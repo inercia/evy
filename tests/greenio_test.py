@@ -51,7 +51,7 @@ class TestGreenSocket(LimitedTestCase):
             fd.write('a')
             self.assertRaises(Exception, fd.flush)
         else:
-            # 3.x io write to closed file-like pbject raises ValueError
+            # 3.x poll write to closed file-like pbject raises ValueError
             self.assertRaises(ValueError, fd.write, 'a')
 
     def test_connect_timeout (self):

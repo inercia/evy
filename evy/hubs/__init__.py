@@ -8,11 +8,12 @@ __all__ = ["use_hub", "get_hub", "get_default_hub", "trampoline"]
 threading = patcher.original('threading')
 _threadlocal = threading.local()
 
+
+
 def get_default_hub ():
     """Select the default hub implementation based on what multiplexing
     libraries are installed.  The order that the hubs are tried is:
     
-    * twistedr
     * epoll
     * poll
     * select
@@ -23,18 +24,19 @@ def get_default_hub ():
 
     select = patcher.original('select')
     try:
-        import evy.hubs.epolls
-
-        return evy.hubs.epolls
+        import evy.hubs.libuv
+        return evy.hubs.libuv
     except ImportError:
-        if hasattr(select, 'poll'):
-            import evy.hubs.poll
-
-            return evy.hubs.poll
-        else:
-            import evy.hubs.selects
-
-            return evy.hubs.selects
+        try:
+            import evy.hubs.epolls
+            return evy.hubs.epolls
+        except ImportError:
+            if hasattr(select, 'poll'):
+                import evy.hubs.poll
+                return evy.hubs.poll
+            else:
+                import evy.hubs.selects
+                return evy.hubs.selects
 
 
 def use_hub (mod = None):
@@ -49,7 +51,7 @@ def use_hub (mod = None):
     timers or listeners will never be resumed.
     """
     if mod is None:
-        mod = os.environ.get('EVENTLET_HUB', None)
+        mod = os.environ.get('EVY_HUB', None)
     if mod is None:
         mod = get_default_hub()
     if hasattr(_threadlocal, 'hub'):
@@ -78,20 +80,20 @@ def get_hub ():
         hub = _threadlocal.hub = _threadlocal.Hub()
     return hub
 
+
 from evy import timeout
+
 
 def trampoline (fd, read = None, write = None, timeout = None,
                 timeout_exc = timeout.Timeout):
-    """Suspend the current coroutine until the given socket object or file
-    descriptor is ready to *read*, ready to *write*, or the specified
-    *timeout* elapses, depending on arguments specified.
+    """
+    Suspend the current coroutine until the given socket object or file descriptor is ready to *read*,
+    ready to *write*, or the specified *timeout* elapses, depending on arguments specified.
 
-    To wait for *fd* to be ready to read, pass *read* ``=True``; ready to
-    write, pass *write* ``=True``. To specify a timeout, pass the *timeout*
+    To wait for *fd* to be ready to read, pass *read* ``=True``; ready to write, pass *write* ``=True``. To specify a timeout, pass the *timeout*
     argument in seconds.
 
-    If the specified *timeout* elapses before the socket is ready to read or
-    write, *timeout_exc* will be raised instead of ``trampoline()``
+    If the specified *timeout* elapses before the socket is ready to read or write, *timeout_exc* will be raised instead of ``trampoline()``
     returning normally.
     
     .. note :: |internal|
@@ -119,3 +121,4 @@ def trampoline (fd, read = None, write = None, timeout = None,
     finally:
         if t is not None:
             t.cancel()
+

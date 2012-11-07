@@ -1,17 +1,24 @@
+
 from evy.support import greenlets as greenlet
 from evy.hubs import get_hub
 
-""" If true, captures a stack trace for each timer when constructed.  This is
-useful for debugging leaking timers, to find out where the timer was set up. """
+
+## If true, captures a stack trace for each timer when constructed.  This is
+## useful for debugging leaking timers, to find out where the timer was set up.
 _g_debug = False
 
+
+
 class Timer(object):
+
     def __init__ (self, seconds, cb, *args, **kw):
-        """Create a timer.
-            seconds: The minimum number of seconds to wait before calling
-            cb: The callback to call when the timer has expired
-            *args: The arguments to pass to cb
-            **kw: The keyword arguments to pass to cb
+        """
+        Create a timer.
+
+        seconds: The minimum number of seconds to wait before calling
+        cb: The callback to call when the timer has expired
+        *args: The arguments to pass to cb
+        **kw: The keyword arguments to pass to cb
 
         This timer will not be run unless it is scheduled in a runloop by
         calling timer.schedule() or runloop.add_timer(timer).
@@ -43,7 +50,8 @@ class Timer(object):
         return self.__class__(self.seconds, cb, *args, **kw)
 
     def schedule (self):
-        """Schedule this timer to run in the current runloop.
+        """
+        Schedule this timer to run in the current runloop.
         """
         self.called = False
         self.scheduled_time = get_hub().add_timer(self)
@@ -62,7 +70,8 @@ class Timer(object):
                     pass
 
     def cancel (self):
-        """Prevent this timer from being called. If the timer has already
+        """
+        Prevent this timer from being called. If the timer has already
         been called or canceled, has no effect.
         """
         if not self.called:

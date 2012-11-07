@@ -33,6 +33,8 @@ g_prevent_multiple_readers = True
 READ = "read"
 WRITE = "write"
 
+
+
 class FdListener(object):
     def __init__ (self, evtype, fileno, cb):
         assert (evtype is READ or evtype is WRITE)
@@ -47,6 +49,7 @@ class FdListener(object):
 
 
 noop = FdListener(READ, 0, lambda x: None)
+
 
 # in debug mode, track the call site that created the listener
 class DebugListener(FdListener):
@@ -73,8 +76,10 @@ def alarm_handler (signum, frame):
 
 
 class BaseHub(object):
-    """ Base hub class for easing the implementation of subclasses that are
-    specific to a particular underlying event architecture. """
+    """
+    Base hub class for easing the implementation of subclasses that are
+    specific to a particular underlying event architecture.
+    """
 
     SYSTEM_EXCEPTIONS = (KeyboardInterrupt, SystemExit)
 
@@ -112,7 +117,8 @@ class BaseHub(object):
         signal.alarm(0)
 
     def add (self, evtype, fileno, cb):
-        """ Signals an intent to or write a particular file descriptor.
+        """
+        Signals an intent to or write a particular file descriptor.
 
         The *evtype* argument is either the constant READ or WRITE.
 
@@ -153,8 +159,10 @@ class BaseHub(object):
                 del self.secondaries[evtype][fileno]
 
     def remove_descriptor (self, fileno):
-        """ Completely remove all listeners for this fileno.  For internal use
-        only."""
+        """
+        Completely remove all listeners for this fileno.  For internal use
+        only.
+        """
         listeners = []
         listeners.append(self.listeners[READ].pop(fileno, noop))
         listeners.append(self.listeners[WRITE].pop(fileno, noop))
@@ -218,8 +226,10 @@ class BaseHub(object):
         return t[0][0]
 
     def run (self, *a, **kw):
-        """Run the runloop until abort is called.
         """
+        Run the runloop until abort is called.
+        """
+
         # accept and discard variable arguments because they will be
         # supplied if other greenlets have run and exited before the
         # hub's greenlet gets a chance to run
@@ -254,7 +264,8 @@ class BaseHub(object):
             self.stopping = False
 
     def abort (self, wait = False):
-        """Stop the runloop. If run is executing, it will exit after
+        """
+        Stop the runloop. If run is executing, it will exit after
         completing the next runloop iteration.
 
         Set *wait* to True to cause abort to switch to the hub immediately and
@@ -309,25 +320,30 @@ class BaseHub(object):
         del self.next_timers[:]
 
     def schedule_call_local (self, seconds, cb, *args, **kw):
-        """Schedule a callable to be called after 'seconds' seconds have
+        """
+        Schedule a callable to be called after 'seconds' seconds have
         elapsed. Cancel the timer if greenlet has exited.
-            seconds: The number of seconds to wait.
-            cb: The callable to call after the given time.
-            *args: Arguments to pass to the callable when called.
-            **kw: Keyword arguments to pass to the callable when called.
+
+        seconds: The number of seconds to wait.
+        cb: The callable to call after the given time.
+        *args: Arguments to pass to the callable when called.
+        **kw: Keyword arguments to pass to the callable when called.
         """
         t = timer.LocalTimer(seconds, cb, *args, **kw)
         self.add_timer(t)
         return t
 
     def schedule_call_global (self, seconds, cb, *args, **kw):
-        """Schedule a callable to be called after 'seconds' seconds have
+        """
+        Schedule a callable to be called after 'seconds' seconds have
         elapsed. The timer will NOT be canceled if the current greenlet has
         exited before the timer fires.
-            seconds: The number of seconds to wait.
-            cb: The callable to call after the given time.
-            *args: Arguments to pass to the callable when called.
-            **kw: Keyword arguments to pass to the callable when called.
+
+        seconds: The number of seconds to wait.
+        cb: The callable to call after the given time.
+        *args: Arguments to pass to the callable when called.
+        **kw: Keyword arguments to pass to the callable when called.
+
         """
         t = timer.Timer(seconds, cb, *args, **kw)
         self.add_timer(t)
