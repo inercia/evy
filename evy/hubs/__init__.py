@@ -16,20 +16,10 @@ def get_default_hub ():
     * epoll
     * poll
     * select
-    
-    It won't automatically select the pyevent hub, because it's not 
-    python-thread-safe.
-    
+
     .. include:: ../../doc/common.txt
     .. note :: |internal|
     """
-
-    # pyevent hub disabled for now because it is not thread-safe
-    #try:
-    #    import evy.hubs.pyevent
-    #    return evy.hubs.pyevent
-    #except:
-    #    pass
 
     select = patcher.original('select')
     try:
