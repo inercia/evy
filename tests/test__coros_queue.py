@@ -1,8 +1,8 @@
 from tests import LimitedTestCase, silence_warnings
 from unittest import main
-import eventlet
-from eventlet import coros, spawn, sleep
-from eventlet.event import Event
+import evy
+from evy import coros, spawn, sleep
+from evy.event import Event
 
 
 class TestQueue(LimitedTestCase):
@@ -23,7 +23,7 @@ class TestQueue(LimitedTestCase):
         q = coros.queue()
 
         def waiter (q):
-            timer = eventlet.Timeout(0.1)
+            timer = evy.Timeout(0.1)
             self.assertEquals(q.wait(), 'hi2')
             timer.cancel()
 
@@ -82,10 +82,10 @@ class TestQueue(LimitedTestCase):
         q = coros.queue()
 
         sendings = ['1', '2', '3', '4']
-        gts = [eventlet.spawn(q.wait)
+        gts = [evy.spawn(q.wait)
                for x in sendings]
 
-        eventlet.sleep(0.01) # get 'em all waiting
+        evy.sleep(0.01) # get 'em all waiting
 
         q.send(sendings[0])
         q.send(sendings[1])
@@ -101,7 +101,7 @@ class TestQueue(LimitedTestCase):
         q = coros.queue()
 
         def do_receive (q, evt):
-            eventlet.Timeout(0, RuntimeError())
+            evy.Timeout(0, RuntimeError())
             try:
                 result = q.wait()
                 evt.send(result)
@@ -132,7 +132,7 @@ class TestQueue(LimitedTestCase):
             evt.send(q.wait())
 
         def do_receive (q, evt):
-            eventlet.Timeout(0, RuntimeError())
+            evy.Timeout(0, RuntimeError())
             try:
                 result = q.wait()
                 evt.send(result)
@@ -152,7 +152,7 @@ class TestQueue(LimitedTestCase):
     @silence_warnings
     def test_two_bogus_waiters (self):
         def do_receive (q, evt):
-            eventlet.Timeout(0, RuntimeError())
+            evy.Timeout(0, RuntimeError())
             try:
                 result = q.wait()
                 evt.send(result)
@@ -238,14 +238,14 @@ class TestChannel(LimitedTestCase):
     @silence_warnings
     def test_waiters (self):
         c = coros.Channel()
-        w1 = eventlet.spawn(c.wait)
-        w2 = eventlet.spawn(c.wait)
-        w3 = eventlet.spawn(c.wait)
+        w1 = evy.spawn(c.wait)
+        w2 = evy.spawn(c.wait)
+        w3 = evy.spawn(c.wait)
         sleep(0)
         self.assertEquals(c.waiting(), 3)
-        s1 = eventlet.spawn(c.send, 1)
-        s2 = eventlet.spawn(c.send, 2)
-        s3 = eventlet.spawn(c.send, 3)
+        s1 = evy.spawn(c.send, 1)
+        s2 = evy.spawn(c.send, 2)
+        s3 = evy.spawn(c.send, 3)
         sleep(0)  # this gets all the sends into a waiting state
         self.assertEquals(c.waiting(), 0)
 

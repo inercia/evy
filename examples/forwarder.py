@@ -4,7 +4,7 @@ demonstrate one way that you could start to do interesting things by
 starting from a simple framework like this.
 """
 
-import eventlet
+import evy
 
 def closed_callback ():
     print "called back"
@@ -19,10 +19,10 @@ def forward (source, dest, cb = lambda: None):
             break
         dest.sendall(d)
 
-listener = eventlet.listen(('localhost', 7000))
+listener = evy.listen(('localhost', 7000))
 while True:
     client, addr = listener.accept()
-    server = eventlet.connect(('localhost', 22))
+    server = evy.connect(('localhost', 22))
     # two unidirectional forwarders make a bidirectional one
-    eventlet.spawn_n(forward, client, server, closed_callback)
-    eventlet.spawn_n(forward, server, client)
+    evy.spawn_n(forward, client, server, closed_callback)
+    evy.spawn_n(forward, server, client)

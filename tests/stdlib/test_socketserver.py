@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 
-from eventlet import patcher
-from eventlet.green import SocketServer
-from eventlet.green import socket
-from eventlet.green import select
-from eventlet.green import time
-from eventlet.green import threading
+from evy import patcher
+from evy.green import SocketServer
+from evy.green import socket
+from evy.green import select
+from evy.green import time
+from evy.green import threading
 
 # to get past the silly 'requires' check
 from test import test_support
@@ -21,7 +21,7 @@ patcher.inject('test.test_socketserver',
     ('threading', threading))
 
 # only a problem with pyevent
-from eventlet import tests
+from evy import tests
 
 if tests.using_pyevent():
     try:

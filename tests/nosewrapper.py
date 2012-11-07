@@ -1,4 +1,4 @@
-""" This script simply gets the paths correct for testing eventlet with the 
+""" This script simply gets the paths correct for testing evy with the 
 hub extension for Nose."""
 import nose
 from os.path import dirname, realpath, abspath

@@ -1,5 +1,5 @@
 :mod:`greenthread` -- Green Thread Implementation
 ==================================================
 
-.. automodule:: eventlet.greenthread
+.. automodule:: evy.greenthread
 	:members:

@@ -1,6 +1,6 @@
 :mod:`greenpool` -- Green Thread Pools
 ========================================
 
-.. automodule:: eventlet.greenpool
+.. automodule:: evy.greenpool
 	:members:
 

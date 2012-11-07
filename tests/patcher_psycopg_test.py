@@ -7,9 +7,9 @@ from tests.db_pool_test import postgres_requirement
 psycopg_test_file = """
 import os
 import sys
-import eventlet
-eventlet.monkey_patch()
-from eventlet import patcher
+import evy
+evy.monkey_patch()
+from evy import patcher
 if not patcher.is_monkey_patched('psycopg'):
     print "Psycopg not monkeypatched"
     sys.exit(0)
@@ -18,7 +18,7 @@ count = [0]
 def tick(totalseconds, persecond):
     for i in xrange(totalseconds*persecond):
         count[0] += 1
-        eventlet.sleep(1.0/persecond)
+        evy.sleep(1.0/persecond)
         
 dsn = os.environ['PSYCOPG_TEST_DSN']
 import psycopg2    
@@ -28,8 +28,8 @@ def fetch(num, secs):
     for i in range(num):
         cur.execute("select pg_sleep(%s)", (secs,))
 
-f = eventlet.spawn(fetch, 2, 1)
-t = eventlet.spawn(tick, 2, 100)
+f = evy.spawn(fetch, 2, 1)
+t = evy.spawn(tick, 2, 100)
 f.wait()
 assert count[0] > 100, count[0]
 print "done"

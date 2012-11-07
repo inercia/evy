@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 
-from eventlet import patcher
-from eventlet.green import socket
-from eventlet.green import select
-from eventlet.green import time
-from eventlet.green import thread
-from eventlet.green import threading
+from evy import patcher
+from evy.green import socket
+from evy.green import select
+from evy.green import time
+from evy.green import thread
+from evy.green import threading
 
 patcher.inject('test.test_socket',
                globals(),

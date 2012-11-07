@@ -1,9 +1,9 @@
 import weakref
-from eventlet.green import thread
-from eventlet import greenthread
-from eventlet import event
-import eventlet
-from eventlet import corolocal
+from evy.green import thread
+from evy import greenthread
+from evy import event
+import evy
+from evy import corolocal
 
 from tests import LimitedTestCase, skipped
 
@@ -34,14 +34,14 @@ class Locals(LimitedTestCase):
 
         thread.start_new_thread(setter, args = (tls, 1))
         thread.start_new_thread(setter, args = (tls, 2))
-        eventlet.sleep()
+        evy.sleep()
         objs = object.__getattribute__(tls, "__objs")
         self.failUnlessEqual(sorted(g_ids), sorted(objs.keys()))
         self.failUnlessEqual(objs[g_ids[0]]['value'], 1)
         self.failUnlessEqual(objs[g_ids[1]]['value'], 2)
         self.failUnlessRaises(AttributeError, lambda: tls.value)
         evt.send("done")
-        eventlet.sleep()
+        evy.sleep()
 
     def test_assignment (self):
         my_local = corolocal.local()
@@ -56,7 +56,7 @@ class Locals(LimitedTestCase):
             except AttributeError:
                 pass
 
-        eventlet.spawn(do_something).wait()
+        evy.spawn(do_something).wait()
         self.assertEqual(my_local.a, 1)
 
     def test_calls_init (self):
@@ -64,19 +64,19 @@ class Locals(LimitedTestCase):
 
         class Init(corolocal.local):
             def __init__ (self, *args):
-                init_args.append((args, eventlet.getcurrent()))
+                init_args.append((args, evy.getcurrent()))
 
         my_local = Init(1, 2, 3)
         self.assertEqual(init_args[0][0], (1, 2, 3))
-        self.assertEqual(init_args[0][1], eventlet.getcurrent())
+        self.assertEqual(init_args[0][1], evy.getcurrent())
 
         def do_something ():
             my_local.foo = 'bar'
             self.assertEqual(len(init_args), 2, init_args)
             self.assertEqual(init_args[1][0], (1, 2, 3))
-            self.assertEqual(init_args[1][1], eventlet.getcurrent())
+            self.assertEqual(init_args[1][1], evy.getcurrent())
 
-        eventlet.spawn(do_something).wait()
+        evy.spawn(do_something).wait()
 
     def test_calling_methods (self):
         class Caller(corolocal.local):
@@ -91,7 +91,7 @@ class Locals(LimitedTestCase):
             my_local.foo = "foo2"
             self.assertEquals("foo2", my_local.callme())
 
-        eventlet.spawn(do_something).wait()
+        evy.spawn(do_something).wait()
 
         my_local.foo = "foo3"
         self.assertEquals("foo3", my_local.callme())
@@ -108,7 +108,7 @@ class Locals(LimitedTestCase):
             refs[o] = True
             my_local.foo = o
 
-        p = eventlet.GreenPool()
+        p = evy.GreenPool()
         for i in xrange(100):
             p.spawn(do_something, i)
         p.waitall()

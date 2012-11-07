@@ -2,10 +2,10 @@
 It even works for some pages.
 
 Demonstrates how to
- * plug in eventlet into a twisted application (join_reactor)
+ * plug in evy into a twisted application (join_reactor)
  * call green functions from places where blocking calls
    are not allowed (deferToGreenThread)
- * use eventlet.green package which provides [some of] the
+ * use evy.green package which provides [some of] the
    standard library modules that don't block other greenlets.
 """
 import re
@@ -13,9 +13,9 @@ from twisted.internet.protocol import Factory
 from twisted.internet import reactor
 from twisted.protocols import basic
 
-from eventlet.twistedutil import deferToGreenThread
-from eventlet.twistedutil import join_reactor
-from eventlet.green import httplib
+from evy.twistedutil import deferToGreenThread
+from evy.twistedutil import join_reactor
+from evy.green import httplib
 
 class LineOnlyReceiver(basic.LineOnlyReceiver):
     def connectionMade (self):

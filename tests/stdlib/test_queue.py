@@ -1,7 +1,7 @@
-from eventlet import patcher
-from eventlet.green import Queue
-from eventlet.green import threading
-from eventlet.green import time
+from evy import patcher
+from evy.green import Queue
+from evy.green import threading
+from evy.green import time
 
 patcher.inject('test.test_queue',
                globals(),

@@ -1,8 +1,8 @@
 from unittest import TestCase, main
 
-import eventlet
-from eventlet import hubs
-from eventlet.hubs import timer
+import evy
+from evy import hubs
+from evy.hubs import timer
 
 class TestTimer(TestCase):
     def test_copy (self):
@@ -18,7 +18,7 @@ class TestTimer(TestCase):
         # on this thread
         if hub.running:
             hub.abort()
-            eventlet.sleep(0)
+            evy.sleep(0)
         called = []
         #t = timer.Timer(0, lambda: (called.append(True), hub.abort()))
         #t.schedule()

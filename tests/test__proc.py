@@ -3,12 +3,12 @@ import unittest
 import warnings
 
 warnings.simplefilter('ignore', DeprecationWarning)
-from eventlet import proc
+from evy import proc
 
 warnings.simplefilter('default', DeprecationWarning)
-from eventlet import coros
-from eventlet import event as _event
-from eventlet import Timeout, sleep, getcurrent, with_timeout
+from evy import coros
+from evy import event as _event
+from evy import Timeout, sleep, getcurrent, with_timeout
 from tests import LimitedTestCase, skipped, silence_warnings
 
 DELAY = 0.01

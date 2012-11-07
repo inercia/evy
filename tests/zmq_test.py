@@ -1,7 +1,7 @@
 from __future__ import with_statement
 
-from eventlet import event, spawn, sleep, patcher, semaphore
-from eventlet.hubs import get_hub, _threadlocal, use_hub
+from evy import event, spawn, sleep, patcher, semaphore
+from evy.hubs import get_hub, _threadlocal, use_hub
 from nose.tools import *
 from tests import mock, LimitedTestCase, using_pyevent, skip_unless
 from unittest import TestCase
@@ -9,7 +9,7 @@ from unittest import TestCase
 from threading import Thread
 
 try:
-    from eventlet.green import zmq
+    from evy.green import zmq
 except ImportError:
     zmq = {}    # for systems lacking zmq, skips tests instead of barfing
 

@@ -32,7 +32,7 @@ def get_modules ():
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     try:
         s.settimeout(0.5)
-        s.connect(('eventlet.net', 80))
+        s.connect(('evy.net', 80))
         s.close()
         test_modules = test_modules + network_modules
     except socket.error, e:

@@ -1,8 +1,8 @@
 import os
 
-import eventlet
-from eventlet import event
-from eventlet.green import socket
+import evy
+from evy import event
+from evy.green import socket
 from tests import LimitedTestCase, s2b, skip_if_no_ssl
 
 certificate_file = os.path.join(os.path.dirname(__file__), 'test_server.crt')
@@ -11,13 +11,13 @@ private_key_file = os.path.join(os.path.dirname(__file__), 'test_server.key')
 class TestServe(LimitedTestCase):
     def setUp (self):
         super(TestServe, self).setUp()
-        from eventlet import debug
+        from evy import debug
 
         debug.hub_exceptions(False)
 
     def tearDown (self):
         super(TestServe, self).tearDown()
-        from eventlet import debug
+        from evy import debug
 
         debug.hub_exceptions(True)
 
@@ -26,9 +26,9 @@ class TestServe(LimitedTestCase):
         def closer (sock, addr):
             pass
 
-        l = eventlet.listen(('localhost', 0))
-        gt = eventlet.spawn(eventlet.serve, l, closer)
-        client = eventlet.connect(('localhost', l.getsockname()[1]))
+        l = evy.listen(('localhost', 0))
+        gt = evy.spawn(evy.serve, l, closer)
+        client = evy.connect(('localhost', l.getsockname()[1]))
         client.sendall(s2b('a'))
         self.assertFalse(client.recv(100))
         gt.kill()
@@ -40,9 +40,9 @@ class TestServe(LimitedTestCase):
             sock.recv(1024)
             0 // 0
 
-        l = eventlet.listen(('localhost', 0))
-        gt = eventlet.spawn(eventlet.serve, l, crasher)
-        client = eventlet.connect(('localhost', l.getsockname()[1]))
+        l = evy.listen(('localhost', 0))
+        gt = evy.spawn(evy.serve, l, crasher)
+        client = evy.connect(('localhost', l.getsockname()[1]))
         client.sendall(s2b('a'))
         self.assertRaises(ZeroDivisionError, gt.wait)
         self.assertFalse(client.recv(100))
@@ -54,9 +54,9 @@ class TestServe(LimitedTestCase):
             sock.close()
             0 // 0
 
-        l = eventlet.listen(('localhost', 0))
-        gt = eventlet.spawn(eventlet.serve, l, crasher)
-        client = eventlet.connect(('localhost', l.getsockname()[1]))
+        l = evy.listen(('localhost', 0))
+        gt = evy.spawn(evy.serve, l, crasher)
+        client = evy.connect(('localhost', l.getsockname()[1]))
         client.sendall(s2b('a'))
         self.assertRaises(ZeroDivisionError, gt.wait)
         self.assertFalse(client.recv(100))
@@ -67,30 +67,30 @@ class TestServe(LimitedTestCase):
         def counter (sock, addr):
             hits[0] += 1
 
-        l = eventlet.listen(('localhost', 0))
-        gt = eventlet.spawn(eventlet.serve, l, counter)
+        l = evy.listen(('localhost', 0))
+        gt = evy.spawn(evy.serve, l, counter)
         for i in xrange(100):
-            client = eventlet.connect(('localhost', l.getsockname()[1]))
+            client = evy.connect(('localhost', l.getsockname()[1]))
             self.assertFalse(client.recv(100))
         gt.kill()
         self.assertEqual(100, hits[0])
 
     def test_blocking (self):
-        l = eventlet.listen(('localhost', 0))
-        x = eventlet.with_timeout(0.01,
-                                  eventlet.serve, l, lambda c, a: None,
+        l = evy.listen(('localhost', 0))
+        x = evy.with_timeout(0.01,
+                                  evy.serve, l, lambda c, a: None,
                                   timeout_value = "timeout")
         self.assertEqual(x, "timeout")
 
     def test_raising_stopserve (self):
         def stopit (conn, addr):
-            raise eventlet.StopServe()
+            raise evy.StopServe()
 
-        l = eventlet.listen(('localhost', 0))
+        l = evy.listen(('localhost', 0))
         # connect to trigger a call to stopit
-        gt = eventlet.spawn(eventlet.connect,
+        gt = evy.spawn(evy.connect,
             ('localhost', l.getsockname()[1]))
-        eventlet.serve(l, stopit)
+        evy.serve(l, stopit)
         gt.wait()
 
     def test_concurrency (self):
@@ -100,44 +100,44 @@ class TestServe(LimitedTestCase):
             sock.sendall(s2b('hi'))
             evt.wait()
 
-        l = eventlet.listen(('localhost', 0))
-        gt = eventlet.spawn(eventlet.serve, l, waiter, 5)
+        l = evy.listen(('localhost', 0))
+        gt = evy.spawn(evy.serve, l, waiter, 5)
 
         def test_client ():
-            c = eventlet.connect(('localhost', l.getsockname()[1]))
+            c = evy.connect(('localhost', l.getsockname()[1]))
             # verify the client is connected by getting data
             self.assertEquals(s2b('hi'), c.recv(2))
             return c
 
         clients = [test_client() for i in xrange(5)]
         # very next client should not get anything
-        x = eventlet.with_timeout(0.01,
+        x = evy.with_timeout(0.01,
                                   test_client,
                                   timeout_value = "timed out")
         self.assertEquals(x, "timed out")
 
     @skip_if_no_ssl
     def test_wrap_ssl (self):
-        server = eventlet.wrap_ssl(eventlet.listen(('localhost', 0)),
+        server = evy.wrap_ssl(evy.listen(('localhost', 0)),
                                    certfile = certificate_file,
                                    keyfile = private_key_file, server_side = True)
         port = server.getsockname()[1]
 
         def handle (sock, addr):
             sock.sendall(sock.recv(1024))
-            raise eventlet.StopServe()
+            raise evy.StopServe()
 
-        eventlet.spawn(eventlet.serve, server, handle)
-        client = eventlet.wrap_ssl(eventlet.connect(('localhost', port)))
+        evy.spawn(evy.serve, server, handle)
+        client = evy.wrap_ssl(evy.connect(('localhost', port)))
         client.sendall("echo")
         self.assertEquals("echo", client.recv(1024))
 
     def test_socket_reuse (self):
-        lsock1 = eventlet.listen(('localhost', 0))
+        lsock1 = evy.listen(('localhost', 0))
         port = lsock1.getsockname()[1]
 
         def same_socket ():
-            return eventlet.listen(('localhost', port))
+            return evy.listen(('localhost', port))
 
         self.assertRaises(socket.error, same_socket)
         lsock1.close()

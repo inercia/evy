@@ -1,5 +1,5 @@
-from eventlet import patcher
-from eventlet.green import os
+from evy import patcher
+from evy.green import os
 
 patcher.inject('test.test_os',
                globals(),

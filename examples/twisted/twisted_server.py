@@ -2,12 +2,12 @@
 Listen on port 8007 and re-send all the data received to other participants.
 
 Demonstrates how to
- * plug in eventlet into a twisted application (join_reactor)
+ * plug in evy into a twisted application (join_reactor)
  * how to use SpawnFactory to start a new greenlet for each new request.
 """
-from eventlet.twistedutil import join_reactor
-from eventlet.twistedutil.protocol import SpawnFactory
-from eventlet.twistedutil.protocols.basic import LineOnlyReceiverTransport
+from evy.twistedutil import join_reactor
+from evy.twistedutil.protocol import SpawnFactory
+from evy.twistedutil.protocols.basic import LineOnlyReceiverTransport
 
 class Chat:
     def __init__ (self):

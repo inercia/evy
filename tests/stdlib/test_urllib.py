@@ -1,6 +1,6 @@
-from eventlet import patcher
-from eventlet.green import httplib
-from eventlet.green import urllib
+from evy import patcher
+from evy.green import httplib
+from evy.green import urllib
 
 patcher.inject('test.test_urllib',
                globals(),

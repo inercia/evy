@@ -1,5 +1,5 @@
 :mod:`queue` -- Queue class
 ========================================
 
-.. automodule:: eventlet.queue
+.. automodule:: evy.queue
 	:members:

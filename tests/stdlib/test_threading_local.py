@@ -1,10 +1,10 @@
-from eventlet import patcher
-from eventlet.green import thread
-from eventlet.green import threading
-from eventlet.green import time
+from evy import patcher
+from evy.green import thread
+from evy.green import threading
+from evy.green import time
 
 # hub requires initialization before test can run
-from eventlet import hubs
+from evy import hubs
 
 hubs.get_hub()
 

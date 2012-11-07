@@ -14,13 +14,13 @@ So all messages are published to port 12345 and the device forwards all the
 messages to 12346 where they are subscribed to
 """
 import os, sys
-import eventlet
+import evy
 from collections import defaultdict
-from eventlet import spawn_n, sleep
-from eventlet import wsgi
-from eventlet import websocket
-from eventlet.green import zmq
-from eventlet.hubs import get_hub, use_hub
+from evy import spawn_n, sleep
+from evy import wsgi
+from evy import websocket
+from evy.green import zmq
+from evy.hubs import get_hub, use_hub
 from uuid import uuid1
 
 use_hub('zeromq')
@@ -123,6 +123,6 @@ if __name__ == "__main__":
         sys.exit(1)
 
     spawn_n(subscribe_and_distribute, sub_socket)
-    listener = eventlet.listen(('127.0.0.1', port))
+    listener = evy.listen(('127.0.0.1', port))
     print "\nVisit http://localhost:%s/ in your websocket-capable browser.\n" % port
     wsgi.server(listener, dispatch)

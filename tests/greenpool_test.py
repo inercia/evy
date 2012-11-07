@@ -3,19 +3,19 @@ import itertools
 import os
 import random
 
-import eventlet
-from eventlet import debug
-from eventlet import hubs, greenpool, coros, event
-from eventlet.support import greenlets as greenlet
+import evy
+from evy import debug
+from evy import hubs, greenpool, coros, event
+from evy.support import greenlets as greenlet
 import tests
 
 def passthru (a):
-    eventlet.sleep(0.01)
+    evy.sleep(0.01)
     return a
 
 
 def passthru2 (a, b):
-    eventlet.sleep(0.01)
+    evy.sleep(0.01)
     return a, b
 
 
@@ -37,7 +37,7 @@ class GreenPool(tests.LimitedTestCase):
         results_closure = []
 
         def do_something (a):
-            eventlet.sleep(0.01)
+            evy.sleep(0.01)
             results_closure.append(a)
 
         for i in xrange(10):
@@ -58,14 +58,14 @@ class GreenPool(tests.LimitedTestCase):
 
         waiters = []
         self.assertEqual(pool.running(), 0)
-        waiters.append(eventlet.spawn(waiter, pool))
-        eventlet.sleep(0)
+        waiters.append(evy.spawn(waiter, pool))
+        evy.sleep(0)
         self.assertEqual(pool.waiting(), 0)
-        waiters.append(eventlet.spawn(waiter, pool))
-        eventlet.sleep(0)
+        waiters.append(evy.spawn(waiter, pool))
+        evy.sleep(0)
         self.assertEqual(pool.waiting(), 1)
-        waiters.append(eventlet.spawn(waiter, pool))
-        eventlet.sleep(0)
+        waiters.append(evy.spawn(waiter, pool))
+        evy.sleep(0)
         self.assertEqual(pool.waiting(), 2)
         self.assertEqual(pool.running(), 1)
         done.send(None)
@@ -107,8 +107,8 @@ class GreenPool(tests.LimitedTestCase):
         pool = greenpool.GreenPool(2)
         worker = pool.spawn(some_work)
         worker.wait()
-        eventlet.sleep(0)
-        eventlet.sleep(0)
+        evy.sleep(0)
+        evy.sleep(0)
         self.assertEquals(timer_fired, [])
 
     def test_reentrant (self):
@@ -136,7 +136,7 @@ class GreenPool(tests.LimitedTestCase):
         def wait_long_time (e):
             e.wait()
 
-        timer = eventlet.Timeout(1)
+        timer = evy.Timeout(1)
         try:
             evt = event.Event()
             for x in xrange(num_free):
@@ -148,7 +148,7 @@ class GreenPool(tests.LimitedTestCase):
 
         # if the runtime error is not raised it means the pool had
         # some unexpected free items
-        timer = eventlet.Timeout(0, RuntimeError)
+        timer = evy.Timeout(0, RuntimeError)
         try:
             self.assertRaises(RuntimeError, pool.spawn, wait_long_time, evt)
         finally:
@@ -156,8 +156,8 @@ class GreenPool(tests.LimitedTestCase):
 
         # clean up by causing all the wait_long_time functions to return
         evt.send(None)
-        eventlet.sleep(0)
-        eventlet.sleep(0)
+        evy.sleep(0)
+        evy.sleep(0)
 
     def test_resize (self):
         pool = greenpool.GreenPool(2)
@@ -178,8 +178,8 @@ class GreenPool(tests.LimitedTestCase):
         # cause the wait_long_time functions to return, which will
         # trigger puts to the pool
         evt.send(None)
-        eventlet.sleep(0)
-        eventlet.sleep(0)
+        evy.sleep(0)
+        evy.sleep(0)
 
         self.assertEquals(pool.free(), 1)
         self.assertEquals(pool.running(), 0)
@@ -195,14 +195,14 @@ class GreenPool(tests.LimitedTestCase):
         # The premise is that a coroutine in a Pool tries to get a token out
         # of a token pool but times out before getting the token.  We verify
         # that neither pool is adversely affected by this situation.
-        from eventlet import pools
+        from evy import pools
 
         pool = greenpool.GreenPool(1)
         tp = pools.TokenPool(max_size = 1)
         token = tp.get()  # empty out the pool
 
         def do_receive (tp):
-            timer = eventlet.Timeout(0, RuntimeError())
+            timer = evy.Timeout(0, RuntimeError())
             try:
                 t = tp.get()
                 self.fail("Shouldn't have recieved anything from the pool")
@@ -220,7 +220,7 @@ class GreenPool(tests.LimitedTestCase):
         def send_wakeup (tp):
             tp.put('wakeup')
 
-        gt = eventlet.spawn(send_wakeup, tp)
+        gt = evy.spawn(send_wakeup, tp)
 
         # now we ask the pool to run something else, which should not
         # be affected by the previous send at all
@@ -246,7 +246,7 @@ class GreenPool(tests.LimitedTestCase):
         self.assertEqual(p.free(), 1)
         gt.wait()
         self.assertEqual(r, [1])
-        eventlet.sleep(0)
+        evy.sleep(0)
         self.assertEqual(p.free(), 2)
 
         #Once the pool is exhausted, spawning forces a yield.
@@ -260,7 +260,7 @@ class GreenPool(tests.LimitedTestCase):
 
         p.spawn_n(foo, 4)
         self.assertEqual(set(r), set([1, 2, 3]))
-        eventlet.sleep(0)
+        evy.sleep(0)
         self.assertEqual(set(r), set([1, 2, 3, 4]))
 
     def test_exceptions (self):
@@ -347,8 +347,8 @@ class GreenPile(tests.LimitedTestCase):
         for i in xrange(4):
             p.spawn(passthru, i)
             # now it should be full and this should time out
-        eventlet.Timeout(0)
-        self.assertRaises(eventlet.Timeout, p.spawn, passthru, "time out")
+        evy.Timeout(0)
+        self.assertRaises(evy.Timeout, p.spawn, passthru, "time out")
         # verify that the spawn breakage didn't interrupt the sequence
         # and terminates properly
         for i in xrange(4, 10):
@@ -364,9 +364,9 @@ class GreenPile(tests.LimitedTestCase):
             for i in xrange(10):
                 pile.spawn(passthru, i + unique)
 
-        eventlet.spawn(bunch_of_work, pile1, 0)
-        eventlet.spawn(bunch_of_work, pile2, 100)
-        eventlet.sleep(0)
+        evy.spawn(bunch_of_work, pile1, 0)
+        evy.spawn(bunch_of_work, pile2, 100)
+        evy.sleep(0)
         self.assertEquals(list(pile2), list(xrange(100, 110)))
         self.assertEquals(list(pile1), list(xrange(10)))
 
@@ -378,7 +378,7 @@ r = random.Random(0)
 
 def pressure (arg):
     while r.random() < 0.5:
-        eventlet.sleep(r.random() * 0.001)
+        evy.sleep(r.random() * 0.001)
     if r.random() < 0.8:
         return arg
     else:
@@ -387,7 +387,7 @@ def pressure (arg):
 
 def passthru (arg):
     while r.random() < 0.5:
-        eventlet.sleep(r.random() * 0.001)
+        evy.sleep(r.random() * 0.001)
     return arg
 
 
@@ -406,9 +406,9 @@ class Stress(tests.LimitedTestCase):
                 p.spawn(pressure, token)
 
         iters = 1000
-        eventlet.spawn(makework, iters, 1)
-        eventlet.spawn(makework, iters, 2)
-        eventlet.spawn(makework, iters, 3)
+        evy.spawn(makework, iters, 1)
+        evy.spawn(makework, iters, 2)
+        evy.spawn(makework, iters, 3)
         p.spawn(pressure, (0, 0))
         latest = [-1] * 4
         received = 0
@@ -422,7 +422,7 @@ class Stress(tests.LimitedTestCase):
                 break
             received += 1
             if received % 5 == 0:
-                eventlet.sleep(0.0001)
+                evy.sleep(0.0001)
             unique, order = i
             self.assert_(latest[unique] < order)
             latest[unique] = order
@@ -456,7 +456,7 @@ class Stress(tests.LimitedTestCase):
             self.assert_(i > latest)
             latest = i
             if latest % 5 == 0:
-                eventlet.sleep(0.001)
+                evy.sleep(0.001)
             if latest % 10 == 0:
                 gc.collect()
                 objs_created = len(gc.get_objects()) - initial_obj_count
@@ -474,7 +474,7 @@ class Stress(tests.LimitedTestCase):
 
     @tests.skip_unless(os.environ.get('RUN_STRESS_TESTS') == 'YES')
     def test_with_intpool (self):
-        from eventlet import pools
+        from evy import pools
 
         class IntPool(pools.Pool):
             def create (self):
@@ -484,7 +484,7 @@ class Stress(tests.LimitedTestCase):
         def subtest (intpool_size, pool_size, num_executes):
             def run (int_pool):
                 token = int_pool.get()
-                eventlet.sleep(0.0001)
+                evy.sleep(0.0001)
                 int_pool.put(token)
                 return token
 

@@ -2,8 +2,8 @@ from twisted.internet import reactor
 from twisted.names.srvconnect import SRVConnector
 from gnutls.interfaces.twisted import X509Credentials
 
-from eventlet.twistedutil.protocol import GreenClientCreator
-from eventlet.twistedutil.protocols.basic import LineOnlyReceiverTransport
+from evy.twistedutil.protocol import GreenClientCreator
+from evy.twistedutil.protocols.basic import LineOnlyReceiverTransport
 
 class NoisySRVConnector(SRVConnector):
     def pickServer (self):

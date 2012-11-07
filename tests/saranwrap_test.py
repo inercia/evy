@@ -1,13 +1,13 @@
 import warnings
 
 warnings.simplefilter('ignore', DeprecationWarning)
-from eventlet import saranwrap
+from evy import saranwrap
 
 warnings.simplefilter('default', DeprecationWarning)
-from eventlet import greenpool, sleep
+from evy import greenpool, sleep
 
 import os
-import eventlet
+import evy
 import sys
 import tempfile
 import time
@@ -28,7 +28,7 @@ class CoroutineCallingClass(object):
         self._my_dict = {}
 
     def run_coroutine (self):
-        eventlet.spawn_n(self._add_random_key)
+        evy.spawn_n(self._add_random_key)
 
     def _add_random_key (self):
         self._my_dict['random'] = 'yes, random'

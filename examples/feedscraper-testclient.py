@@ -1,7 +1,7 @@
-from eventlet.green import urllib2
+from evy.green import urllib2
 
 big_list_of_feeds = """
-http://blog.eventlet.net/feed/
+http://blog.evy.net/feed/
 http://rss.slashdot.org/Slashdot/slashdot
 http://feeds.boingboing.net/boingboing/iBag
 http://feeds.feedburner.com/RockPaperShotgun

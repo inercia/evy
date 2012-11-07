@@ -17,7 +17,7 @@
         <div class="bodywrapper">
           <div class="body">
             
-  <div class="section" id="eventlet">
+  <div class="section" id="evy">
 <h1>Eventlet</h1>
 
 <p>Eventlet is a concurrent networking library for Python that allows you to change how you run your code, not how you write it.</p>
@@ -34,34 +34,34 @@
 
 <h3>Installation</h3>
 
-<p>To install eventlet, simply:
+<p>To install evy, simply:
 <pre>
-easy_install eventlet
+easy_install evy
 </pre></p>
 
-<p>Alternately, you can download the source tarball from <a href="http://pypi.python.org/pypi/eventlet/">PyPi</a>:
+<p>Alternately, you can download the source tarball from <a href="http://pypi.python.org/pypi/evy/">PyPi</a>:
 <ul>
-<li><a href="http://pypi.python.org/packages/source/e/eventlet/eventlet-0.9.17.tar.gz">eventlet-0.9.17.tar.gz</a></li>
+<li><a href="http://pypi.python.org/packages/source/e/evy/evy-0.9.17.tar.gz">evy-0.9.17.tar.gz</a></li>
 </ul>
 </p>
 
 <h3>Discussion</h3>
 
-<p><a href="https://lists.secondlife.com/cgi-bin/mailman/listinfo/eventletdev">eventletdev at lists.secondlife.com</a></p>
+<p><a href="https://lists.secondlife.com/cgi-bin/mailman/listinfo/evydev">evydev at lists.secondlife.com</a></p>
 
-<p>This is a relatively low-traffic list about using and developing eventlet.  Look through the <a href="https://lists.secondlife.com/pipermail/eventletdev/">archives</a> for some useful information and possible answers to questions.</p>
+<p>This is a relatively low-traffic list about using and developing evy.  Look through the <a href="https://lists.secondlife.com/pipermail/evydev/">archives</a> for some useful information and possible answers to questions.</p>
 
-<p>There's an IRC channel dedicated to eventlet: <a href="irc://kubrick.freenode.net/#eventlet">#eventlet on freenode</a>.  It's a pretty chill place to hang out!</p>
+<p>There's an IRC channel dedicated to evy: <a href="irc://kubrick.freenode.net/#evy">#evy on freenode</a>.  It's a pretty chill place to hang out!</p>
 
 <h3>Development</h3>
 
-<p><a href="http://bitbucket.org/which_linden/eventlet/">trunk repository</a></p>
+<p><a href="http://bitbucket.org/which_linden/evy/">trunk repository</a></p>
 
 <p>We use Mercurial for our source control, hosted by BitBucket.  It's easy to branch off the main repository and contribute patches, tests, and documentation back upstream.</p>
 
 <h4>Bugs</h4>
 
-<p><a href="http://bitbucket.org/which_linden/eventlet/issues/new/">Bug Report Form</a></p>
+<p><a href="http://bitbucket.org/which_linden/evy/issues/new/">Bug Report Form</a></p>
 
 <p>No registration is required.  Please be sure to report bugs <a href="http://www.chiark.greenend.org.uk/~sgtatham/bugs.html">as effectively as possible</a>, to ensure that we understand and act on them quickly.</p>
 
@@ -73,14 +73,14 @@ easy_install eventlet
      <span class="s">&quot;https://wiki.secondlife.com/w/images/secondlife.jpg&quot;</span><span class="p">,</span>
      <span class="s">&quot;http://us.i1.yimg.com/us.yimg.com/i/ww/beta/y3.gif&quot;</span><span class="p">]</span>
 
-<span class="kn">import</span> <span class="nn">eventlet</span>
-<span class="kn">from</span> <span class="nn">eventlet.green</span> <span class="kn">import</span> <span class="n">urllib2</span>
+<span class="kn">import</span> <span class="nn">evy</span>
+<span class="kn">from</span> <span class="nn">evy.green</span> <span class="kn">import</span> <span class="n">urllib2</span>
 
 <span class="k">def</span> <span class="nf">fetch</span><span class="p">(</span><span class="n">url</span><span class="p">):</span>
 
   <span class="k">return</span> <span class="n">urllib2</span><span class="o">.</span><span class="n">urlopen</span><span class="p">(</span><span class="n">url</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
 
-<span class="n">pool</span> <span class="o">=</span> <span class="n">eventlet</span><span class="o">.</span><span class="n">GreenPool</span><span class="p">()</span>
+<span class="n">pool</span> <span class="o">=</span> <span class="n">evy</span><span class="o">.</span><span class="n">GreenPool</span><span class="p">()</span>
 
 <span class="k">for</span> <span class="n">body</span> <span class="ow">in</span> <span class="n">pool</span><span class="o">.</span><span class="n">imap</span><span class="p">(</span><span class="n">fetch</span><span class="p">,</span> <span class="n">urls</span><span class="p">):</span>
   <span class="k">print</span> <span class="s">&quot;got body&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">body</span><span class="p">)</span>
@@ -101,12 +101,12 @@ easy_install eventlet
 <div class="sphinxsidebarwrapper">
 <h3><a href="">Links</a></h3>
 <ul>
-<li><a class="reference external" href="http://blog.eventlet.net/">Blog</a></li>
+<li><a class="reference external" href="http://blog.evy.net/">Blog</a></li>
 <li><a class="reference external" href="doc/">Documentation</a></li>
-<li><a class="reference external" href="https://lists.secondlife.com/pipermail/eventletdev/">Mailing List Archives</a></li>
-<li><a class="reference external" href="http://eventlet.net/hudson/">Automated Builds</a></li>
-<li><a class="reference external" href="http://bitbucket.org/which_linden/eventlet/issues/new/">Bug Report Form</a></li>
-<li><a class="reference external" href="irc://chat.freenode.net/#eventlet">irc channel</a></li>
+<li><a class="reference external" href="https://lists.secondlife.com/pipermail/evydev/">Mailing List Archives</a></li>
+<li><a class="reference external" href="http://evy.net/hudson/">Automated Builds</a></li>
+<li><a class="reference external" href="http://bitbucket.org/which_linden/evy/issues/new/">Bug Report Form</a></li>
+<li><a class="reference external" href="irc://chat.freenode.net/#evy">irc channel</a></li>
 </ul>
         </div>
       </div>

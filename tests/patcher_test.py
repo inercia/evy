@@ -13,9 +13,9 @@ print "base", socket, urllib
 """
 
 patching_module_contents = """
-from eventlet.green import socket
-from eventlet.green import urllib
-from eventlet import patcher
+from evy.green import socket
+from evy.green import urllib
+from evy import patcher
 print 'patcher', socket, urllib
 patcher.inject('base', globals(), ('socket', socket), ('urllib', urllib))
 del patcher
@@ -75,16 +75,16 @@ class ImportPatched(ProcessBase):
         self.assert_(lines[0].startswith('patcher'), repr(output))
         self.assert_(lines[1].startswith('base'), repr(output))
         self.assert_(lines[2].startswith('importing'), repr(output))
-        self.assert_('eventlet.green.socket' in lines[1], repr(output))
-        self.assert_('eventlet.green.urllib' in lines[1], repr(output))
-        self.assert_('eventlet.green.socket' in lines[2], repr(output))
-        self.assert_('eventlet.green.urllib' in lines[2], repr(output))
-        self.assert_('eventlet.green.httplib' not in lines[2], repr(output))
+        self.assert_('evy.green.socket' in lines[1], repr(output))
+        self.assert_('evy.green.urllib' in lines[1], repr(output))
+        self.assert_('evy.green.socket' in lines[2], repr(output))
+        self.assert_('evy.green.urllib' in lines[2], repr(output))
+        self.assert_('evy.green.httplib' not in lines[2], repr(output))
 
     def test_import_patched_defaults (self):
         self.write_to_tempfile("base", base_module_contents)
         new_mod = """
-from eventlet import patcher
+from evy import patcher
 base = patcher.import_patched('base')
 print "newmod", base, base.socket, base.urllib.socket.socket
 """
@@ -92,14 +92,14 @@ print "newmod", base, base.socket, base.urllib.socket.socket
         output, lines = self.launch_subprocess('newmod.py')
         self.assert_(lines[0].startswith('base'), repr(output))
         self.assert_(lines[1].startswith('newmod'), repr(output))
-        self.assert_('eventlet.green.socket' in lines[1], repr(output))
+        self.assert_('evy.green.socket' in lines[1], repr(output))
         self.assert_('GreenSocket' in lines[1], repr(output))
 
 
 class MonkeyPatch(ProcessBase):
     def test_patched_modules (self):
         new_mod = """
-from eventlet import patcher
+from evy import patcher
 patcher.monkey_patch()
 import socket
 import urllib
@@ -112,10 +112,10 @@ print "newmod", socket.socket, urllib.socket.socket
 
     def test_early_patching (self):
         new_mod = """
-from eventlet import patcher
+from evy import patcher
 patcher.monkey_patch()
-import eventlet
-eventlet.sleep(0.01)
+import evy
+evy.sleep(0.01)
 print "newmod"
 """
         self.write_to_tempfile("newmod", new_mod)
@@ -125,11 +125,11 @@ print "newmod"
 
     def test_late_patching (self):
         new_mod = """
-import eventlet
-eventlet.sleep(0.01)
-from eventlet import patcher
+import evy
+evy.sleep(0.01)
+from evy import patcher
 patcher.monkey_patch()
-eventlet.sleep(0.01)
+evy.sleep(0.01)
 print "newmod"
 """
         self.write_to_tempfile("newmod", new_mod)
@@ -140,7 +140,7 @@ print "newmod"
 
     def test_typeerror (self):
         new_mod = """
-from eventlet import patcher
+from evy import patcher
 patcher.monkey_patch(finagle=True)
 """
         self.write_to_tempfile("newmod", new_mod)
@@ -153,7 +153,7 @@ patcher.monkey_patch(finagle=True)
         expected_list = ", ".join(['"%s"' % x for x in expected.split(',') if len(x)])
         not_expected_list = ", ".join(['"%s"' % x for x in not_expected.split(',') if len(x)])
         new_mod = """
-from eventlet import patcher
+from evy import patcher
 %s
 for mod in [%s]:
     assert patcher.is_monkey_patched(mod), mod
@@ -221,13 +221,13 @@ def test_monkey_patch_threading():
     def tick():
         for i in xrange(1000):
             tickcount[0] += 1
-            eventlet.sleep()
+            evy.sleep()
 
     def do_sleep():
         tpool.execute(time.sleep, 0.5)
 
-    eventlet.spawn(tick)
-    w1 = eventlet.spawn(do_sleep)
+    evy.spawn(tick)
+    w1 = evy.spawn(do_sleep)
     w1.wait()
     print tickcount[0]
     assert tickcount[0] > 900
@@ -240,10 +240,10 @@ class Tpool(ProcessBase):
     @skip_with_pyevent
     def test_simple (self):
         new_mod = """
-import eventlet
-from eventlet import patcher
+import evy
+from evy import patcher
 patcher.monkey_patch()
-from eventlet import tpool
+from evy import tpool
 print "newmod", tpool.execute(len, "hi")
 print "newmod", tpool.execute(len, "hi2")
 tpool.killall()
@@ -257,9 +257,9 @@ tpool.killall()
 
     @skip_with_pyevent
     def test_unpatched_thread (self):
-        new_mod = """import eventlet
-eventlet.monkey_patch(time=False, thread=False)
-from eventlet import tpool
+        new_mod = """import evy
+evy.monkey_patch(time=False, thread=False)
+from evy import tpool
 import time
 """
         new_mod += test_monkey_patch_threading
@@ -270,9 +270,9 @@ import time
 
     @skip_with_pyevent
     def test_patched_thread (self):
-        new_mod = """import eventlet
-eventlet.monkey_patch(time=False, thread=True)
-from eventlet import tpool
+        new_mod = """import evy
+evy.monkey_patch(time=False, thread=True)
+from evy import tpool
 import time
 """
         new_mod += test_monkey_patch_threading
@@ -284,9 +284,9 @@ import time
 
 class Subprocess(ProcessBase):
     def test_monkeypatched_subprocess (self):
-        new_mod = """import eventlet
-eventlet.monkey_patch()
-from eventlet.green import subprocess
+        new_mod = """import evy
+evy.monkey_patch()
+from evy.green import subprocess
 
 subprocess.Popen(['/bin/true'], stdin=subprocess.PIPE)
 print "done"
@@ -298,9 +298,9 @@ print "done"
 
 class Threading(ProcessBase):
     def test_orig_thread (self):
-        new_mod = """import eventlet
-eventlet.monkey_patch()
-from eventlet import patcher
+        new_mod = """import evy
+evy.monkey_patch()
+from evy import patcher
 import threading
 _threading = patcher.original('threading')
 def test():
@@ -319,8 +319,8 @@ print len(_threading._active)
         self.assertEqual(lines[2], "1", lines[2])
 
     def test_threading (self):
-        new_mod = """import eventlet
-eventlet.monkey_patch()
+        new_mod = """import evy
+evy.monkey_patch()
 import threading
 def test():
     print repr(threading.currentThread())
@@ -336,9 +336,9 @@ print len(threading._active)
         self.assertEqual(lines[1], "1", lines[1])
 
     def test_tpool (self):
-        new_mod = """import eventlet
-eventlet.monkey_patch()
-from eventlet import tpool
+        new_mod = """import evy
+evy.monkey_patch()
+from evy import tpool
 import threading
 def test():
     print repr(threading.currentThread())
@@ -352,15 +352,15 @@ print len(threading._active)
         self.assertEqual(lines[1], "1", lines[1])
 
     def test_greenlet (self):
-        new_mod = """import eventlet
-eventlet.monkey_patch()
-from eventlet import event
+        new_mod = """import evy
+evy.monkey_patch()
+from evy import event
 import threading
 evt = event.Event()
 def test():
     print repr(threading.currentThread())
     evt.send()
-eventlet.spawn_n(test)
+evy.spawn_n(test)
 evt.wait()
 print len(threading._active)
 """
@@ -371,12 +371,12 @@ print len(threading._active)
         self.assertEqual(lines[1], "1", lines[1])
 
     def test_greenthread (self):
-        new_mod = """import eventlet
-eventlet.monkey_patch()
+        new_mod = """import evy
+evy.monkey_patch()
 import threading
 def test():
     print repr(threading.currentThread())
-t = eventlet.spawn(test)
+t = evy.spawn(test)
 t.wait()
 print len(threading._active)
 """
@@ -387,8 +387,8 @@ print len(threading._active)
         self.assertEqual(lines[1], "1", lines[1])
 
     def test_keyerror (self):
-        new_mod = """import eventlet
-eventlet.monkey_patch()
+        new_mod = """import evy
+evy.monkey_patch()
 """
         self.write_to_tempfile("newmod", new_mod)
         output, lines = self.launch_subprocess('newmod')
@@ -396,14 +396,14 @@ eventlet.monkey_patch()
 
 
 class GreenThreadWrapper(ProcessBase):
-    prologue = """import eventlet
-eventlet.monkey_patch()
+    prologue = """import evy
+evy.monkey_patch()
 import threading
 def test():
     t = threading.currentThread()
 """
     epilogue = """
-t = eventlet.spawn(test)
+t = evy.spawn(test)
 t.wait()
 """
 
@@ -412,7 +412,7 @@ t.wait()
     def test2():
         global t2
         t2 = threading.currentThread()
-    eventlet.spawn(test2)
+    evy.spawn(test2)
 """ + self.epilogue + """
 print repr(t2)
 t2.join()

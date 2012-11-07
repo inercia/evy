@@ -1,4 +1,4 @@
-"""Benchmark evaluating eventlet's performance at speaking to itself over a localhost socket."""
+"""Benchmark evaluating evy's performance at speaking to itself over a localhost socket."""
 
 import time
 import benchmarks
@@ -38,22 +38,22 @@ def heavy_accepter (server_sock, pool):
         t.start()
         pool.append(t)
 
-import eventlet.green.socket
-import eventlet
+import evy.green.socket
+import evy
 
-from eventlet import debug
+from evy import debug
 
 debug.hub_exceptions(True)
 
 def launch_green_threads ():
-    pool = eventlet.GreenPool(CONCURRENCY * 2 + 1)
-    server_sock = eventlet.green.socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    pool = evy.GreenPool(CONCURRENCY * 2 + 1)
+    server_sock = evy.green.socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_sock.bind(('localhost', 0))
     server_sock.listen(50)
     addr = ('localhost', server_sock.getsockname()[1])
     pool.spawn_n(green_accepter, server_sock, pool)
     for i in xrange(CONCURRENCY):
-        pool.spawn_n(writer, addr, eventlet.green.socket.socket)
+        pool.spawn_n(writer, addr, evy.green.socket.socket)
     pool.waitall()
 
 import threading

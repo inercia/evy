@@ -1,11 +1,11 @@
-"""Test context switching performance of threading and eventlet"""
+"""Test context switching performance of threading and evy"""
 
 import threading
 import time
 
-import eventlet
-from eventlet import hubs
-from eventlet.hubs import pyevent, epolls, poll, selects
+import evy
+from evy import hubs
+from evy.hubs import pyevent, epolls, poll, selects
 
 
 CONTEXT_SWITCHES = 100000
@@ -19,12 +19,12 @@ def run (event, wait_event):
         event.send()
 
 
-def test_eventlet ():
-    event1 = eventlet.event.Event()
-    event2 = eventlet.event.Event()
+def test_evy ():
+    event1 = evy.event.Event()
+    event2 = evy.event.Event()
     event1.send()
-    thread1 = eventlet.spawn(run, event1, event2)
-    thread2 = eventlet.spawn(run, event2, event1)
+    thread1 = evy.spawn(run, event1, event2)
+    thread2 = evy.spawn(run, event2, event1)
 
     thread1.wait()
     thread2.wait()
@@ -64,7 +64,7 @@ print "threading: %.02f seconds" % (time.time() - start)
 try:
     hubs.use_hub(pyevent)
     start = time.time()
-    test_eventlet()
+    test_evy()
     print "pyevent:   %.02f seconds" % (time.time() - start)
 except:
     print "pyevent hub unavailable"
@@ -72,7 +72,7 @@ except:
 try:
     hubs.use_hub(epolls)
     start = time.time()
-    test_eventlet()
+    test_evy()
     print "epoll:     %.02f seconds" % (time.time() - start)
 except:
     print "epoll hub unavailable"
@@ -80,7 +80,7 @@ except:
 try:
     hubs.use_hub(poll)
     start = time.time()
-    test_eventlet()
+    test_evy()
     print "poll:      %.02f seconds" % (time.time() - start)
 except:
     print "poll hub unavailable"
@@ -88,7 +88,7 @@ except:
 try:
     hubs.use_hub(selects)
     start = time.time()
-    test_eventlet()
+    test_evy()
     print "select:    %.02f seconds" % (time.time() - start)
 except:
     print "select hub unavailable"

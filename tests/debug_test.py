@@ -1,7 +1,7 @@
 import sys
 
-import eventlet
-from eventlet import debug
+import evy
+from evy import debug
 from tests import LimitedTestCase, main, s2b
 from unittest import TestCase
 
@@ -68,7 +68,7 @@ class TestSpew(TestCase):
                         "Didn't find line %i in %s" % (lineno, output))
         self.failUnless("f=<frame object at" in output)
         self.failUnless("GLOBAL_VAR" in f.f_globals)
-        self.failUnless("GLOBAL_VAR=<eventlet.debug.Spew object at" in output)
+        self.failUnless("GLOBAL_VAR=<evy.debug.Spew object at" in output)
         del GLOBAL_VAR
 
     def test_line_novalue (self):
@@ -107,8 +107,8 @@ class TestDebug(LimitedTestCase):
 
     def test_hub_exceptions (self):
         debug.hub_exceptions(True)
-        server = eventlet.listen(('0.0.0.0', 0))
-        client = eventlet.connect(('127.0.0.1', server.getsockname()[1]))
+        server = evy.listen(('0.0.0.0', 0))
+        client = evy.connect(('127.0.0.1', server.getsockname()[1]))
         client_2, addr = server.accept()
 
         def hurl (s):
@@ -119,13 +119,13 @@ class TestDebug(LimitedTestCase):
         orig = sys.stderr
         sys.stderr = fake
         try:
-            gt = eventlet.spawn(hurl, client_2)
-            eventlet.sleep(0)
+            gt = evy.spawn(hurl, client_2)
+            evy.sleep(0)
             client.send(s2b(' '))
-            eventlet.sleep(0)
+            evy.sleep(0)
             # allow the "hurl" greenlet to trigger the KeyError
             # not sure why the extra context switch is needed
-            eventlet.sleep(0)
+            evy.sleep(0)
         finally:
             sys.stderr = orig
             self.assertRaises(KeyError, gt.wait)

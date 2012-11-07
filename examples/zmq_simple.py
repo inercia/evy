@@ -1,5 +1,5 @@
-from eventlet.green import zmq
-import eventlet
+from evy.green import zmq
+import evy
 
 CTX = zmq.Context(1)
 
@@ -25,8 +25,8 @@ def alice_server (ctx, count):
         print "ALIC SENDING"
         alice.send("HI BACK")
 
-alice = eventlet.spawn(alice_server, CTX, 10)
-bob = eventlet.spawn(bob_client, CTX, 10)
+alice = evy.spawn(alice_server, CTX, 10)
+bob = evy.spawn(bob_client, CTX, 10)
 
 bob.wait()
 alice.wait()

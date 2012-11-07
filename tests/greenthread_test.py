@@ -1,6 +1,6 @@
 from tests import LimitedTestCase
-from eventlet import greenthread
-from eventlet.support import greenlets as greenlet
+from evy import greenthread
+from evy.support import greenlets as greenlet
 
 _g_results = []
 

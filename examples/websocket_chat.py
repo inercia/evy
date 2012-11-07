@@ -1,8 +1,8 @@
 import os
 
-import eventlet
-from eventlet import wsgi
-from eventlet import websocket
+import evy
+from evy import wsgi
+from evy import websocket
 
 PORT = 7000
 
@@ -33,6 +33,6 @@ def dispatch (environ, start_response):
 
 if __name__ == "__main__":
     # run an example app from the command line            
-    listener = eventlet.listen(('127.0.0.1', PORT))
+    listener = evy.listen(('127.0.0.1', PORT))
     print "\nVisit http://localhost:7000/ in your websocket-capable browser.\n"
     wsgi.server(listener, dispatch)

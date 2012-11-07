@@ -1,6 +1,6 @@
-from eventlet import patcher
-from eventlet.green import subprocess
-from eventlet.green import time
+from evy import patcher
+from evy.green import subprocess
+from evy.green import time
 
 patcher.inject('test.test_subprocess',
                globals(),

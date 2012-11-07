@@ -1,7 +1,7 @@
 import unittest
 import socket as _original_sock
-from eventlet import api
-from eventlet.green import socket
+from evy import api
+from evy.green import socket
 
 class TestSocketErrors(unittest.TestCase):
     def test_connection_refused (self):

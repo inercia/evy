@@ -1,7 +1,7 @@
-import eventlet
+import evy
 
-eventlet.sleep(0)
-from eventlet import patcher
+evy.sleep(0)
+from evy import patcher
 
 patcher.monkey_patch()
 

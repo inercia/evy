@@ -1,8 +1,8 @@
 from unittest import TestCase, main
 
-import eventlet
-from eventlet import Queue
-from eventlet import pools
+import evy
+from evy import Queue
+from evy import pools
 
 class IntPool(pools.Pool):
     def create (self):
@@ -48,14 +48,14 @@ class TestIntPool(TestCase):
             finally:
                 waiter.put(gotten)
 
-        eventlet.spawn(consumer)
+        evy.spawn(consumer)
 
         one, two, three, four = (
             self.pool.get(), self.pool.get(), self.pool.get(), self.pool.get())
         self.assertEquals(self.pool.free(), 0)
 
         # Let consumer run; nothing will be in the pool, so he will wait
-        eventlet.sleep(0)
+        evy.sleep(0)
 
         # Wake consumer
         self.pool.put(one)
@@ -78,13 +78,13 @@ class TestIntPool(TestCase):
             # So this put should never be called.
             waiter.put('Failed!')
 
-        killable = eventlet.spawn(greedy)
+        killable = evy.spawn(greedy)
 
         # no one should be waiting yet.
         self.assertEquals(self.pool.waiting(), 0)
 
         ## Wait for greedy
-        eventlet.sleep(0)
+        evy.sleep(0)
 
         ## Greedy should be blocking on the last get
         self.assertEquals(self.pool.waiting(), 1)
@@ -92,7 +92,7 @@ class TestIntPool(TestCase):
         ## Send will never be called, so balance should be 0.
         self.assertFalse(not waiter.full())
 
-        eventlet.kill(killable)
+        evy.kill(killable)
 
     def test_ordering (self):
         # normal case is that items come back out in the
@@ -104,7 +104,7 @@ class TestIntPool(TestCase):
         self.assertEquals(self.pool.get(), two)
 
     def test_putting_to_queue (self):
-        timer = eventlet.Timeout(0.1)
+        timer = evy.Timeout(0.1)
         try:
             size = 2
             self.pool = IntPool(min_size = 0, max_size = size)
@@ -117,7 +117,7 @@ class TestIntPool(TestCase):
 
             for index in xrange(size + 1):
                 pool_item = self.pool.get()
-                eventlet.spawn(just_put, pool_item, index)
+                evy.spawn(just_put, pool_item, index)
 
             for _ in range(size + 1):
                 x = queue.get()
@@ -147,7 +147,7 @@ class TestIntPool(TestCase):
 
         def sleep_create ():
             creates[0] += 1
-            eventlet.sleep()
+            evy.sleep()
             return "slept"
 
         p = pools.Pool(max_size = 4, create = sleep_create)
@@ -157,7 +157,7 @@ class TestIntPool(TestCase):
             self.assertEquals(x, "slept")
             p.put(x)
 
-        gp = eventlet.GreenPool()
+        gp = evy.GreenPool()
         for i in xrange(100):
             gp.spawn_n(do_get)
         gp.waitall()

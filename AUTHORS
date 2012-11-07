@@ -72,5 +72,5 @@ Thanks To
 * rfk, patch to get green zmq to respect noblock flag.
 * Soren Hansen, finding and fixing issue in subprocess (#77)
 * Stefano Rivera, making tests pass in absence of postgres (#78)
-* Joshua Kwan, fixing busy-wait in eventlet.green.ssl.
+* Joshua Kwan, fixing busy-wait in evy.green.ssl.
 * Nick Vatamaniuc, Windows SO_REUSEADDR patch (#83)

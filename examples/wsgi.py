@@ -1,12 +1,12 @@
-"""This is a simple example of running a wsgi application with eventlet.
+"""This is a simple example of running a wsgi application with evy.
 For a more fully-featured server which supports multiple processes,
 multiple threads, and graceful code reloading, see:
 
 http://pypi.python.org/pypi/Spawning/
 """
 
-import eventlet
-from eventlet import wsgi
+import evy
+from evy import wsgi
 
 def hello_world (env, start_response):
     if env['PATH_INFO'] != '/':
@@ -15,4 +15,4 @@ def hello_world (env, start_response):
     start_response('200 OK', [('Content-Type', 'text/plain')])
     return ['Hello, World!\r\n']
 
-wsgi.server(eventlet.listen(('', 8090)), hello_world)
+wsgi.server(evy.listen(('', 8090)), hello_world)

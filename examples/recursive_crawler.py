@@ -11,8 +11,8 @@ course).
 """
 from __future__ import with_statement
 
-from eventlet.green import urllib2
-import eventlet
+from evy.green import urllib2
+import evy
 import re
 
 # http://daringfireball.net/2009/11/liberal_regex_for_matching_urls
@@ -24,12 +24,12 @@ def fetch (url, seen, pool):
     dispatch any new ones to the pool."""
     print "fetching", url
     data = ''
-    with eventlet.Timeout(5, False):
+    with evy.Timeout(5, False):
         data = urllib2.urlopen(url).read()
     for url_match in url_regex.finditer(data):
         new_url = url_match.group(0)
-        # only send requests to eventlet.net so as not to destroy the internet
-        if new_url not in seen and 'eventlet.net' in new_url:
+        # only send requests to evy.net so as not to destroy the internet
+        if new_url not in seen and 'evy.net' in new_url:
             seen.add(new_url)
             # while this seems stack-recursive, it's actually not:
             # spawned greenthreads start their own stacks
@@ -39,12 +39,12 @@ def fetch (url, seen, pool):
 def crawl (start_url):
     """Recursively crawl starting from *start_url*.  Returns a set of 
     urls that were found."""
-    pool = eventlet.GreenPool()
+    pool = evy.GreenPool()
     seen = set()
     fetch(start_url, seen, pool)
     pool.waitall()
     return seen
 
-seen = crawl("http://eventlet.net")
+seen = crawl("http://evy.net")
 print "I saw these urls:"
 print "\n".join(seen)

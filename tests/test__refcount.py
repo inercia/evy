@@ -4,10 +4,10 @@ are not leaked by the hub.
 import sys
 import unittest
 from pprint import pformat
-from eventlet.support import clear_sys_exc_info
-from eventlet.green import socket
-from eventlet.green.thread import start_new_thread
-from eventlet.green.time import sleep
+from evy.support import clear_sys_exc_info
+from evy.green import socket
+from evy.green.thread import start_new_thread
+from evy.green.time import sleep
 import weakref
 import gc
 

@@ -4,13 +4,13 @@ import socket
 from unittest import TestCase, main
 import warnings
 
-import eventlet
+import evy
 
 warnings.simplefilter('ignore', DeprecationWarning)
-from eventlet import api
+from evy import api
 
 warnings.simplefilter('default', DeprecationWarning)
-from eventlet import greenio, util, hubs, greenthread, spawn
+from evy import greenio, util, hubs, greenthread, spawn
 
 from tests import skip_if_no_ssl
 
@@ -34,7 +34,7 @@ class TestApi(TestCase):
     private_key_file = os.path.join(os.path.dirname(__file__), 'test_server.key')
 
     def test_tcp_listener (self):
-        socket = eventlet.listen(('0.0.0.0', 0))
+        socket = evy.listen(('0.0.0.0', 0))
         assert socket.getsockname()[0] == '0.0.0.0'
         socket.close()
 
@@ -51,10 +51,10 @@ class TestApi(TestCase):
             finally:
                 listenfd.close()
 
-        server = eventlet.listen(('0.0.0.0', 0))
+        server = evy.listen(('0.0.0.0', 0))
         api.spawn(accept_once, server)
 
-        client = eventlet.connect(('127.0.0.1', server.getsockname()[1]))
+        client = evy.connect(('127.0.0.1', server.getsockname()[1]))
         fd = client.makefile()
         client.close()
         assert fd.readline() == 'hello\n'
@@ -81,7 +81,7 @@ class TestApi(TestCase):
                                                 self.private_key_file)
         api.spawn(accept_once, server)
 
-        raw_client = eventlet.connect(('127.0.0.1', server.getsockname()[1]))
+        raw_client = evy.connect(('127.0.0.1', server.getsockname()[1]))
         client = util.wrap_ssl(raw_client)
         fd = socket._fileobject(client, 'rb', 8192)
 
@@ -97,9 +97,9 @@ class TestApi(TestCase):
         check_hub()
 
     def test_001_trampoline_timeout (self):
-        from eventlet import coros
+        from evy import coros
 
-        server_sock = eventlet.listen(('127.0.0.1', 0))
+        server_sock = evy.listen(('127.0.0.1', 0))
         bound_port = server_sock.getsockname()[1]
 
         def server (sock):
@@ -109,7 +109,7 @@ class TestApi(TestCase):
         server_evt = spawn(server, server_sock)
         api.sleep(0)
         try:
-            desc = eventlet.connect(('127.0.0.1', bound_port))
+            desc = evy.connect(('127.0.0.1', bound_port))
             api.trampoline(desc, read = True, write = False, timeout = 0.001)
         except api.TimeoutError:
             pass # test passed
@@ -120,7 +120,7 @@ class TestApi(TestCase):
         check_hub()
 
     def test_timeout_cancel (self):
-        server = eventlet.listen(('0.0.0.0', 0))
+        server = evy.listen(('0.0.0.0', 0))
         bound_port = server.getsockname()[1]
 
         done = [False]
@@ -131,7 +131,7 @@ class TestApi(TestCase):
                 conn.close()
 
         def go ():
-            desc = eventlet.connect(('127.0.0.1', bound_port))
+            desc = evy.connect(('127.0.0.1', bound_port))
             try:
                 api.trampoline(desc, read = True, timeout = 0.1)
             except api.TimeoutError:

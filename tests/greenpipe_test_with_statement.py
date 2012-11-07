@@ -4,7 +4,7 @@ import os
 
 from tests import LimitedTestCase
 
-from eventlet import greenio
+from evy import greenio
 
 class TestGreenPipeWithStatement(LimitedTestCase):
     def test_pipe_context (self):

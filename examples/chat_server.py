@@ -1,5 +1,5 @@
-import eventlet
-from eventlet.green import socket
+import evy
+from evy.green import socket
 
 PORT = 3001
 participants = set()
@@ -24,13 +24,13 @@ def read_chat_forever (writer, reader):
 
 try:
     print "ChatServer starting up on port %s" % PORT
-    server = eventlet.listen(('0.0.0.0', PORT))
+    server = evy.listen(('0.0.0.0', PORT))
     while True:
         new_connection, address = server.accept()
         print "Participant joined chat."
         new_writer = new_connection.makefile('w')
         participants.add(new_writer)
-        eventlet.spawn_n(read_chat_forever,
+        evy.spawn_n(read_chat_forever,
                          new_writer,
                          new_connection.makefile('r'))
 except (KeyboardInterrupt, SystemExit):

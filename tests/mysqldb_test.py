@@ -3,11 +3,11 @@ import sys
 import time
 import traceback
 from tests import skipped, skip_unless, using_pyevent, get_database_auth, LimitedTestCase
-import eventlet
-from eventlet import event
+import evy
+from evy import event
 
 try:
-    from eventlet.green import MySQLdb
+    from evy.green import MySQLdb
 except ImportError:
     MySQLdb = False
 
@@ -108,9 +108,9 @@ class MySQLdbTester(LimitedTestCase):
         def tick ():
             while True:
                 counter[0] += 1
-                eventlet.sleep()
+                evy.sleep()
 
-        gt = eventlet.spawn(tick)
+        gt = evy.spawn(tick)
         curs.execute("select 1")
         rows = curs.fetchall()
         self.assertEqual(rows, ((1L,),))
@@ -184,7 +184,7 @@ class MySQLdbTester(LimitedTestCase):
             results.append(2)
             evt.send()
 
-        eventlet.spawn(a_query)
+        evy.spawn(a_query)
         results.append(1)
         self.assertEqual([1], results)
         evt.wait()
@@ -223,9 +223,9 @@ class MonkeyPatchTester(patcher_test.ProcessBase):
     @skip_unless(mysql_requirement)
     def test_monkey_patching (self):
         output, lines = self.run_script("""
-from eventlet import patcher
+from evy import patcher
 import MySQLdb as m
-from eventlet.green import MySQLdb as gm
+from evy.green import MySQLdb as gm
 patcher.monkey_patch(all=True, MySQLdb=True)
 print "mysqltest", ",".join(sorted(patcher.already_patched.keys()))
 print "connect", m.connect == gm.connect

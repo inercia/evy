@@ -21,11 +21,11 @@
 ======
 * ZeroMQ support without an explicit hub now implemented!  Thanks to Zed Shaw for the patch.
 * zmq module supports the NOBLOCK flag, thanks to rfk. (#76)
-* eventlet.wsgi has a debug flag which can be set to false to not send tracebacks to the client (per redbo's request)
+* evy.wsgi has a debug flag which can be set to false to not send tracebacks to the client (per redbo's request)
 * Recursive GreenPipe madness forestalled by Soren Hansen (#77)
-* eventlet.green.ssl no longer busywaits on send()
+* evy.green.ssl no longer busywaits on send()
 * EEXIST ignored in epoll hub (#80)
-* eventlet.listen's behavior on Windows improved, thanks to Nick Vatamaniuc (#83)
+* evy.listen's behavior on Windows improved, thanks to Nick Vatamaniuc (#83)
 * Timeouts raised within tpool.execute are propagated back to the caller (thanks again to redbo for being the squeaky wheel)
 
 0.9.14
@@ -39,20 +39,20 @@
 * Better behavior in tpool when you give it nonsensical numbers, thanks to R. Tyler for the nonsense.  :)
 * Fixed importing on 2.5 (#73, thanks to Ruijun Luo)
 * Hub doesn't hold on to invalid fds (#74, thanks to Edward George)
-* Documentation for eventlet.green.zmq, courtesy of Ben Ford
+* Documentation for evy.green.zmq, courtesy of Ben Ford
 
 0.9.13
 ======
-* ZeroMQ hub, and eventlet.green.zmq make supersockets green.  Thanks to Ben Ford!
-* eventlet.green.MySQLdb added.  It's an interface to MySQLdb that uses tpool to make it appear nonblocking
+* ZeroMQ hub, and evy.green.zmq make supersockets green.  Thanks to Ben Ford!
+* evy.green.MySQLdb added.  It's an interface to MySQLdb that uses tpool to make it appear nonblocking
 * Greenthread affinity in tpool.  Each greenthread is assigned to the same thread when using tpool, making it easier to work with non-thread-safe libraries.
 * Eventlet now depends on greenlet 0.3 or later.
 * Fixed a hang when using tpool during an import causes another import.  Thanks to mikepk for tracking that down.
 * Improved websocket draft 76 compliance, thanks to Nick V.
 * Rare greenthread.kill() bug fixed, which was probably brought about by a bugfix in greenlet 0.3.
-* Easy_installing eventlet should no longer print an ImportError about greenlet
+* Easy_installing evy should no longer print an ImportError about greenlet
 * Support for serving up SSL websockets, thanks to chwagssd for reporting #62
-* eventlet.wsgi properly sets 'wsgi.url_scheme' environment variable to 'https', and 'HTTPS' to 'on' if serving over ssl
+* evy.wsgi properly sets 'wsgi.url_scheme' environment variable to 'https', and 'HTTPS' to 'on' if serving over ssl
 * Blocking detector uses setitimer on 2.6 or later, allowing for sub-second block detection, thanks to rtyler.
 * Blocking detector is documented now, too
 * socket.create_connection properly uses dnspython for nonblocking dns.  Thanks to rtyler.
@@ -61,14 +61,14 @@
 
 0.9.12
 ======
-* Eventlet no longer uses the Twisted hub if Twisted is imported -- you must call eventlet.hubs.use_hub('twistedr') if you want to use it.  This prevents strange race conditions for those who want to use both Twisted and Eventlet separately.
+* Eventlet no longer uses the Twisted hub if Twisted is imported -- you must call evy.hubs.use_hub('twistedr') if you want to use it.  This prevents strange race conditions for those who want to use both Twisted and Eventlet separately.
 * Removed circular import in twistedr.py
 * Added websocket multi-user chat example
 * Not using exec() in green modules anymore.
-* eventlet.green.socket now contains all attributes of the stdlib socket module, even those that were left out by bugs.
+* evy.green.socket now contains all attributes of the stdlib socket module, even those that were left out by bugs.
 * Eventlet.wsgi doesn't call print anymore, instead uses the logfiles for everything (it used to print exceptions in one place).
 * Eventlet.wsgi properly closes the connection when an error is raised
-* Better documentation on eventlet.event.Event.send_exception
+* Better documentation on evy.event.Event.send_exception
 * Adding websocket.html to tarball so that you can run the examples without checking out the source
 
 0.9.10
@@ -92,7 +92,7 @@
 0.9.8
 =====
 * Support for psycopg2's asynchronous mode, from Daniele Varrazzo
-* websocket module is now part of core Eventlet with 100% unit test coverage thanks to Ben Ford.  See its documentation at http://eventlet.net/doc/modules/websocket.html
+* websocket module is now part of core Eventlet with 100% unit test coverage thanks to Ben Ford.  See its documentation at http://evy.net/doc/modules/websocket.html
 * Added wrap_ssl convenience method, meaning that we truly no longer need api or util modules.
 * Multiple-reader detection code protects against the common mistake of having multiple greenthreads read from the same socket at the same time, which can be overridden if you know what you're doing.
 * Cleaner monkey_patch API: the "all" keyword is no longer necessary.
@@ -104,7 +104,7 @@
 =====
 * GreenPipe is now a context manager (thanks, quad)
 * tpool.Proxy supports iterators properly
-* bug fixes in eventlet.green.os (thanks, Benoit)
+* bug fixes in evy.green.os (thanks, Benoit)
 * much code cleanup from Tavis
 * a few more example apps
 * multitudinous improvements in Py3k compatibility from amajorek
@@ -126,7 +126,7 @@
 * Greenlet-aware profile module courtesy of CCP
 * support for select26 module's epoll
 * better PEP-8 compliance and import cleanup
-* new eventlet.serve convenience function for easy TCP servers
+* new evy.serve convenience function for easy TCP servers
 
 
 0.9.5
@@ -139,31 +139,31 @@
 * imported timeout module from gevent, replace exc_after and with_timeout()
 * replace call_after with spawn_after; this is so that users don't see the Timer class
 * added cancel() method to GreenThread to support the semantic of "abort if not already in the middle of something"
-* eventlet.green.os with patched read() and write(), etc
+* evy.green.os with patched read() and write(), etc
 * moved stuff from wrap_pipes_with_coroutine_pipe into green.os
-* eventlet.green.subprocess instead of eventlet.processes
-* improve patching docs, explaining more about patcher and why you'd use eventlet.green
+* evy.green.subprocess instead of evy.processes
+* improve patching docs, explaining more about patcher and why you'd use evy.green
 * better documentation on greenpiles
 * deprecate api.py completely
 * deprecate util.py completely
 * deprecate saranwrap
 * performance improvements in the hubs
 * much better documentation overall
-* new convenience functions: eventlet.connect and eventlet.listen.  Thanks, Sergey!
+* new convenience functions: evy.connect and evy.listen.  Thanks, Sergey!
 
 
 0.9.4
 =====
 * Deprecated coros.Queue and coros.Channel (use queue.Queue instead)
 * Added putting and getting methods to queue.Queue.
-* Added eventlet.green.Queue which is a greened clone of stdlib Queue, along with stdlib tests.
+* Added evy.green.Queue which is a greened clone of stdlib Queue, along with stdlib tests.
 * Changed __init__.py so that the version number is readable even if greenlet's not installed.
 * Bugfixes in wsgi, greenpool
 
 0.9.3
 =====
 
-* Moved primary api module to __init__ from api.  It shouldn't be necessary to import eventlet.api anymore; import eventlet should do the same job.
+* Moved primary api module to __init__ from api.  It shouldn't be necessary to import evy.api anymore; import evy should do the same job.
 * Proc module deprecated in favor of greenthread
 * New module greenthread, with new class GreenThread.
 * New GreenPool class that replaces pool.Pool.
@@ -175,13 +175,13 @@
 * New queue module, API-compatible with stdlib Queue
 * New debug module, used for enabling verbosity within Eventlet that can help debug applications or Eventlet itself.
 * Bugfixes in tpool, green.select, patcher
-* Deprecated coros.execute (use eventlet.spawn instead)
+* Deprecated coros.execute (use evy.spawn instead)
 * Deprecated coros.semaphore (use semaphore.Semaphore or semaphore.BoundedSemaphore instead)
 * Moved coros.BoundedSemaphore to semaphore.BoundedSemaphore
 * Moved coros.Semaphore to semaphore.Semaphore
 * Moved coros.event to event.Event
 * Deprecated api.tcp_listener, api.connect_tcp, api.ssl_listener
-* Moved get_hub, use_hub, get_default_hub from eventlet.api to eventlet.hubs
+* Moved get_hub, use_hub, get_default_hub from evy.api to evy.hubs
 * Renamed libevent hub to pyevent.
 * Removed previously-deprecated features tcp_server, GreenSSL, erpc, and trap_errors.
 * Removed saranwrap as an option for making db connections nonblocking in db_pool.
@@ -196,9 +196,9 @@
 0.9.1
 =====
 
-* PyOpenSSL is no longer required for Python 2.6: use the eventlet.green.ssl module. 2.5 and 2.4 still require PyOpenSSL.
-* Cleaned up the eventlet.green packages and their associated tests, this should result in fewer version-dependent bugs with these modules.
-* PyOpenSSL is now fully wrapped in eventlet.green.OpenSSL; using it is therefore more consistent with using other green modules.
+* PyOpenSSL is no longer required for Python 2.6: use the evy.green.ssl module. 2.5 and 2.4 still require PyOpenSSL.
+* Cleaned up the evy.green packages and their associated tests, this should result in fewer version-dependent bugs with these modules.
+* PyOpenSSL is now fully wrapped in evy.green.OpenSSL; using it is therefore more consistent with using other green modules.
 * Documentation on using SSL added.
 * New green modules: ayncore, asynchat, SimpleHTTPServer, CGIHTTPServer, ftplib.
 * Fuller thread/threading compatibility: patching threadlocal with corolocal so coroutines behave even more like threads.
@@ -221,7 +221,7 @@
 * Removed test dependency on sqlite, using nose instead.
 * Marked known-broken tests using nose's mechanism (most of these are not broken but are simply run in the incorrect context, such as threading-related tests that are incompatible with the libevent hub).
 * Remove copied code from python standard libs (in tests).
-* Added eventlet.patcher which can be used to import "greened" modules.
+* Added evy.patcher which can be used to import "greened" modules.
 
 0.8.16
 ======
@@ -253,7 +253,7 @@ replaced CoroutinePool.
 * The ability to resize() pools of coroutines, which was lost when the 
 Pool implementation replaced CoroutinePool.
 * Fixed Cesar's issue with SSL connections, and furthermore did a 
-complete overhaul of SSL handling in eventlet so that it's much closer 
+complete overhaul of SSL handling in evy so that it's much closer 
 to the behavior of the built-in libraries.  In particular, users of 
 GreenSSL sockets must now call shutdown() before close(), exactly 
 like SSL.Connection objects.
@@ -264,27 +264,27 @@ release of Eventlet that works on Windows.
 ======
 
 Eventlet can now run on top of twisted reactor. Twisted-based hub is enabled automatically if
-twisted.internet.reactor is imported. It is also possible to "embed" eventlet into a twisted
-application via eventlet.twistedutil.join_reactor. See the examples for details.
+twisted.internet.reactor is imported. It is also possible to "embed" evy into a twisted
+application via evy.twistedutil.join_reactor. See the examples for details.
 
-A new package, eventlet.twistedutil, is added that makes integration of twisted and eventlet
+A new package, evy.twistedutil, is added that makes integration of twisted and evy
 easier. It has block_on function that allows to wait for a Deferred to fire and it wraps
 twisted's Protocol in a synchronous interface. This is similar to and is inspired by Christopher
 Armstrong's corotwine library. Thanks to Dan Pascu for reviewing the package.
 
-Another new package, eventlet.green, was added to provide some of the standard modules
+Another new package, evy.green, was added to provide some of the standard modules
 that are fixed not to block other greenlets. This is an alternative to monkey-patching
 the socket, which is impossible to do if you are running twisted reactor.
 The package includes socket, httplib, urllib2.
 
 Much of the core functionality has been refactored and cleaned up, including the removal
-of eventlet.greenlib. This means that it is now possible to use plain greenlets without
-modification in eventlet, and the subclasses of greenlet instead of the old
-eventlet.greenlib.GreenletContext. Calling eventlet.api.get_hub().switch() now checks to
+of evy.greenlib. This means that it is now possible to use plain greenlets without
+modification in evy, and the subclasses of greenlet instead of the old
+evy.greenlib.GreenletContext. Calling evy.api.get_hub().switch() now checks to
 see whether the current greenlet has a "switch_out" method and calls it if so, providing the
 same functionality that the GreenletContext.swap_out used to. The swap_in behavior can be
 duplicated by overriding the switch method, and the finalize functionality can be duplicated
-by having a try: finally: block around the greenlet's main implementation. The eventlet.backdoor
+by having a try: finally: block around the greenlet's main implementation. The evy.backdoor
 module has been ported to this new scheme, although it's signature had to change slightly so
 existing code that used the backdoor will have to be modified.
 
@@ -321,7 +321,7 @@ Python 2.3 is no longer supported.
 A number of tests was added along with a script to run all of them for all the configurations.
 The script generates an html page with the results.
 
-Thanks to Brian Brunswick for investigation of popen4 badness (eventlet.process)
+Thanks to Brian Brunswick for investigation of popen4 badness (evy.process)
 Thanks to Marcus Cavanaugh for pointing out some coros.queue(0) bugs.
 
 The twisted integration as well as many other improvements were funded by AG Projects (http://ag-projects.com), thanks!
@@ -340,7 +340,7 @@ Add a backlog argument to api.tcp_listener (Patch by grugq)
 
 Fix a major memory leak when using the libevent or libev hubs. Timers were not being removed from the hub after they fired. (Thanks Agusto Becciu and the grugq). Also, make it possible to call wrap_socket_with_coroutine_socket without using the threadpool to make dns operations non-blocking (Thanks the grugq).
 
-It's now possible to use eventlet's SSL client to talk to eventlet's SSL server. (Thanks to Ryan Williams)
+It's now possible to use evy's SSL client to talk to evy's SSL server. (Thanks to Ryan Williams)
 
 Fixed a major CPU leak when using select hub. When adding a descriptor to the hub, entries were made in all three dictionaries, readers, writers, and exc, even if the callback is None. Thus every fd would be passed into all three lists when calling select regardless of whether there was a callback for that event or not. When reading the next request out of a keepalive socket, the socket would come back as ready for writing, the hub would notice the callback is None and ignore it, and then loop as fast as possible consuming CPU.
 
@@ -349,12 +349,12 @@ Fixed a major CPU leak when using select hub. When adding a descriptor to the hu
 
 Fixes some long-standing bugs where sometimes failures in accept() or connect() would cause the coroutine that was waiting to be double-resumed, most often resulting in SwitchingToDeadGreenlet exceptions as well as weird tuple-unpacking exceptions in the CoroutinePool main loop.
 
-0.6.1: Added eventlet.tpool.killall. Blocks until all of the threadpool threads have been told to exit and join()ed. Meant to be used to clean up the threadpool on exit or if calling execv. Used by Spawning.
+0.6.1: Added evy.tpool.killall. Blocks until all of the threadpool threads have been told to exit and join()ed. Meant to be used to clean up the threadpool on exit or if calling execv. Used by Spawning.
 
 0.5.x
 =====
 
-"The Pycon 2008 Refactor": The first release which incorporates libevent support. Also comes with significant refactoring and code cleanup, especially to the eventlet.wsgi http server. Docstring coverage is much higher and there is new extensive documentation: http://wiki.secondlife.com/wiki/Eventlet/Documentation
+"The Pycon 2008 Refactor": The first release which incorporates libevent support. Also comes with significant refactoring and code cleanup, especially to the evy.wsgi http server. Docstring coverage is much higher and there is new extensive documentation: http://wiki.secondlife.com/wiki/Eventlet/Documentation
 
 The point releases of 0.5.x fixed some bugs in the wsgi server, most notably handling of Transfer-Encoding: chunked; previously, it would happily send chunked encoding to clients which asked for HTTP/1.0, which isn't legal.
 

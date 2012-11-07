@@ -1,6 +1,6 @@
 :mod:`corolocal` -- Coroutine local storage
 =============================================
 
-.. automodule:: eventlet.corolocal
+.. automodule:: evy.corolocal
 	:members:
 	:undoc-members:

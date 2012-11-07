@@ -1,7 +1,7 @@
 import unittest
-from eventlet.event import Event
-from eventlet.api import spawn, sleep, with_timeout
-import eventlet
+from evy.event import Event
+from evy.api import spawn, sleep, with_timeout
+import evy
 from tests import LimitedTestCase
 
 DELAY = 0.01
@@ -31,7 +31,7 @@ class TestEvent(LimitedTestCase):
         event2 = Event()
 
         spawn(event1.send, 'hello event1')
-        eventlet.Timeout(0, ValueError('interrupted'))
+        evy.Timeout(0, ValueError('interrupted'))
         try:
             result = event1.wait()
         except ValueError:

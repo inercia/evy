@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
-from eventlet import patcher
-from eventlet.green import socket
+from evy import patcher
+from evy.green import socket
 
 # enable network resource
 import test.test_support

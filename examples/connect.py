@@ -1,9 +1,9 @@
 """Spawn multiple workers and collect their results.
 
-Demonstrates how to use the eventlet.green.socket module.
+Demonstrates how to use the evy.green.socket module.
 """
-import eventlet
-from eventlet.green import socket
+import evy
+from evy.green import socket
 
 def geturl (url):
     c = socket.socket()
@@ -14,7 +14,7 @@ def geturl (url):
     return c.recv(1024)
 
 urls = ['www.google.com', 'www.yandex.ru', 'www.python.org']
-pile = eventlet.GreenPile()
+pile = evy.GreenPile()
 for x in urls:
     pile.spawn(geturl, x)
 

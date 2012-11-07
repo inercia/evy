@@ -10,7 +10,7 @@ You terminate your connection by terminating telnet (typically Ctrl-]
 and then 'quit')
 """
 
-import eventlet
+import evy
 
 def handle (fd):
     print "client connected"
@@ -24,8 +24,8 @@ def handle (fd):
     print "client disconnected"
 
 print "server socket listening on port 6000"
-server = eventlet.listen(('0.0.0.0', 6000))
-pool = eventlet.GreenPool()
+server = evy.listen(('0.0.0.0', 6000))
+pool = evy.GreenPool()
 while True:
     try:
         new_sock, address = server.accept()

@@ -1,13 +1,13 @@
 import socket
 import errno
 
-import eventlet
-from eventlet.green import urllib2
-from eventlet.green import httplib
-from eventlet.websocket import WebSocket, WebSocketWSGI
-from eventlet import wsgi
-from eventlet import event
-from eventlet import greenio
+import evy
+from evy.green import urllib2
+from evy.green import httplib
+from evy.websocket import WebSocket, WebSocketWSGI
+from evy import wsgi
+from evy import event
+from evy import greenio
 
 from tests import mock, LimitedTestCase, certificate_file, private_key_file
 from tests import skip_if_no_ssl
@@ -25,7 +25,7 @@ def handle (ws):
     elif ws.path == '/range':
         for i in xrange(10):
             ws.send("msg %d" % i)
-            eventlet.sleep(0.01)
+            evy.sleep(0.01)
     elif ws.path == '/error':
         # some random socket error that we shouldn't normally get
         raise socket.error(errno.ENOTSOCK)
@@ -110,7 +110,7 @@ class TestWebSocket(_TestBase):
             "Origin: http://localhost:%s" % self.port,
             "WebSocket-Protocol: ws",
             ]
-        sock = eventlet.connect(
+        sock = evy.connect(
             ('localhost', self.port))
 
         sock.sendall('\r\n'.join(connect) + '\r\n\r\n')
@@ -134,7 +134,7 @@ class TestWebSocket(_TestBase):
             "Sec-WebSocket-Key1: 4 @1  46546xW%0l 1 5",
             "Sec-WebSocket-Key2: 12998 5 Y3 1  .P00",
             ]
-        sock = eventlet.connect(
+        sock = evy.connect(
             ('localhost', self.port))
 
         sock.sendall('\r\n'.join(connect) + '\r\n\r\n^n:ds[4U')
@@ -161,7 +161,7 @@ class TestWebSocket(_TestBase):
             "Sec-WebSocket-Key1: 4 @1  46546xW%0l 1 5",
             "Sec-WebSocket-Key2: 12998 5 Y3 1  .P00",
             ]
-        sock = eventlet.connect(
+        sock = evy.connect(
             ('localhost', self.port))
 
         sock.sendall('\r\n'.join(connect) + '\r\n\r\n^n:ds[4U')
@@ -186,7 +186,7 @@ class TestWebSocket(_TestBase):
             "Sec-WebSocket-Key1: 4 @1  46546xW%0l 1 5",
             "Sec-WebSocket-Key2: 12998 5 Y3 1  .P00",
             ]
-        sock = eventlet.connect(
+        sock = evy.connect(
             ('localhost', self.port))
 
         sock.sendall('\r\n'.join(connect) + '\r\n\r\n^n:ds[4U')
@@ -209,7 +209,7 @@ class TestWebSocket(_TestBase):
             "Origin: http://localhost:%s" % self.port,
             "WebSocket-Protocol: ws",
             ]
-        sock = eventlet.connect(
+        sock = evy.connect(
             ('localhost', self.port))
 
         sock.sendall('\r\n'.join(connect) + '\r\n\r\n')
@@ -218,13 +218,13 @@ class TestWebSocket(_TestBase):
         result = sock.recv(1024)
         self.assertEqual(result, '\x00hello\xff')
         sock.sendall('\x00start')
-        eventlet.sleep(0.001)
+        evy.sleep(0.001)
         sock.sendall(' end\xff')
         result = sock.recv(1024)
         self.assertEqual(result, '\x00start end\xff')
         sock.shutdown(socket.SHUT_RDWR)
         sock.close()
-        eventlet.sleep(0.01)
+        evy.sleep(0.01)
 
     def test_sending_messages_to_websocket_76 (self):
         connect = [
@@ -237,7 +237,7 @@ class TestWebSocket(_TestBase):
             "Sec-WebSocket-Key1: 4 @1  46546xW%0l 1 5",
             "Sec-WebSocket-Key2: 12998 5 Y3 1  .P00",
             ]
-        sock = eventlet.connect(
+        sock = evy.connect(
             ('localhost', self.port))
 
         sock.sendall('\r\n'.join(connect) + '\r\n\r\n^n:ds[4U')
@@ -246,13 +246,13 @@ class TestWebSocket(_TestBase):
         result = sock.recv(1024)
         self.assertEqual(result, '\x00hello\xff')
         sock.sendall('\x00start')
-        eventlet.sleep(0.001)
+        evy.sleep(0.001)
         sock.sendall(' end\xff')
         result = sock.recv(1024)
         self.assertEqual(result, '\x00start end\xff')
         sock.shutdown(socket.SHUT_RDWR)
         sock.close()
-        eventlet.sleep(0.01)
+        evy.sleep(0.01)
 
     def test_getting_messages_from_websocket_75 (self):
         connect = [
@@ -263,7 +263,7 @@ class TestWebSocket(_TestBase):
             "Origin: http://localhost:%s" % self.port,
             "WebSocket-Protocol: ws",
             ]
-        sock = eventlet.connect(
+        sock = evy.connect(
             ('localhost', self.port))
 
         sock.sendall('\r\n'.join(connect) + '\r\n\r\n')
@@ -288,7 +288,7 @@ class TestWebSocket(_TestBase):
             "Sec-WebSocket-Key1: 4 @1  46546xW%0l 1 5",
             "Sec-WebSocket-Key2: 12998 5 Y3 1  .P00",
             ]
-        sock = eventlet.connect(
+        sock = evy.connect(
             ('localhost', self.port))
 
         sock.sendall('\r\n'.join(connect) + '\r\n\r\n^n:ds[4U')
@@ -327,7 +327,7 @@ class TestWebSocket(_TestBase):
             "Origin: http://localhost:%s" % self.port,
             "WebSocket-Protocol: ws",
             ]
-        sock = eventlet.connect(
+        sock = evy.connect(
             ('localhost', self.port))
         sock.sendall('\r\n'.join(connect) + '\r\n\r\n')
         resp = sock.recv(1024)  # get the headers
@@ -362,7 +362,7 @@ class TestWebSocket(_TestBase):
             "Sec-WebSocket-Key1: 4 @1  46546xW%0l 1 5",
             "Sec-WebSocket-Key2: 12998 5 Y3 1  .P00",
             ]
-        sock = eventlet.connect(
+        sock = evy.connect(
             ('localhost', self.port))
         sock.sendall('\r\n'.join(connect) + '\r\n\r\n^n:ds[4U')
         resp = sock.recv(1024)  # get the headers
@@ -397,7 +397,7 @@ class TestWebSocket(_TestBase):
             "Sec-WebSocket-Key1: 4 @1  46546xW%0l 1 5",
             "Sec-WebSocket-Key2: 12998 5 Y3 1  .P00",
             ]
-        sock = eventlet.connect(
+        sock = evy.connect(
             ('localhost', self.port))
         sock.sendall('\r\n'.join(connect) + '\r\n\r\n^n:ds[4U')
         resp = sock.recv(1024)  # get the headers
@@ -432,7 +432,7 @@ class TestWebSocket(_TestBase):
             "Sec-WebSocket-Key1: 4 @1  46546xW%0l 1 5",
             "Sec-WebSocket-Key2: 12998 5 Y3 1  .P00",
             ]
-        sock = eventlet.connect(
+        sock = evy.connect(
             ('localhost', self.port))
         sock.sendall('\r\n'.join(connect) + '\r\n\r\n^n:ds[4U')
         resp = sock.recv(1024)  # get the headers
@@ -451,7 +451,7 @@ class TestWebSocket(_TestBase):
             "Sec-WebSocket-Key1: 4 @1  46546xW%0l 1 5",
             "Sec-WebSocket-Key2: 12998 5 Y3 1  .P00",
             ]
-        sock = eventlet.connect(
+        sock = evy.connect(
             ('localhost', self.port))
 
         sock.sendall('\r\n'.join(connect) + '\r\n\r\n^n:ds[4U')
@@ -485,7 +485,7 @@ class TestWebSocket(_TestBase):
             "Origin: http://localhost:%s" % self.port,
             "WebSocket-Protocol: ws",
             ]
-        sock = eventlet.connect(
+        sock = evy.connect(
             ('localhost', self.port))
         sock.sendall('\r\n'.join(connect) + '\r\n\r\n')
         resp = sock.recv(1024)
@@ -519,7 +519,7 @@ class TestWebSocket(_TestBase):
             "Sec-WebSocket-Key1: 4 @1  46546xW%0l 1 5",
             "Sec-WebSocket-Key2: 12998 5 Y3 1  .P00",
             ]
-        sock = eventlet.connect(
+        sock = evy.connect(
             ('localhost', self.port))
         sock.sendall('\r\n'.join(connect) + '\r\n\r\n^n:ds[4U')
         resp = sock.recv(1024)
@@ -533,7 +533,7 @@ class TestWebSocketSSL(_TestBase):
 
     @skip_if_no_ssl
     def test_ssl_sending_messages (self):
-        s = eventlet.wrap_ssl(eventlet.listen(('localhost', 0)),
+        s = evy.wrap_ssl(evy.listen(('localhost', 0)),
                               certfile = certificate_file,
                               keyfile = private_key_file,
                               server_side = True)
@@ -548,7 +548,7 @@ class TestWebSocketSSL(_TestBase):
             "Sec-WebSocket-Key1: 4 @1  46546xW%0l 1 5",
             "Sec-WebSocket-Key2: 12998 5 Y3 1  .P00",
             ]
-        sock = eventlet.wrap_ssl(eventlet.connect(
+        sock = evy.wrap_ssl(evy.connect(
             ('localhost', self.port)))
 
         sock.sendall('\r\n'.join(connect) + '\r\n\r\n^n:ds[4U')
@@ -562,13 +562,13 @@ class TestWebSocketSSL(_TestBase):
         result = sock.recv(1024)
         self.assertEqual(result, '\x00hello\xff')
         sock.sendall('\x00start')
-        eventlet.sleep(0.001)
+        evy.sleep(0.001)
         sock.sendall(' end\xff')
         result = sock.recv(1024)
         self.assertEqual(result, '\x00start end\xff')
         greenio.shutdown_safe(sock)
         sock.close()
-        eventlet.sleep(0.01)
+        evy.sleep(0.01)
 
 
 class TestWebSocketObject(LimitedTestCase):

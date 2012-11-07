@@ -10,7 +10,7 @@ A ConnectionPool object represents a pool of connections open to a particular da
 >>> import MySQLdb
 >>> cp = ConnectionPool(MySQLdb, host='localhost', user='root', passwd='')
 
-Once you have this pool object, you connect to the database by calling :meth:`~eventlet.db_pool.ConnectionPool.get` on it:
+Once you have this pool object, you connect to the database by calling :meth:`~evy.db_pool.ConnectionPool.get` on it:
 
 >>> conn = cp.get()
 
@@ -56,6 +56,6 @@ The rest of the arguments to the DatabaseConnector constructor are passed on to 
 
 *Caveat: The DatabaseConnector is a bit unfinished, it only suits a subset of use cases.*
 
-.. automodule:: eventlet.db_pool
+.. automodule:: evy.db_pool
 	:members:
 	:undoc-members:

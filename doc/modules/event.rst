@@ -1,5 +1,5 @@
 :mod:`event` -- Cross-greenthread primitive
 ==================================================
 
-.. automodule:: eventlet.event
+.. automodule:: evy.event
 	:members:

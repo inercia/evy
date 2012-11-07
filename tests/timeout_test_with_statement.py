@@ -6,8 +6,8 @@ import sys
 import unittest
 import weakref
 import time
-from eventlet import sleep
-from eventlet.timeout import Timeout
+from evy import sleep
+from evy.timeout import Timeout
 from tests import LimitedTestCase
 
 DELAY = 0.01

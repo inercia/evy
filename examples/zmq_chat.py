@@ -1,6 +1,6 @@
-import eventlet, sys
-from eventlet.green import socket, zmq
-from eventlet.hubs import use_hub
+import evy, sys
+from evy.green import socket, zmq
+from evy.hubs import use_hub
 
 use_hub('zeromq')
 
@@ -14,7 +14,7 @@ def publish (writer):
 
     socket.setsockopt(zmq.SUBSCRIBE, "")
     socket.connect(ADDR)
-    eventlet.sleep(0.1)
+    evy.sleep(0.1)
 
     while True:
         msg = socket.recv_pyobj()
@@ -45,18 +45,18 @@ def read_chat_forever (reader, pub_socket):
 
 try:
     print "ChatServer starting up on port %s" % PORT
-    server = eventlet.listen(('0.0.0.0', PORT))
+    server = evy.listen(('0.0.0.0', PORT))
     pub_socket = ctx.socket(zmq.PUB)
     pub_socket.bind(ADDR)
-    eventlet.spawn_n(publish,
+    evy.spawn_n(publish,
                      sys.stdout)
     while True:
         new_connection, address = server.accept()
 
         print "Participant joined chat."
-        eventlet.spawn_n(publish,
+        evy.spawn_n(publish,
                          new_connection.makefile('w'))
-        eventlet.spawn_n(read_chat_forever,
+        evy.spawn_n(read_chat_forever,
                          new_connection.makefile('r'),
                          pub_socket)
 except (KeyboardInterrupt, SystemExit):

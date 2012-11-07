@@ -1,5 +1,5 @@
-import eventlet
-from eventlet import event
+import evy
+from evy import event
 from tests import LimitedTestCase
 
 class TestEvent(LimitedTestCase):
@@ -10,7 +10,7 @@ class TestEvent(LimitedTestCase):
         def send_to_event ():
             evt.send(value)
 
-        eventlet.spawn_n(send_to_event)
+        evy.spawn_n(send_to_event)
         self.assertEqual(evt.wait(), value)
 
     def test_multiple_waiters (self):
@@ -35,8 +35,8 @@ class TestEvent(LimitedTestCase):
         count = 5
         for i in range(count):
             waiters.append(event.Event())
-            eventlet.spawn_n(wait_on_event, waiters[-1])
-        eventlet.sleep()  # allow spawns to start executing
+            evy.spawn_n(wait_on_event, waiters[-1])
+        evy.sleep()  # allow spawns to start executing
         evt.send()
 
         for w in waiters:
@@ -55,7 +55,7 @@ class TestEvent(LimitedTestCase):
         def send_to_event ():
             evt.send(value)
 
-        eventlet.spawn_n(send_to_event)
+        evy.spawn_n(send_to_event)
         self.assertEqual(evt.wait(), value)
 
         # now try it again, and we should get the same exact value,
@@ -70,7 +70,7 @@ class TestEvent(LimitedTestCase):
         def send_to_event2 ():
             evt.send(value2)
 
-        eventlet.spawn_n(send_to_event2)
+        evy.spawn_n(send_to_event2)
         self.assertEqual(evt.wait(), value2)
 
     def test_double_exception (self):
@@ -80,6 +80,6 @@ class TestEvent(LimitedTestCase):
         self.assertRaises(RuntimeError, evt.wait)
         evt.reset()
         # shouldn't see the RuntimeError again
-        eventlet.Timeout(0.001)
-        self.assertRaises(eventlet.Timeout, evt.wait)
+        evy.Timeout(0.001)
+        self.assertRaises(evy.Timeout, evt.wait)
 

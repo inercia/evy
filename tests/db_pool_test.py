@@ -5,9 +5,9 @@ import traceback
 from unittest import TestCase, main
 
 from tests import skipped, skip_unless, skip_with_pyevent, get_database_auth
-from eventlet import event
-from eventlet import db_pool
-import eventlet
+from evy import event
+from evy import db_pool
+import evy
 
 
 class DBTester(object):
@@ -151,7 +151,7 @@ class DBConnectionPool(DBTester):
             results.append(2)
             evt.send()
 
-        eventlet.spawn(a_query)
+        evy.spawn(a_query)
         results.append(1)
         self.assertEqual([1], results)
         evt.wait()
@@ -241,8 +241,8 @@ class DBConnectionPool(DBTester):
             results.append(2)
             evt2.send()
 
-        eventlet.spawn(long_running_query)
-        eventlet.spawn(short_running_query)
+        evy.spawn(long_running_query)
+        evy.spawn(short_running_query)
         evt.wait()
         evt2.wait()
         results.sort()
@@ -326,17 +326,17 @@ class DBConnectionPool(DBTester):
         self.connection = self.pool.get()
         self.connection.close()
         self.assertEquals(len(self.pool.free_items), 1)
-        eventlet.sleep(0.01)  # not long enough to trigger the idle timeout
+        evy.sleep(0.01)  # not long enough to trigger the idle timeout
         self.assertEquals(len(self.pool.free_items), 1)
         self.connection = self.pool.get()
         self.connection.close()
         self.assertEquals(len(self.pool.free_items), 1)
-        eventlet.sleep(0.01)  # idle timeout should have fired but done nothing
+        evy.sleep(0.01)  # idle timeout should have fired but done nothing
         self.assertEquals(len(self.pool.free_items), 1)
         self.connection = self.pool.get()
         self.connection.close()
         self.assertEquals(len(self.pool.free_items), 1)
-        eventlet.sleep(0.03) # long enough to trigger idle timeout for real
+        evy.sleep(0.03) # long enough to trigger idle timeout for real
         self.assertEquals(len(self.pool.free_items), 0)
 
     @skipped
@@ -348,11 +348,11 @@ class DBConnectionPool(DBTester):
         self.pool = self.create_pool(max_size = 2, max_idle = 0.02)
         self.connection, conn2 = self.pool.get(), self.pool.get()
         self.connection.close()
-        eventlet.sleep(0.01)
+        evy.sleep(0.01)
         self.assertEquals(len(self.pool.free_items), 1)
         conn2.close()
         self.assertEquals(len(self.pool.free_items), 2)
-        eventlet.sleep(0.02)  # trigger cleanup of conn1 but not conn2
+        evy.sleep(0.02)  # trigger cleanup of conn1 but not conn2
         self.assertEquals(len(self.pool.free_items), 1)
 
     @skipped
@@ -365,12 +365,12 @@ class DBConnectionPool(DBTester):
         self.connection = self.pool.get()
         self.connection.close()
         self.assertEquals(len(self.pool.free_items), 1)
-        eventlet.sleep(0.01)  # not long enough to trigger the age timeout
+        evy.sleep(0.01)  # not long enough to trigger the age timeout
         self.assertEquals(len(self.pool.free_items), 1)
         self.connection = self.pool.get()
         self.connection.close()
         self.assertEquals(len(self.pool.free_items), 1)
-        eventlet.sleep(0.05) # long enough to trigger age timeout
+        evy.sleep(0.05) # long enough to trigger age timeout
         self.assertEquals(len(self.pool.free_items), 0)
 
     @skipped
@@ -383,9 +383,9 @@ class DBConnectionPool(DBTester):
         self.connection, conn2 = self.pool.get(), self.pool.get()
         self.connection.close()
         self.assertEquals(len(self.pool.free_items), 1)
-        eventlet.sleep(0)  # not long enough to trigger the age timeout
+        evy.sleep(0)  # not long enough to trigger the age timeout
         self.assertEquals(len(self.pool.free_items), 1)
-        eventlet.sleep(0.2) # long enough to trigger age timeout
+        evy.sleep(0.2) # long enough to trigger age timeout
         self.assertEquals(len(self.pool.free_items), 0)
         conn2.close()  # should not be added to the free items
         self.assertEquals(len(self.pool.free_items), 0)
@@ -407,13 +407,13 @@ class DBConnectionPool(DBTester):
             c = pool.get()
             ev.send(c)
 
-        eventlet.spawn(retrieve, self.pool, e)
-        eventlet.sleep(0) # these two sleeps should advance the retrieve
-        eventlet.sleep(0) # coroutine until it's waiting in get()
+        evy.spawn(retrieve, self.pool, e)
+        evy.sleep(0) # these two sleeps should advance the retrieve
+        evy.sleep(0) # coroutine until it's waiting in get()
         self.assertEquals(self.pool.free(), 0)
         self.assertEquals(self.pool.waiting(), 1)
         self.pool.put(self.connection)
-        timer = eventlet.Timeout(1)
+        timer = evy.Timeout(1)
         conn = e.wait()
         timer.cancel()
         self.assertEquals(self.pool.free(), 0)
@@ -477,7 +477,7 @@ class TpoolConnectionPool(DBConnectionPool):
 
     def tearDown (self):
         super(TpoolConnectionPool, self).tearDown()
-        from eventlet import tpool
+        from evy import tpool
 
         tpool.killall()
 
@@ -498,7 +498,7 @@ class RawConnectionPool(DBConnectionPool):
 get_auth = get_database_auth
 
 def mysql_requirement (_f):
-    verbose = os.environ.get('eventlet_test_mysql_verbose')
+    verbose = os.environ.get('evy_test_mysql_verbose')
     try:
         import MySQLdb
 

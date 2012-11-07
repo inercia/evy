@@ -21,8 +21,8 @@ import re
 import gc
 from tests import skipped, skip_with_pyevent, LimitedTestCase, main
 
-from eventlet import tpool, debug
-import eventlet
+from evy import tpool, debug
+import evy
 
 one = 1
 two = 2
@@ -170,11 +170,11 @@ class TestTpool(LimitedTestCase):
             for i in xrange(20000):
                 counter[0] += 1
                 if counter[0] % 20 == 0:
-                    eventlet.sleep(0.0001)
+                    evy.sleep(0.0001)
                 else:
-                    eventlet.sleep()
+                    evy.sleep()
 
-        gt = eventlet.spawn(tick)
+        gt = evy.spawn(tick)
         previtem = 0
         for item in tpool.Proxy(foo()):
             self.assert_(item >= previtem)
@@ -212,7 +212,7 @@ class TestTpool(LimitedTestCase):
 
         prox = tpool.Proxy(tpool_test)
 
-        pile = eventlet.GreenPile(4)
+        pile = evy.GreenPile(4)
         pile.spawn(lambda: self.assertEquals(prox.one, 1))
         pile.spawn(lambda: self.assertEquals(prox.two, 2))
         pile.spawn(lambda: self.assertEquals(prox.three, 3))
@@ -223,8 +223,8 @@ class TestTpool(LimitedTestCase):
     def test_timeout (self):
         import time
 
-        eventlet.Timeout(0.1, eventlet.TimeoutError())
-        self.assertRaises(eventlet.TimeoutError,
+        evy.Timeout(0.1, evy.TimeoutError())
+        self.assertRaises(evy.TimeoutError,
                           tpool.execute, time.sleep, 0.3)
 
     @skip_with_pyevent
@@ -288,11 +288,11 @@ class TestTpool(LimitedTestCase):
             self.assertEquals(3, r)
 
     @skip_with_pyevent
-    def test_eventlet_timeout (self):
+    def test_evy_timeout (self):
         def raise_timeout ():
-            raise eventlet.Timeout()
+            raise evy.Timeout()
 
-        self.assertRaises(eventlet.Timeout, tpool.execute, raise_timeout)
+        self.assertRaises(evy.Timeout, tpool.execute, raise_timeout)
 
     @skip_with_pyevent
     def test_tpool_set_num_threads (self):
@@ -317,15 +317,15 @@ class TpoolLongTests(LimitedTestCase):
             obj = tpool.Proxy(Dummy())
             count = 100
             for n in xrange(count):
-                eventlet.sleep(random.random() / 200.0)
+                evy.sleep(random.random() / 200.0)
                 now = time.time()
                 token = loopnum * count + n
                 rv = obj.foo(now, token = token)
                 self.assertEquals(token, rv)
-                eventlet.sleep(random.random() / 200.0)
+                evy.sleep(random.random() / 200.0)
 
         cnt = 10
-        pile = eventlet.GreenPile(cnt)
+        pile = evy.GreenPile(cnt)
         for i in xrange(cnt):
             pile.spawn(sender_loop, i)
         results = list(pile)
@@ -340,7 +340,7 @@ class TpoolLongTests(LimitedTestCase):
 
         imports = """
 from tests.tpool_test import noop
-from eventlet.tpool import execute
+from evy.tpool import execute
         """
         t = timeit.Timer("noop()", imports)
         results = t.repeat(repeat = 3, number = iterations)

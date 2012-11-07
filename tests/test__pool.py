@@ -1,11 +1,11 @@
-import eventlet
+import evy
 import warnings
 
 warnings.simplefilter('ignore', DeprecationWarning)
-from eventlet import pool, coros, api, hubs, timeout
+from evy import pool, coros, api, hubs, timeout
 
 warnings.simplefilter('default', DeprecationWarning)
-from eventlet import event as _event
+from evy import event as _event
 from tests import LimitedTestCase
 from unittest import main
 
@@ -44,13 +44,13 @@ class TestCoroutinePool(LimitedTestCase):
             evt.wait()
 
         waiters = []
-        waiters.append(eventlet.spawn(waiter, pool))
+        waiters.append(evy.spawn(waiter, pool))
         api.sleep(0)
         self.assertEqual(pool.waiting(), 0)
-        waiters.append(eventlet.spawn(waiter, pool))
+        waiters.append(evy.spawn(waiter, pool))
         api.sleep(0)
         self.assertEqual(pool.waiting(), 1)
-        waiters.append(eventlet.spawn(waiter, pool))
+        waiters.append(evy.spawn(waiter, pool))
         api.sleep(0)
         self.assertEqual(pool.waiting(), 2)
         done.send(None)
@@ -225,7 +225,7 @@ class TestCoroutinePool(LimitedTestCase):
         # The premise is that a coroutine in a Pool tries to get a token out
         # of a token pool but times out before getting the token.  We verify
         # that neither pool is adversely affected by this situation.
-        from eventlet import pools
+        from evy import pools
 
         pool = self.klass(min_size = 1, max_size = 1)
         tp = pools.TokenPool(max_size = 1)
@@ -301,7 +301,7 @@ class PoolBasicTests(LimitedTestCase):
         self.assertEqual(evt.wait(), ('foo', 1))
 
     def test_with_intpool (self):
-        from eventlet import pools
+        from evy import pools
 
         class IntPool(pools.Pool):
             def create (self):

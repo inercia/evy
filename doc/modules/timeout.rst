@@ -1,7 +1,7 @@
 :mod:`timeout` -- Universal Timeouts
 ========================================
 
-.. class:: eventlet.timeout.Timeout
+.. class:: evy.timeout.Timeout
 
     Raises *exception* in the current greenthread after *timeout* seconds::
 
@@ -15,7 +15,7 @@
     itself is raised:
 
         >>> Timeout(0.1)
-        >>> eventlet.sleep(0.2)
+        >>> evy.sleep(0.2)
         Traceback (most recent call last):
          ...
         Timeout: 0.1 seconds
@@ -63,7 +63,7 @@
     .. autoattribute:: pending
 
 
-.. function:: eventlet.timeout.with_timeout(seconds, function, *args, **kwds)
+.. function:: evy.timeout.with_timeout(seconds, function, *args, **kwds)
 
     Wrap a call to some (yielding) function with a timeout; if the called
     function fails to return before the timeout, cancel it and return a flag

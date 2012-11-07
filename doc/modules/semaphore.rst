@@ -1,11 +1,11 @@
 :mod:`semaphore` -- Semaphore classes
 ==================================================
 
-.. autoclass:: eventlet.semaphore.Semaphore
+.. autoclass:: evy.semaphore.Semaphore
 	:members:
 
-.. autoclass:: eventlet.semaphore.BoundedSemaphore
+.. autoclass:: evy.semaphore.BoundedSemaphore
 	:members:
 	
-.. autoclass:: eventlet.semaphore.CappedSemaphore
+.. autoclass:: evy.semaphore.CappedSemaphore
 	:members:

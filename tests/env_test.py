@@ -4,7 +4,7 @@ from tests import skip_with_pyevent
 
 class Socket(ProcessBase):
     def test_patched_thread (self):
-        new_mod = """from eventlet.green import socket
+        new_mod = """from evy.green import socket
 socket.gethostbyname('localhost')
 socket.getaddrinfo('localhost', 80)
 """
@@ -22,8 +22,8 @@ class Tpool(ProcessBase):
     def test_tpool_size (self):
         expected = "40"
         normal = "20"
-        new_mod = """from eventlet import tpool
-import eventlet
+        new_mod = """from evy import tpool
+import evy
 import time
 current = [0]
 highwater = [0]
@@ -35,7 +35,7 @@ def count():
     current[0] -= 1
 expected = %s
 normal = %s
-p = eventlet.GreenPool()
+p = evy.GreenPool()
 for i in xrange(expected*2):
     p.spawn(tpool.execute, count)
 p.waitall()
@@ -50,8 +50,8 @@ assert highwater[0] > 20, "Highwater %%s  <= %%s" %% (highwater[0], normal)
             del os.environ['EVENTLET_THREADPOOL_SIZE']
 
     def test_tpool_negative (self):
-        new_mod = """from eventlet import tpool
-import eventlet
+        new_mod = """from evy import tpool
+import evy
 import time
 def do():
     print "should not get here"
@@ -70,8 +70,8 @@ except AssertionError:
             del os.environ['EVENTLET_THREADPOOL_SIZE']
 
     def test_tpool_zero (self):
-        new_mod = """from eventlet import tpool
-import eventlet
+        new_mod = """from evy import tpool
+import evy
 import time
 def do():
     print "ran it"
@@ -101,8 +101,8 @@ class Hub(ProcessBase):
             del os.environ['EVENTLET_HUB']
         super(Hub, self).tearDown()
 
-    def test_eventlet_hub (self):
-        new_mod = """from eventlet import hubs
+    def test_evy_hub (self):
+        new_mod = """from evy import hubs
 print hubs.get_hub()
 """
         self.write_to_tempfile("newmod", new_mod)

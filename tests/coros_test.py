@@ -1,9 +1,9 @@
 from unittest import main
 from tests import LimitedTestCase, silence_warnings
-import eventlet
-from eventlet import coros
-from eventlet import event
-from eventlet import greenthread
+import evy
+from evy import coros
+from evy import event
+from evy import greenthread
 
 class IncrActor(coros.Actor):
     def received (self, evt):
@@ -46,7 +46,7 @@ class TestActor(LimitedTestCase):
     def test_cast_multi_2 (self):
         # the actor goes through a slightly different code path if it
         # is forced to enter its event loop prior to any cast()s
-        eventlet.sleep(0)
+        evy.sleep(0)
         self.test_cast_multi_1()
 
     def test_sleeping_during_received (self):
@@ -56,7 +56,7 @@ class TestActor(LimitedTestCase):
         waiters = []
 
         def received ( (message, evt) ):
-            eventlet.sleep(0)
+            evy.sleep(0)
             msgs.append(message)
             evt.send()
 
@@ -64,12 +64,12 @@ class TestActor(LimitedTestCase):
 
         waiters.append(event.Event())
         self.actor.cast((1, waiters[-1]))
-        eventlet.sleep(0)
+        evy.sleep(0)
         waiters.append(event.Event())
         self.actor.cast((2, waiters[-1]))
         waiters.append(event.Event())
         self.actor.cast((3, waiters[-1]))
-        eventlet.sleep(0)
+        evy.sleep(0)
         waiters.append(event.Event())
         self.actor.cast((4, waiters[-1]))
         waiters.append(event.Event())
@@ -111,7 +111,7 @@ class TestActor(LimitedTestCase):
         self.actor.received = received
 
         def onemoment ():
-            eventlet.sleep(0.1)
+            evy.sleep(0.1)
 
         evt = event.Event()
         evt1 = event.Event()
@@ -121,11 +121,11 @@ class TestActor(LimitedTestCase):
 
         evt1.wait()
         self.assertEqual(total[0], 2)
-        eventlet.sleep(0)
+        evy.sleep(0)
         self.assertEqual(self.actor._pool.free(), 1)
         evt.wait()
         self.assertEqual(total[0], 3)
-        eventlet.sleep(0)
+        evy.sleep(0)
         self.assertEqual(self.actor._pool.free(), 2)
 
 

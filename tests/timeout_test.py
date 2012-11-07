@@ -1,6 +1,6 @@
 from tests import LimitedTestCase
-from eventlet import timeout
-from eventlet import greenthread
+from evy import timeout
+from evy import greenthread
 
 DELAY = 0.01
 

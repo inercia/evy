@@ -1,12 +1,12 @@
 """A simple web server that accepts POSTS containing a list of feed urls,
 and returns the titles of those feeds.
 """
-import eventlet
+import evy
 
-feedparser = eventlet.import_patched('feedparser')
+feedparser = evy.import_patched('feedparser')
 
 # the pool provides a safety limit on our concurrency
-pool = eventlet.GreenPool()
+pool = evy.GreenPool()
 
 def fetch_title (url):
     d = feedparser.parse(url)
@@ -20,7 +20,7 @@ def app (environ, start_response):
 
     # the pile collects the result of a concurrent operation -- in this case,
     # the collection of feed titles
-    pile = eventlet.GreenPile(pool)
+    pile = evy.GreenPile(pool)
     for line in environ['wsgi.input'].readlines():
         url = line.strip()
         if url:
@@ -33,6 +33,6 @@ def app (environ, start_response):
 
 
 if __name__ == '__main__':
-    from eventlet import wsgi
+    from evy import wsgi
 
-    wsgi.server(eventlet.listen(('localhost', 9010)), app)
+    wsgi.server(evy.listen(('localhost', 9010)), app)

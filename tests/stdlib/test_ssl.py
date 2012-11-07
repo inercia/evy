@@ -1,13 +1,13 @@
-from eventlet import patcher
-from eventlet.green import asyncore
-from eventlet.green import BaseHTTPServer
-from eventlet.green import select
-from eventlet.green import socket
-from eventlet.green import SocketServer
-from eventlet.green import SimpleHTTPServer
-from eventlet.green import ssl
-from eventlet.green import threading
-from eventlet.green import urllib
+from evy import patcher
+from evy.green import asyncore
+from evy.green import BaseHTTPServer
+from evy.green import select
+from evy.green import socket
+from evy.green import SocketServer
+from evy.green import SimpleHTTPServer
+from evy.green import ssl
+from evy.green import threading
+from evy.green import urllib
 
 # stupid test_support messing with our mojo
 import test.test_support
@@ -44,7 +44,7 @@ NetworkedTests.test_algorithms = lambda s: None
 
 # these don't pass because nonblocking ssl sockets don't report
 # when the socket is closed uncleanly, per the docstring on 
-# eventlet.green.GreenSSLSocket
+# evy.green.GreenSSLSocket
 # *TODO: fix and restore these tests
 ThreadedTests.testProtocolSSL2 = lambda s: None
 ThreadedTests.testProtocolSSL3 = lambda s: None

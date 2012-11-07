@@ -3,10 +3,10 @@
 # test timer adds & expires on hubs.hub.BaseHub
 
 import sys
-import eventlet
+import evy
 import random
 import time
-from eventlet.hubs import timer, get_hub
+from evy.hubs import timer, get_hub
 
 timer_count = 100000
 

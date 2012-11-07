@@ -1,8 +1,8 @@
-from eventlet import patcher
-from eventlet.green import asyncore
-from eventlet.green import ftplib
-from eventlet.green import threading
-from eventlet.green import socket
+from evy import patcher
+from evy.green import asyncore
+from evy.green import ftplib
+from evy.green import threading
+from evy.green import socket
 
 patcher.inject('test.test_ftplib', globals())
 

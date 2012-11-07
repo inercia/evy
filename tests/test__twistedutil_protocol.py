@@ -5,8 +5,8 @@ import unittest
 try:
     from twisted.internet import reactor
     from twisted.internet.error import ConnectionDone
-    import eventlet.twistedutil.protocol as pr
-    from eventlet.twistedutil.protocols.basic import LineOnlyReceiverTransport
+    import evy.twistedutil.protocol as pr
+    from evy.twistedutil.protocols.basic import LineOnlyReceiverTransport
 except ImportError:
     # stub out some of the twisted dependencies so it at least imports
     class dummy(object):
@@ -20,11 +20,11 @@ except ImportError:
     class reactor(object):
         pass
 
-from eventlet import spawn, sleep, with_timeout, spawn_after
-from eventlet.coros import Event
+from evy import spawn, sleep, with_timeout, spawn_after
+from evy.coros import Event
 
 try:
-    from eventlet.green import socket
+    from evy.green import socket
 except SyntaxError:
     socket = None
 

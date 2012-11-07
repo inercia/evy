@@ -6,7 +6,7 @@ try:
     from twisted.internet.error import DNSLookupError
     from twisted.internet import defer
     from twisted.python.failure import Failure
-    from eventlet.twistedutil import block_on
+    from evy.twistedutil import block_on
 except ImportError:
     pass
 

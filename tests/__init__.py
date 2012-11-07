@@ -5,7 +5,7 @@ import errno
 import unittest
 import warnings
 
-from eventlet import debug, hubs
+from evy import debug, hubs
 
 # convenience for importers
 main = unittest.main
@@ -87,7 +87,7 @@ def requires_twisted (func):
     """ Decorator that skips a test if Twisted is not present."""
 
     def requirement (_f):
-        from eventlet.hubs import get_hub
+        from evy.hubs import get_hub
 
         try:
             return 'Twisted' in type(get_hub()).__name__
@@ -98,7 +98,7 @@ def requires_twisted (func):
 
 
 def using_pyevent (_f):
-    from eventlet.hubs import get_hub
+    from evy.hubs import get_hub
 
     return 'pyevent' in type(get_hub()).__module__
 
@@ -130,10 +130,10 @@ def skip_if_no_itimer (func):
 def skip_if_no_ssl (func):
     """ Decorator that skips a test if SSL is not available."""
     try:
-        import eventlet.green.ssl
+        import evy.green.ssl
     except ImportError:
         try:
-            import eventlet.green.OpenSSL
+            import evy.green.OpenSSL
         except ImportError:
             skipped(func)
 
@@ -152,17 +152,17 @@ class LimitedTestCase(unittest.TestCase):
     TEST_TIMEOUT = 1
 
     def setUp (self):
-        import eventlet
+        import evy
 
-        self.timer = eventlet.Timeout(self.TEST_TIMEOUT,
+        self.timer = evy.Timeout(self.TEST_TIMEOUT,
                                       TestIsTakingTooLong(self.TEST_TIMEOUT))
 
     def reset_timeout (self, new_timeout):
         """Changes the timeout duration; only has effect during one test case"""
-        import eventlet
+        import evy
 
         self.timer.cancel()
-        self.timer = eventlet.Timeout(new_timeout,
+        self.timer = evy.Timeout(new_timeout,
                                       TestIsTakingTooLong(new_timeout))
 
     def tearDown (self):
@@ -195,7 +195,7 @@ class LimitedTestCase(unittest.TestCase):
 
 
 def verify_hub_empty ():
-    from eventlet import hubs
+    from evy import hubs
 
     hub = hubs.get_hub()
     num_readers = len(hub.get_readers())

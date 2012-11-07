@@ -1,10 +1,10 @@
-:mod:`eventlet.green.zmq` -- ØMQ support
+:mod:`evy.green.zmq` -- ØMQ support
 ========================================
 
-.. automodule:: eventlet.green.zmq
+.. automodule:: evy.green.zmq
     :show-inheritance:
 
-.. currentmodule:: eventlet.green.zmq
+.. currentmodule:: evy.green.zmq
 
 .. autofunction:: Context
 

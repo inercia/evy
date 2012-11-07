@@ -1,6 +1,6 @@
-import eventlet
-from eventlet import wsgi
-from eventlet import websocket
+import evy
+from evy import wsgi
+from evy import websocket
 
 # demo app
 import os
@@ -20,7 +20,7 @@ def handle (ws):
     elif ws.path == '/data':
         for i in xrange(10000):
             ws.send("0 %s %s\n" % (i, random.random()))
-            eventlet.sleep(0.1)
+            evy.sleep(0.1)
 
 
 def dispatch (environ, start_response):
@@ -36,6 +36,6 @@ def dispatch (environ, start_response):
 
 if __name__ == "__main__":
     # run an example app from the command line            
-    listener = eventlet.listen(('127.0.0.1', 7000))
+    listener = evy.listen(('127.0.0.1', 7000))
     print "\nVisit http://localhost:7000/ in your websocket-capable browser.\n"
     wsgi.server(listener, dispatch)

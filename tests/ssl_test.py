@@ -1,8 +1,8 @@
 from tests import LimitedTestCase, certificate_file, private_key_file
 from tests import skip_if_no_ssl
 from unittest import main
-import eventlet
-from eventlet import util, coros, greenio
+import evy
+from evy import util, coros, greenio
 import socket
 import os
 
@@ -25,9 +25,9 @@ class SSLTest(LimitedTestCase):
 
         sock = listen_ssl_socket()
 
-        server_coro = eventlet.spawn(serve, sock)
+        server_coro = evy.spawn(serve, sock)
 
-        client = util.wrap_ssl(eventlet.connect(('127.0.0.1', sock.getsockname()[1])))
+        client = util.wrap_ssl(evy.connect(('127.0.0.1', sock.getsockname()[1])))
         client.write('line 1\r\nline 2\r\n\r\n')
         self.assertEquals(client.read(8192), 'response')
         server_coro.wait()
@@ -44,9 +44,9 @@ class SSLTest(LimitedTestCase):
 
         sock = listen_ssl_socket()
 
-        server_coro = eventlet.spawn(serve, sock)
+        server_coro = evy.spawn(serve, sock)
 
-        raw_client = eventlet.connect(('127.0.0.1', sock.getsockname()[1]))
+        raw_client = evy.connect(('127.0.0.1', sock.getsockname()[1]))
         client = util.wrap_ssl(raw_client)
         client.write('X')
         greenio.shutdown_safe(client)
@@ -60,7 +60,7 @@ class SSLTest(LimitedTestCase):
             stuff = sock.read(8192)
 
         sock = listen_ssl_socket()
-        server_coro = eventlet.spawn(serve, sock)
+        server_coro = evy.spawn(serve, sock)
 
         raw_client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         ssl_client = util.wrap_ssl(raw_client)
@@ -83,9 +83,9 @@ class SSLTest(LimitedTestCase):
             self.assertEquals(sock2.recv(5), 'after')
             sock2.close()
 
-        listener = eventlet.listen(('127.0.0.1', 0))
-        server_coro = eventlet.spawn(serve)
-        client = eventlet.connect((listener.getsockname()))
+        listener = evy.listen(('127.0.0.1', 0))
+        server_coro = evy.spawn(serve)
+        client = evy.connect((listener.getsockname()))
         client.send('before')
         client_ssl = util.wrap_ssl(client)
         client_ssl.do_handshake()
@@ -111,10 +111,10 @@ class SocketSSLTest(LimitedTestCase):
             sock.close()
 
         listener = listen_ssl_socket(('', 0))
-        killer = eventlet.spawn(serve, listener)
-        from eventlet.green.socket import ssl
+        killer = evy.spawn(serve, listener)
+        from evy.green.socket import ssl
 
-        client = ssl(eventlet.connect(('localhost', listener.getsockname()[1])))
+        client = ssl(evy.connect(('localhost', listener.getsockname()[1])))
         self.assertEquals(client.read(1024), 'content')
         self.assertEquals(client.read(1024), '')
 

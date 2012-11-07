@@ -1,7 +1,7 @@
 Testing Eventlet
 ================
 
-Eventlet is tested using `Nose <http://somethingaboutorange.com/mrl/projects/nose/>`_.  To run tests, simply install nose, and then, in the eventlet tree, do:
+Eventlet is tested using `Nose <http://somethingaboutorange.com/mrl/projects/nose/>`_.  To run tests, simply install nose, and then, in the evy tree, do:
 
 .. code-block:: sh
 
@@ -28,11 +28,11 @@ Many tests are skipped based on environmental factors; for example, it makes no 
 Doctests
 --------
 
-To run the doctests included in many of the eventlet modules, use this command:
+To run the doctests included in many of the evy modules, use this command:
 
 .. code-block :: sh
 
-  $ nosetests --with-doctest eventlet/*.py
+  $ nosetests --with-doctest evy/*.py
   
 Currently there are 16 doctests.
 
@@ -73,17 +73,17 @@ The filename convention when writing a test for module `foo` is to name the test
 
 If you are writing a test that involves a client connecting to a spawned server, it is best to not use a hardcoded port because that makes it harder to parallelize tests.  Instead bind the server to 0, and then look up its port when connecting the client, like this::
 
-  server_sock = eventlet.listener(('127.0.0.1', 0))
-  client_sock = eventlet.connect(('localhost', server_sock.getsockname()[1]))
+  server_sock = evy.listener(('127.0.0.1', 0))
+  client_sock = evy.connect(('localhost', server_sock.getsockname()[1]))
   
 Coverage
 --------
 
-Coverage.py is an awesome tool for evaluating how much code was exercised by unit tests.  Nose supports it if both are installed, so it's easy to generate coverage reports for eventlet.  Here's how:
+Coverage.py is an awesome tool for evaluating how much code was exercised by unit tests.  Nose supports it if both are installed, so it's easy to generate coverage reports for evy.  Here's how:
 
 .. code-block:: sh
 
- nosetests --with-coverage --cover-package=eventlet
+ nosetests --with-coverage --cover-package=evy
  
 After running the tests to completion, this will emit a huge wodge of module names and line numbers.  For some reason, the ``--cover-inclusive`` option breaks everything rather than serving its purpose of limiting the coverage to the local files, so don't use that.
 
