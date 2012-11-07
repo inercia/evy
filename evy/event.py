@@ -10,19 +10,16 @@ class NOT_USED:
 NOT_USED = NOT_USED()
 
 class Event(object):
-    """An abstraction where an arbitrary number of coroutines
-    can wait for one event from another.
+    """
+    An abstraction where an arbitrary number of coroutines can wait for one event from another.
 
-    Events are similar to a Queue that can only hold one item, but differ
-    in two important ways:
+    Events are similar to a Queue that can only hold one item, but differ in two important ways:
 
     1. calling :meth:`send` never unschedules the current greenthread
     2. :meth:`send` can only be called once; create a new event to send again.
 
-    They are good for communicating results between coroutines, and
-    are the basis for how
-    :meth:`GreenThread.wait() <evy.greenthread.GreenThread.wait>`
-    is implemented.
+    They are good for communicating results between coroutines, and are the basis for how
+    :meth:`GreenThread.wait() <evy.greenthread.GreenThread.wait>` is implemented.
 
     >>> from evy import event
     >>> import evy
@@ -55,11 +52,13 @@ class Event(object):
         self._exc = None
 
     def ready (self):
-        """ Return true if the :meth:`wait` call will return immediately.
+        """
+        Return true if the :meth:`wait` call will return immediately.
         Used to avoid waiting for things that might take a while to time out.
         For example, you can put a bunch of events into a list, and then visit
         them all repeatedly, calling :meth:`ready` until one returns ``True``,
-        and then you can :meth:`wait` on that one."""
+        and then you can :meth:`wait` on that one.
+        """
         return self._result is not NOT_USED
 
     def has_exception (self):
@@ -89,7 +88,8 @@ class Event(object):
         return notready
 
     def wait (self):
-        """Wait until another coroutine calls :meth:`send`.
+        """
+        Wait until another coroutine calls :meth:`send`.
         Returns the value the other coroutine passed to
         :meth:`send`.
 
@@ -122,7 +122,8 @@ class Event(object):
         return self._result
 
     def send (self, result = None, exc = None):
-        """Makes arrangements for the waiters to be woken with the
+        """
+        Makes arrangements for the waiters to be woken with the
         result and then returns immediately to the parent.
 
         >>> from evy import event
@@ -166,7 +167,8 @@ class Event(object):
                 waiter.throw(*exc)
 
     def send_exception (self, *args):
-        """Same as :meth:`send`, but sends an exception to waiters.
+        """
+        Same as :meth:`send`, but sends an exception to waiters.
         
         The arguments to send_exception are the same as the arguments
         to ``raise``.  If a single exception object is passed in, it
