@@ -14,16 +14,248 @@ from cffi import FFI
 
 ffi = FFI()
 ffi.cdef("""
+
 #define UV_VERSION_MAJOR ...
 #define UV_VERSION_MINOR ...
 
 typedef enum {
+  UV_UNKNOWN,
+  UV_OK,
+  UV_EOF,
+  UV_EADDRINFO,
+  UV_EACCES,
+  UV_EAGAIN,
+  UV_EADDRINUSE,
+  UV_EADDRNOTAVAIL,
+  UV_EAFNOSUPPORT,
+  UV_EALREADY,
+  UV_EBADF,
+  UV_EBUSY,
+  UV_ECONNABORTED,
+  UV_ECONNREFUSED,
+  UV_ECONNRESET,
+  UV_EDESTADDRREQ,
+  UV_EFAULT,
+  UV_EHOSTUNREACH,
+  UV_EINTR,
+  UV_EINVAL,
+  UV_EISCONN,
+  UV_EMFILE,
+  UV_EMSGSIZE,
+  UV_ENETDOWN,
+  UV_ENETUNREACH,
+  UV_ENFILE,
+  UV_ENOBUFS,
+  UV_ENOMEM,
+  UV_ENOTDIR,
+  UV_EISDIR,
+  UV_ENONET,
+  UV_ENOTCONN,
+  UV_ENOTSOCK,
+  UV_ENOTSUP,
+  UV_ENOENT,
+  UV_ENOSYS,
+  UV_EPIPE,
+  UV_EPROTO,
+  UV_EPROTONOSUPPORT,
+  UV_EPROTOTYPE,
+  UV_ETIMEDOUT,
+  UV_ECHARSET,
+  UV_EAIFAMNOSUPPORT,
+  UV_EAISERVICE,
+  UV_EAISOCKTYPE,
+  UV_ESHUTDOWN,
+  UV_EEXIST,
+  UV_ESRCH,
+  UV_ENAMETOOLONG,
+  UV_EPERM,
+  UV_ELOOP,
+  UV_EXDEV,
+  UV_ENOTEMPTY,
+  UV_ENOSPC,
+  UV_EIO,
+  UV_EROFS,
+  UV_ENODEV,
+  UV_ESPIPE,
+  UV_ECANCELED,
+  ...
+} uv_err_code;
+
+typedef enum {
+  UV_ASYNC,
+  UV_CHECK,
+  UV_FS_EVENT,
+  UV_FS_POLL,
+  UV_HANDLE,
+  UV_IDLE,
+  UV_NAMED_PIPE,
+  UV_POLL,
+  UV_PREPARE,
+  UV_PROCESS,
+  UV_STREAM,
+  UV_TCP,
+  UV_TIMER,
+  UV_TTY,
+  UV_UDP,
+  UV_SIGNAL,
   ...
 } uv_handle_type;
 
 typedef enum {
+  UV_REQ,
+  UV_CONNECT,
+  UV_WRITE,
+  UV_SHUTDOWN,
+  UV_UDP_SEND,
+  UV_FS,
+  UV_WORK,
+  UV_GETADDRINFO,
   ...
 } uv_req_type;
+
+typedef ... uv_buf_t;
+typedef ... uv_os_sock_t;
+typedef ... uv_file;
+typedef ... uv_mutex_t;
+typedef ... uv_rwlock_t;
+typedef ... uv_sem_t;
+typedef ... uv_cond_t;
+typedef ... uv_barrier_t;
+typedef ... uv_thread_t;
+typedef ... uv_once_t;
+
+struct uv_err_s {
+  ...;
+};
+
+struct uv_req_s {
+  ...;
+};
+
+struct uv_shutdown_s {
+  ...;
+};
+
+struct uv_handle_s {
+  ...;
+};
+
+struct uv_stream_s {
+  ...;
+};
+
+struct uv_write_s {
+  ...;
+};
+
+struct uv_tcp_s {
+  ...;
+};
+
+struct uv_connect_s {
+  ...;
+};
+
+struct uv_udp_s {
+  ...;
+};
+
+struct uv_udp_send_s {
+  ...;
+};
+
+struct uv_tty_s {
+  ...;
+};
+
+struct uv_pipe_s {
+  ...;
+};
+
+struct uv_poll_s {
+  ...;
+};
+
+struct uv_prepare_s {
+  ...;
+};
+
+struct uv_check_s {
+  ...;
+};
+
+struct uv_idle_s {
+  ...;
+};
+
+struct uv_async_s {
+  ...;
+};
+
+struct uv_timer_s {
+  ...;
+};
+
+struct uv_getaddrinfo_s {
+  ...;
+};
+
+
+typedef struct uv_stdio_container_s {
+  ...;
+} uv_stdio_container_t;
+
+typedef struct uv_process_options_s {
+  ...;
+} uv_process_options_t;
+
+struct uv_process_s {
+  ...;
+};
+
+struct uv_work_s {
+  ...;
+};
+
+struct uv_cpu_info_s {
+  char* model;
+  int speed;
+  struct uv_cpu_times_s {
+    uint64_t user;
+    uint64_t nice;
+    uint64_t sys;
+    uint64_t idle;
+    uint64_t irq;
+  } cpu_times;
+};
+
+struct uv_interface_address_s {
+  char* name;
+  int is_internal;
+  ...;
+};
+
+struct uv_fs_s {
+  ...;
+};
+
+struct uv_fs_event_s {
+  char* filename;
+  ...;
+};
+
+struct uv_fs_poll_s {
+  ...;
+};
+
+struct uv_signal_s {
+  ...;
+};
+
+struct uv_loop_s {
+  unsigned int active_handles;
+  ...;
+};
 
 typedef struct uv_loop_s uv_loop_t;
 typedef struct uv_err_s uv_err_t;
@@ -34,17 +266,16 @@ typedef struct uv_udp_s uv_udp_t;
 typedef struct uv_pipe_s uv_pipe_t;
 typedef struct uv_tty_s uv_tty_t;
 typedef struct uv_poll_s uv_poll_t;
-typedef uv_timer_t_s uv_timer_t;
+typedef struct uv_timer_s uv_timer_t;
 typedef struct uv_prepare_s uv_prepare_t;
 typedef struct uv_check_s uv_check_t;
-typedef uv_idle_t_s uv_idle_t;
-typedef uv_async_t_s uv_async_t;
+typedef struct uv_idle_s uv_idle_t;
+typedef struct uv_async_s uv_async_t;
 typedef struct uv_process_s uv_process_t;
 typedef struct uv_fs_event_s uv_fs_event_t;
 typedef struct uv_fs_poll_s uv_fs_poll_t;
-typedef uv_signal_t_s uv_signal_t;
+typedef struct uv_signal_s uv_signal_t;
 
-/* Request types. */
 typedef struct uv_req_s uv_req_t;
 typedef struct uv_getaddrinfo_s uv_getaddrinfo_t;
 typedef struct uv_shutdown_s uv_shutdown_t;
@@ -69,9 +300,13 @@ void uv_unref(uv_handle_t*);
 void uv_update_time(uv_loop_t*);
 int64_t uv_now(uv_loop_t*);
 
-typedef uv_buf_t (*uv_alloc_cb)(uv_handle_t* handle, size_t suggested_size);
-typedef void (*uv_read_cb)(uv_stream_t* stream, ssize_t nread, uv_buf_t buf);
-typedef void (*uv_read2_cb)(uv_pipe_t* pipe, ssize_t nread, uv_buf_t buf, uv_handle_type pending);
+//typedef uv_buf_t (*uv_alloc_cb)(uv_handle_t* handle, size_t suggested_size);
+//typedef void (*uv_read_cb)(uv_stream_t* stream, ssize_t nread, uv_buf_t buf);
+//typedef void (*uv_read2_cb)(uv_pipe_t* pipe, ssize_t nread, uv_buf_t buf, uv_handle_type pending);
+
+typedef void *uv_alloc_cb;
+typedef void *uv_read_cb;
+typedef void *uv_read2_cb;
 
 typedef void (*uv_write_cb)(uv_write_t* req, int status);
 typedef void (*uv_connect_cb)(uv_connect_t* req, int status);
@@ -90,52 +325,25 @@ typedef void (*uv_fs_cb)(uv_fs_t* req);
 typedef void (*uv_work_cb)(uv_work_t* req);
 typedef void (*uv_after_work_cb)(uv_work_t* req);
 typedef void (*uv_getaddrinfo_cb)(uv_getaddrinfo_t* req, int status, struct addrinfo* res);
-typedef void (*uv_fs_event_cb)(uv_fs_event_t* handle, const char* filename, int events, int status);
-typedef void (*uv_fs_poll_cb)(uv_fs_poll_t* handle, int status, const uv_statbuf_t* prev, const uv_statbuf_t* curr);
+
+//typedef void (*uv_fs_event_cb)(uv_fs_event_t* handle, const char* filename, int events, int status);
+typedef void *uv_fs_event_cb;
+
+//typedef void (*uv_fs_poll_cb)(uv_fs_poll_t* handle, int status, const uv_statbuf_t* prev, const uv_statbuf_t* curr);
+typedef void *uv_fs_poll_cb;
+
 typedef void (*uv_signal_cb)(uv_signal_t* handle, int signum);
 
-
 typedef enum {
-  UV_LEAVE_GROUP = ...,
-  UV_JOIN_GROUP
+  UV_LEAVE_GROUP,
+  UV_JOIN_GROUP,
 } uv_membership;
-
-struct uv_err_s {
-  uv_err_code code;
-  ...
-};
 
 uv_err_t uv_last_error(uv_loop_t*);
 const char* uv_strerror(uv_err_t err);
 const char* uv_err_name(uv_err_t err);
 
-/* Abstract base class of all requests. */
-struct uv_req_s {
-  void* data;
-  uv_req_type type;
-  ngx_queue_t active_queue;
-};
-
 int uv_shutdown(uv_shutdown_t* req, uv_stream_t* handle, uv_shutdown_cb cb);
-
-struct uv_shutdown_s {
-  void* data;
-  uv_req_type type;
-  ngx_queue_t active_queue;
-
-  uv_stream_t* handle;
-  uv_shutdown_cb cb;
-  ...
-};
-
-
-struct uv_handle_s {
-  uv_close_cb close_cb;
-  void* data;
-  uv_loop_t* loop;
-  uv_handle_type type;
-  ...
-};
 
 size_t uv_handle_size(uv_handle_type type);
 size_t uv_req_size(uv_req_type type);
@@ -147,19 +355,6 @@ uv_buf_t uv_buf_init(char* base, unsigned int len);
 size_t uv_strlcpy(char* dst, const char* src, size_t size);
 size_t uv_strlcat(char* dst, const char* src, size_t size);
 
-struct uv_stream_s {
-  uv_close_cb close_cb;
-  void* data;
-  uv_loop_t* loop;
-  uv_handle_type type;
-
-  size_t write_queue_size;
-  uv_alloc_cb alloc_cb;
-  uv_read_cb read_cb;
-  uv_read2_cb read2_cb;
-  ...
-};
-
 int uv_listen(uv_stream_t* stream, int backlog, uv_connection_cb cb);
 int uv_accept(uv_stream_t* server, uv_stream_t* client);
 int uv_read_start(uv_stream_t*, uv_alloc_cb alloc_cb, uv_read_cb read_cb);
@@ -169,35 +364,9 @@ int uv_read2_start(uv_stream_t*, uv_alloc_cb alloc_cb, uv_read2_cb read_cb);
 int uv_write(uv_write_t* req, uv_stream_t* handle, uv_buf_t bufs[], int bufcnt, uv_write_cb cb);
 int uv_write2(uv_write_t* req, uv_stream_t* handle, uv_buf_t bufs[], int bufcnt, uv_stream_t* send_handle, uv_write_cb cb);
 
-/* uv_write_t is a subclass of uv_req_t */
-struct uv_write_s {
-  void* data;
-  uv_req_type type;
-
-  uv_write_cb cb;
-  uv_stream_t* send_handle;
-  uv_stream_t* handle;
-  ...
-};
-
 int uv_is_readable(const uv_stream_t* handle);
 int uv_is_writable(const uv_stream_t* handle);
-
-
 int uv_is_closing(const uv_handle_t* handle);
-
-struct uv_tcp_s {
-  uv_close_cb close_cb;
-  void* data;
-  uv_loop_t* loop;
-  uv_handle_type type;
-
-  size_t write_queue_size;
-  uv_alloc_cb alloc_cb;
-  uv_read_cb read_cb;
-  uv_read2_cb read2_cb;
-  ...
-};
 
 int uv_tcp_init(uv_loop_t*, uv_tcp_t* handle);
 int uv_tcp_open(uv_tcp_t* handle, uv_os_sock_t sock);
@@ -208,45 +377,17 @@ int uv_tcp_bind(uv_tcp_t* handle, struct sockaddr_in);
 int uv_tcp_bind6(uv_tcp_t* handle, struct sockaddr_in6);
 int uv_tcp_getsockname(uv_tcp_t* handle, struct sockaddr* name, int* namelen);
 int uv_tcp_getpeername(uv_tcp_t* handle, struct sockaddr* name, int* namelen);
-
 int uv_tcp_connect(uv_connect_t* req, uv_tcp_t* handle, struct sockaddr_in address, uv_connect_cb cb);
 int uv_tcp_connect6(uv_connect_t* req, uv_tcp_t* handle, struct sockaddr_in6 address, uv_connect_cb cb);
 
-/* uv_connect_t is a subclass of uv_req_t */
-struct uv_connect_s {
-  void* data;
-  uv_req_type type;
-  ngx_queue_t active_queue;
-  uv_connect_cb cb;
-  uv_stream_t* handle;
-  ...
-};
-
 enum uv_udp_flags {
-  UV_UDP_IPV6ONLY = ...,
-  UV_UDP_PARTIAL = ...
+  UV_UDP_IPV6ONLY,
+  UV_UDP_PARTIAL,
+  ...
 };
 
 typedef void (*uv_udp_send_cb)(uv_udp_send_t* req, int status);
 typedef void (*uv_udp_recv_cb)(uv_udp_t* handle, ssize_t nread, uv_buf_t buf, struct sockaddr* addr, unsigned flags);
-
-struct uv_udp_s {
-  uv_close_cb close_cb;
-  void* data;
-  uv_loop_t* loop;
-  uv_handle_type type;
-  ...
-};
-
-/* uv_udp_send_t is a subclass of uv_req_t */
-struct uv_udp_send_s {
-  void* data;
-  uv_req_type type;
-
-  uv_udp_t* handle;
-  uv_udp_send_cb cb;
-  ...
-};
 
 int uv_udp_init(uv_loop_t*, uv_udp_t* handle);
 int uv_udp_open(uv_udp_t* handle, uv_os_sock_t sock);
@@ -263,18 +404,6 @@ int uv_udp_send6(uv_udp_send_t* req, uv_udp_t* handle, uv_buf_t bufs[], int bufc
 int uv_udp_recv_start(uv_udp_t* handle, uv_alloc_cb alloc_cb, uv_udp_recv_cb recv_cb);
 int uv_udp_recv_stop(uv_udp_t* handle);
 
-struct uv_tty_s {
-  uv_close_cb close_cb;
-  void* data;
-  uv_loop_t* loop;
-  uv_handle_type type;
-
-  size_t write_queue_size;
-  uv_alloc_cb alloc_cb;
-  uv_read_cb read_cb;
-  uv_read2_cb read2_cb;
-  ...
-};
 
 int uv_tty_init(uv_loop_t*, uv_tty_t*, uv_file fd, int readable);
 
@@ -283,42 +412,16 @@ void uv_tty_reset_mode(void);
 int uv_tty_get_winsize(uv_tty_t*, int* width, int* height);
 uv_handle_type uv_guess_handle(uv_file file);
 
-struct uv_pipe_s {
-  uv_close_cb close_cb;
-  void* data;
-  uv_loop_t* loop;
-  uv_handle_type type;
-
-  size_t write_queue_size;
-  uv_alloc_cb alloc_cb;
-  uv_read_cb read_cb;
-  uv_read2_cb read2_cb;
-
-  int ipc; /* non-zero if this pipe is used for passing handles */
-  ...
-};
-
 int uv_pipe_init(uv_loop_t*, uv_pipe_t* handle, int ipc);
 int uv_pipe_open(uv_pipe_t*, uv_file file);
 int uv_pipe_bind(uv_pipe_t* handle, const char* name);
 void uv_pipe_connect(uv_connect_t* req, uv_pipe_t* handle, const char* name, uv_connect_cb cb);
 void uv_pipe_pending_instances(uv_pipe_t* handle, int count);
 
-
-struct uv_poll_s {
-  uv_close_cb close_cb;
-  void* data;
-  uv_loop_t* loop;
-  uv_handle_type type;
-
-  uv_poll_cb poll_cb;
-
-  ...
-};
-
 enum uv_poll_event {
-  UV_READABLE = ...,
-  UV_WRITABLE = ...
+  UV_READABLE,
+  UV_WRITABLE,
+  ...
 };
 
 int uv_poll_init(uv_loop_t* loop, uv_poll_t* handle, int fd);
@@ -326,69 +429,20 @@ int uv_poll_init_socket(uv_loop_t* loop, uv_poll_t* handle, uv_os_sock_t socket)
 int uv_poll_start(uv_poll_t* handle, int events, uv_poll_cb cb);
 int uv_poll_stop(uv_poll_t* handle);
 
-
-struct uv_prepare_s {
-  uv_close_cb close_cb;
-  void* data;
-  uv_loop_t* loop;
-  uv_handle_type type;
-
-  ...
-};
-
 int uv_prepare_init(uv_loop_t*, uv_prepare_t* prepare);
 int uv_prepare_start(uv_prepare_t* prepare, uv_prepare_cb cb);
 int uv_prepare_stop(uv_prepare_t* prepare);
-
-
-struct uv_check_s {
-  uv_close_cb close_cb;
-  void* data;
-  uv_loop_t* loop;
-  uv_handle_type type;
-
-  ...
-};
 
 int uv_check_init(uv_loop_t*, uv_check_t* check);
 int uv_check_start(uv_check_t* check, uv_check_cb cb);
 int uv_check_stop(uv_check_t* check);
 
-
-uv_idle_t_s {
-  uv_close_cb close_cb;
-  void* data;
-  uv_loop_t* loop;
-  uv_handle_type type;
-
-  ...
-};
-
 int uv_idle_init(uv_loop_t*, uv_idle_t* idle);
 int uv_idle_start(uv_idle_t* idle, uv_idle_cb cb);
 int uv_idle_stop(uv_idle_t* idle);
 
-
-uv_async_t_s {
-  uv_close_cb close_cb;
-  void* data;
-  uv_loop_t* loop;
-  uv_handle_type type;
-
-  ...
-};
-
 int uv_async_init(uv_loop_t*, uv_async_t* async, uv_async_cb async_cb);
 int uv_async_send(uv_async_t* async);
-
-
-uv_timer_t_s {
-  uv_close_cb close_cb;
-  void* data;
-  uv_loop_t* loop;
-  uv_handle_type type;
-  ...
-};
 
 int uv_timer_init(uv_loop_t*, uv_timer_t* timer);
 int uv_timer_start(uv_timer_t* timer, uv_timer_cb cb, int64_t timeout, int64_t repeat);
@@ -397,106 +451,36 @@ int uv_timer_again(uv_timer_t* timer);
 void uv_timer_set_repeat(uv_timer_t* timer, int64_t repeat);
 int64_t uv_timer_get_repeat(uv_timer_t* timer);
 
-struct uv_getaddrinfo_s {
-  void* data;
-  uv_req_type type;
-  ngx_queue_t active_queue;
-  uv_loop_t* loop;
-  ...
-};
-
 int uv_getaddrinfo(uv_loop_t* loop, uv_getaddrinfo_t* req, uv_getaddrinfo_cb getaddrinfo_cb, const char* node, const char* service, const struct addrinfo* hints);
 void uv_freeaddrinfo(struct addrinfo* ai);
 
 /* uv_spawn() options */
 typedef enum {
-  UV_IGNORE         = ...,
-  UV_CREATE_PIPE    = ...,
-  UV_INHERIT_FD     = ...,
-  UV_INHERIT_STREAM = ...,
-  UV_READABLE_PIPE  = ...,
-  UV_WRITABLE_PIPE  = ...
+  UV_IGNORE,
+  UV_CREATE_PIPE,
+  UV_INHERIT_FD,
+  UV_INHERIT_STREAM,
+  UV_READABLE_PIPE,
+  UV_WRITABLE_PIPE,
+  ...
 } uv_stdio_flags;
 
-typedef struct uv_stdio_container_s {
-  uv_stdio_flags flags;
-
-  union {
-    uv_stream_t* stream;
-    int fd;
-  } data;
-
-} uv_stdio_container_t;
-
-typedef struct uv_process_options_s {
-  uv_exit_cb exit_cb; /* Called after the process exits. */
-  const char* file; /* Path to program to execute. */
-  char** args;
-  char** env;
-  char* cwd;
-  unsigned int flags;
-  int stdio_count;
-  uv_stdio_container_t* stdio;
-  uv_uid_t uid;
-  uv_gid_t gid;
-} uv_process_options_t;
-
-/*
- * These are the flags that can be used for the uv_process_options.flags field.
- */
 enum uv_process_flags {
-  UV_PROCESS_SETUID = ...,
-  UV_PROCESS_SETGID = ...,
-  UV_PROCESS_WINDOWS_VERBATIM_ARGUMENTS = ...,
-  UV_PROCESS_DETACHED = ...
-};
-
-struct uv_process_s {
-  uv_close_cb close_cb;
-  void* data;
-  uv_loop_t* loop;
-  uv_handle_type type;
-  uv_exit_cb exit_cb;
-  int pid;
+  UV_PROCESS_SETUID,
+  UV_PROCESS_SETGID,
+  UV_PROCESS_WINDOWS_VERBATIM_ARGUMENTS,
+  UV_PROCESS_DETACHED,
   ...
 };
+
 
 int uv_spawn(uv_loop_t*, uv_process_t*, uv_process_options_t options);
 int uv_process_kill(uv_process_t*, int signum);
 uv_err_t uv_kill(int pid, int signum);
 
-struct uv_work_s {
-  void* data;
-  uv_req_type type;
-
-  uv_loop_t* loop;
-  uv_work_cb work_cb;
-  uv_after_work_cb after_work_cb;
-  ...
-};
 
 int uv_queue_work(uv_loop_t* loop, uv_work_t* req, uv_work_cb work_cb, uv_after_work_cb after_work_cb);
 
-struct uv_cpu_info_s {
-  char* model;
-  int speed;
-  struct uv_cpu_times_s {
-    uint64_t user;
-    uint64_t nice;
-    uint64_t sys;
-    uint64_t idle;
-    uint64_t irq;
-  } cpu_times;
-};
-
-struct uv_interface_address_s {
-  char* name;
-  int is_internal;
-  union {
-    struct sockaddr_in address4;
-    struct sockaddr_in6 address6;
-  } address;
-};
 
 char** uv_setup_args(int argc, char** argv);
 uv_err_t uv_get_process_title(char* buffer, size_t size);
@@ -511,7 +495,7 @@ uv_err_t uv_interface_addresses(uv_interface_address_t** addresses, int* count);
 void uv_free_interface_addresses(uv_interface_address_t* addresses, int count);
 
 typedef enum {
-  UV_FS_UNKNOWN = ...,
+  UV_FS_UNKNOWN,
   UV_FS_CUSTOM,
   UV_FS_OPEN,
   UV_FS_CLOSE,
@@ -537,22 +521,10 @@ typedef enum {
   UV_FS_SYMLINK,
   UV_FS_READLINK,
   UV_FS_CHOWN,
-  UV_FS_FCHOWN
+  UV_FS_FCHOWN,
+  ...
 } uv_fs_type;
 
-struct uv_fs_s {
-  void* data;
-  uv_req_type type;
-  ngx_queue_t active_queue;
-  uv_fs_type fs_type;
-  uv_loop_t* loop;
-  uv_fs_cb cb;
-  ssize_t result;
-  void* ptr;
-  const char* path;
-  uv_err_code errorno;
-  ...
-};
 
 void uv_fs_req_cleanup(uv_fs_t* req);
 int uv_fs_close(uv_loop_t* loop, uv_fs_t* req, uv_file file, uv_fs_cb cb);
@@ -580,43 +552,16 @@ int uv_fs_fchown(uv_loop_t* loop, uv_fs_t* req, uv_file file, int uid, int gid, 
 
 
 enum uv_fs_event {
-  UV_RENAME = ...,
-  UV_CHANGE = ...
-};
-
-
-struct uv_fs_event_s {
-  uv_close_cb close_cb;
-  void* data;
-  uv_loop_t* loop;
-  uv_handle_type type;
-
-  char* filename;
+  UV_RENAME,
+  UV_CHANGE,
   ...
 };
 
-struct uv_fs_poll_s {
-  uv_close_cb close_cb;
-  void* data;
-  uv_loop_t* loop;
-  uv_handle_type type;
-  ...
-};
 
 int uv_fs_poll_init(uv_loop_t* loop, uv_fs_poll_t* handle);
 int uv_fs_poll_start(uv_fs_poll_t* handle, uv_fs_poll_cb poll_cb, const char* path, unsigned int interval);
 int uv_fs_poll_stop(uv_fs_poll_t* handle);
 
-uv_signal_t_s {
-  uv_close_cb close_cb;
-  void* data;
-  uv_loop_t* loop;
-  uv_handle_type type;
-
-  uv_signal_cb signal_cb;
-  int signum;
-  ...
-};
 
 /* These functions are no-ops on Windows. */
 int uv_signal_init(uv_loop_t* loop, uv_signal_t* handle);
@@ -626,9 +571,10 @@ int uv_signal_stop(uv_signal_t* handle);
 void uv_loadavg(double avg[3]);
 
 enum uv_fs_event_flags {
-  UV_FS_EVENT_WATCH_ENTRY = ...,
-  UV_FS_EVENT_STAT = ...,
-  UV_FS_EVENT_RECURSIVE = ...
+  UV_FS_EVENT_WATCH_ENTRY,
+  UV_FS_EVENT_STAT,
+  UV_FS_EVENT_RECURSIVE,
+  ...
 };
 
 
@@ -653,10 +599,7 @@ uv_err_t uv_chdir(const char* dir);
 uint64_t uv_get_free_memory(void);
 uint64_t uv_get_total_memory(void);
 
-extern uint64_t uv_hrtime(void);
-
-
-void uv_disable_stdio_inheritance(void);
+uint64_t uv_hrtime(void);
 
 int uv_mutex_init(uv_mutex_t* handle);
 void uv_mutex_destroy(uv_mutex_t* handle);
@@ -689,52 +632,16 @@ int uv_barrier_init(uv_barrier_t* barrier, unsigned int count);
 void uv_barrier_destroy(uv_barrier_t* barrier);
 void uv_barrier_wait(uv_barrier_t* barrier);
 
-void uv_once(uv_once_t* guard, void (*callback)(void));
+void uv_once(uv_once_t* guard, void *callback);
 
-int uv_thread_create(uv_thread_t *tid, void (*entry)(void *arg), void *arg);
+int uv_thread_create(uv_thread_t *tid, void *entry, void *arg);
 unsigned long uv_thread_self(void);
 int uv_thread_join(uv_thread_t *tid);
 
-union uv_any_handle {
-  uv_handle_t handle;
-  uv_stream_t stream;
-  uv_tcp_t tcp;
-  uv_pipe_t pipe;
-  uv_prepare_t prepare;
-  uv_check_t check;
-  uv_idle_t idle;
-  uv_async_t async;
-  uv_timer_t timer;
-  uv_fs_event_t fs_event;
-  uv_fs_poll_t fs_poll;
-  uv_poll_t poll;
-  uv_process_t process;
-  uv_tty_t tty;
-  uv_udp_t udp;
-};
-
-union uv_any_req {
-  uv_req_t req;
-  uv_write_t write;
-  uv_connect_t connect;
-  uv_shutdown_t shutdown;
-  uv_fs_t fs_req;
-  uv_work_t work_req;
-  uv_udp_send_t udp_send_req;
-  uv_getaddrinfo_t getaddrinfo_req;
-};
-
-struct uv_loop_s {
-  void* data;
-  uv_err_t last_err;
-
-  unsigned int active_handles;
-  ngx_queue_t handle_queue;
-  ngx_queue_t active_reqs;
-  ...
-};
 
 """)
+
+
 
 libuv = C = ffi.verify("""   // passed to the real C compiler
 #include <uv.h>
@@ -1065,19 +972,17 @@ class Poll(Watcher):
         Watcher.__init__(self, loop, ref=ref)
 
     def _get_fd(self):
-        return libuv.vfd_get(self._watcher.fd)
+        return self._watcher.fd
 
     def _set_fd(self, fd):
         if libuv.uv_is_active(self._watcher):
             raise AttributeError("'poll' watcher attribute 'fd' is read-only while watcher is active")
-        vfd = libuv.vfd_open(fd)
-        libuv.vfd_free(self._watcher.fd)
-        libuv.uv_poll_init(self._watcher, self._cb, vfd, self._watcher.events)
+        libuv.uv_poll_init(self._watcher, self._cb, fd, self._watcher.events)
 
     fd = property(_get_fd, _set_fd)
 
     def _get_events(self):
-        return libuv.vfd_get(self._watcher.fd)
+        return self._watcher.fd
 
     def _set_events(self, events):
         if libuv.uv_is_active(self._watcher):
