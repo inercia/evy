@@ -1,9 +1,11 @@
 import eventlet
+
 eventlet.sleep(0)
 from eventlet import patcher
+
 patcher.monkey_patch()
 
-def assimilate_real(name):
+def assimilate_real (name):
     print "Assimilating", name
     try:
         modobj = __import__('test.' + name, globals(), locals(), ['test_main'])

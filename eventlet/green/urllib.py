@@ -5,13 +5,14 @@ from eventlet.green import httplib
 from eventlet.green import ftplib
 
 to_patch = [('socket', socket), ('httplib', httplib),
-            ('time', time), ('ftplib', ftplib)]
+    ('time', time), ('ftplib', ftplib)]
 try:
     from eventlet.green import ssl
+
     to_patch.append(('ssl', ssl))
 except ImportError:
     pass
-    
+
 patcher.inject('urllib', globals(), *to_patch)
 
 # patch a bunch of things that have imports inside the 

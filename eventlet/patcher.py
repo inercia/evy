@@ -9,17 +9,18 @@ class SysModulesSaver(object):
     """Class that captures some subset of the current state of
     sys.modules.  Pass in an iterator of module names to the
     constructor."""
-    def __init__(self, module_names=()):
+
+    def __init__ (self, module_names = ()):
         self._saved = {}
         imp.acquire_lock()
         self.save(*module_names)
 
-    def save(self, *module_names):
+    def save (self, *module_names):
         """Saves the named modules to the object."""
         for modname in module_names:
             self._saved[modname] = sys.modules.get(modname, None)
 
-    def restore(self):
+    def restore (self):
         """Restores the modules that the saver knows about into
         sys.modules.
         """
@@ -34,9 +35,9 @@ class SysModulesSaver(object):
                         pass
         finally:
             imp.release_lock()
-                
 
-def inject(module_name, new_globals, *additional_modules):
+
+def inject (module_name, new_globals, *additional_modules):
     """Base method for "injecting" greened modules into an imported module.  It
     imports the module specified in *module_name*, arranging things so
     that the already-imported modules in *additional_modules* are used when
@@ -64,9 +65,9 @@ def inject(module_name, new_globals, *additional_modules):
             _green_select_modules() +
             _green_socket_modules() +
             _green_thread_modules() +
-            _green_time_modules()) 
-            #_green_MySQLdb()) # enable this after a short baking-in period
-    
+            _green_time_modules())
+        #_green_MySQLdb()) # enable this after a short baking-in period
+
     # after this we are gonna screw with sys.modules, so capture the
     # state of all the modules we're going to mess with, and lock
     saver = SysModulesSaver([name for name, m in additional_modules])
@@ -97,7 +98,7 @@ def inject(module_name, new_globals, *additional_modules):
     return module
 
 
-def import_patched(module_name, *additional_modules, **kw_additional_modules):
+def import_patched (module_name, *additional_modules, **kw_additional_modules):
     """Imports a module in a way that ensures that the module uses "green"
     versions of the standard library modules, so that everything works
     nonblockingly.
@@ -110,7 +111,7 @@ def import_patched(module_name, *additional_modules, **kw_additional_modules):
         *additional_modules + tuple(kw_additional_modules.items()))
 
 
-def patch_function(func, *additional_modules):
+def patch_function (func, *additional_modules):
     """Decorator that returns a version of the function that patches
     some modules for the duration of the function call.  This is
     deeply gross and should only be used for functions that import
@@ -122,10 +123,10 @@ def patch_function(func, *additional_modules):
             _green_os_modules() +
             _green_select_modules() +
             _green_socket_modules() +
-            _green_thread_modules() + 
+            _green_thread_modules() +
             _green_time_modules())
 
-    def patched(*args, **kw):
+    def patched (*args, **kw):
         saver = SysModulesSaver()
         for name, mod in additional_modules:
             saver.save(name)
@@ -134,16 +135,19 @@ def patch_function(func, *additional_modules):
             return func(*args, **kw)
         finally:
             saver.restore()
+
     return patched
 
-def _original_patch_function(func, *module_names):
+
+def _original_patch_function (func, *module_names):
     """Kind of the contrapositive of patch_function: decorates a
     function such that when it's called, sys.modules is populated only
     with the unpatched versions of the specified modules.  Unlike
     patch_function, only the names of the modules need be supplied,
     and there are no defaults.  This is a gross hack; tell your kids not
     to import inside function bodies!"""
-    def patched(*args, **kw):
+
+    def patched (*args, **kw):
         saver = SysModulesSaver(module_names)
         for name in module_names:
             sys.modules[name] = original(name)
@@ -151,10 +155,11 @@ def _original_patch_function(func, *module_names):
             return func(*args, **kw)
         finally:
             saver.restore()
+
     return patched
 
 
-def original(modname):
+def original (modname):
     """ This returns an unpatched version of a module; this is useful for 
     Eventlet itself (i.e. tpool)."""
     # note that it's not necessary to temporarily install unpatched
@@ -172,7 +177,7 @@ def original(modname):
     # some rudimentary dependency checking -- fortunately the modules
     # we're working on don't have many dependencies so we can just do
     # some special-casing here
-    deps = {'threading':'thread', 'Queue':'threading'}
+    deps = {'threading': 'thread', 'Queue': 'threading'}
     if modname in deps:
         dependency = deps[modname]
         saver.save(dependency)
@@ -184,9 +189,9 @@ def original(modname):
             # threading on every instantiation; therefore we wrap
             # it so that it always gets the original threading
             real_mod.Queue.__init__ = _original_patch_function(
-                real_mod.Queue.__init__, 
+                real_mod.Queue.__init__,
                 'threading')
-        # save a reference to the unpatched module so it doesn't get lost
+            # save a reference to the unpatched module so it doesn't get lost
         sys.modules[original_name] = real_mod
     finally:
         saver.restore()
@@ -194,7 +199,8 @@ def original(modname):
     return sys.modules[original_name]
 
 already_patched = {}
-def monkey_patch(**on):
+
+def monkey_patch (**on):
     """Globally patches certain system modules to be greenthread-friendly.
 
     The keyword arguments afford some control over which modules are patched.
@@ -206,14 +212,14 @@ def monkey_patch(**on):
     module if present; and thread, which patches thread, threading, and Queue.
 
     It's safe to call monkey_patch multiple times.
-    """    
-    accepted_args = set(('os', 'select', 'socket', 
+    """
+    accepted_args = set(('os', 'select', 'socket',
                          'thread', 'time', 'psycopg', 'MySQLdb'))
-    default_on = on.pop("all",None)
+    default_on = on.pop("all", None)
     for k in on.iterkeys():
         if k not in accepted_args:
             raise TypeError("monkey_patch() got an unexpected "\
-                                "keyword argument %r" % k)
+                            "keyword argument %r" % k)
     if default_on is None:
         default_on = not (True in on.values())
     for modname in accepted_args:
@@ -221,7 +227,7 @@ def monkey_patch(**on):
             # MySQLdb is only on when explicitly patched for the moment
             on.setdefault(modname, False)
         on.setdefault(modname, default_on)
-        
+
     modules_to_patch = []
     if on['os'] and not already_patched.get('os'):
         modules_to_patch += _green_os_modules()
@@ -244,6 +250,7 @@ def monkey_patch(**on):
     if on['psycopg'] and not already_patched.get('psycopg'):
         try:
             from eventlet.support import psycopg2_patcher
+
             psycopg2_patcher.make_psycopg_green()
             already_patched['psycopg'] = True
         except ImportError:
@@ -267,7 +274,8 @@ def monkey_patch(**on):
     finally:
         imp.release_lock()
 
-def is_monkey_patched(module):
+
+def is_monkey_patched (module):
     """Returns True if the given module is monkeypatched currently, False if
     not.  *module* can be either the module itself or its name.
 
@@ -275,44 +283,57 @@ def is_monkey_patched(module):
     module some other way than with the import keyword (including
     import_patched), this might not be correct about that particular
     module."""
-    return module in already_patched or \
+    return module in already_patched or\
            getattr(module, '__name__', None) in already_patched
 
-def _green_os_modules():
+
+def _green_os_modules ():
     from eventlet.green import os
+
     return [('os', os)]
 
-def _green_select_modules():
+
+def _green_select_modules ():
     from eventlet.green import select
+
     return [('select', select)]
 
-def _green_socket_modules():
+
+def _green_socket_modules ():
     from eventlet.green import socket
+
     try:
         from eventlet.green import ssl
+
         return [('socket', socket), ('ssl', ssl)]
     except ImportError:
         return [('socket', socket)]
 
-def _green_thread_modules():
+
+def _green_thread_modules ():
     from eventlet.green import Queue
     from eventlet.green import thread
     from eventlet.green import threading
+
     return [('Queue', Queue), ('thread', thread), ('threading', threading)]
 
-def _green_time_modules():
+
+def _green_time_modules ():
     from eventlet.green import time
+
     return [('time', time)]
 
-def _green_MySQLdb():
+
+def _green_MySQLdb ():
     try:
         from eventlet.green import MySQLdb
+
         return [('MySQLdb', MySQLdb)]
     except ImportError:
         return []
 
 
-def slurp_properties(source, destination, ignore=[], srckeys=None):
+def slurp_properties (source, destination, ignore = [], srckeys = None):
     """Copy properties from *source* (assumed to be a module) to
     *destination* (assumed to be a dict).
     
@@ -323,15 +344,16 @@ def slurp_properties(source, destination, ignore=[], srckeys=None):
     if srckeys is None:
         srckeys = source.__all__
     destination.update(dict([(name, getattr(source, name))
-                              for name in srckeys
-                              if not (
-                                name.startswith('__') or 
-                                name in ignore)
-                            ]))
+    for name in srckeys
+    if not (
+        name.startswith('__') or
+        name in ignore)
+    ]))
 
 
 if __name__ == "__main__":
     import sys
+
     sys.argv.pop(0)
     monkey_patch()
     execfile(sys.argv[0])

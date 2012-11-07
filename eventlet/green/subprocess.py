@@ -20,7 +20,7 @@ class Popen(subprocess_orig.Popen):
     # this __init__() override is to wrap the pipes for eventlet-friendly
     # non-blocking I/O, don't even bother overriding it on Windows.
     if not subprocess_orig.mswindows:
-        def __init__(self, args, bufsize=0, *argss, **kwds):
+        def __init__ (self, args, bufsize = 0, *argss, **kwds):
             # Forward the call to base-class constructor
             subprocess_orig.Popen.__init__(self, args, 0, *argss, **kwds)
             # Now wrap the pipes, if any. This logic is loosely borrowed from 
@@ -30,9 +30,10 @@ class Popen(subprocess_orig.Popen):
                 if pipe is not None and not type(pipe) == greenio.GreenPipe:
                     wrapped_pipe = greenio.GreenPipe(pipe, pipe.mode, bufsize)
                     setattr(self, attr, wrapped_pipe)
+
         __init__.__doc__ = subprocess_orig.Popen.__init__.__doc__
 
-    def wait(self, check_interval=0.01):
+    def wait (self, check_interval = 0.01):
         # Instead of a blocking OS call, this version of wait() uses logic
         # borrowed from the eventlet 0.2 processes.Process.wait() method.
         try:
@@ -48,6 +49,7 @@ class Popen(subprocess_orig.Popen):
                 return -1
             else:
                 raise
+
     wait.__doc__ = subprocess_orig.Popen.wait.__doc__
 
     if not subprocess_orig.mswindows:
@@ -61,7 +63,8 @@ class Popen(subprocess_orig.Popen):
             # 2.4 only has communicate
             _communicate = new.function(subprocess_orig.Popen.communicate.im_func.func_code,
                                         globals())
-            def communicate(self, input=None):
+
+            def communicate (self, input = None):
                 return self._communicate(input)
 
 # Borrow subprocess.call() and check_call(), but patch them so they reference

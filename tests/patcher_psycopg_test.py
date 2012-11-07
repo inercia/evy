@@ -37,20 +37,20 @@ print "done"
 
 class PatchingPsycopg(patcher_test.ProcessBase):
     @skip_unless(postgres_requirement)
-    def test_psycopg_patched(self):
+    def test_psycopg_patched (self):
         if 'PSYCOPG_TEST_DSN' not in os.environ:
             # construct a non-json dsn for the subprocess
             psycopg_auth = get_database_auth()['psycopg2']
-            if isinstance(psycopg_auth,str):
+            if isinstance(psycopg_auth, str):
                 dsn = psycopg_auth
             else:
-                dsn = " ".join(["%s=%s" % (k,v) for k,v, in psycopg_auth.iteritems()])
+                dsn = " ".join(["%s=%s" % (k, v) for k, v, in psycopg_auth.iteritems()])
             os.environ['PSYCOPG_TEST_DSN'] = dsn
         self.write_to_tempfile("psycopg_patcher", psycopg_test_file)
         output, lines = self.launch_subprocess('psycopg_patcher.py')
         if lines[0].startswith('Psycopg not monkeypatched'):
             print "Can't test psycopg2 patching; it's not installed."
             return
-        # if there's anything wrong with the test program it'll have a stack trace
+            # if there's anything wrong with the test program it'll have a stack trace
         self.assert_(lines[0].startswith('done'), output)
 

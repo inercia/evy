@@ -6,11 +6,11 @@ from eventlet.green import select
 
 test = None # bind prior to patcher.inject to silence pyflakes warning below
 patcher.inject('CGIHTTPServer',
-    globals(),
+               globals(),
     ('BaseHTTPServer', BaseHTTPServer),
     ('SimpleHTTPServer', SimpleHTTPServer),
-    ('urllib',  urllib),
-    ('select',  select))
+    ('urllib', urllib),
+    ('select', select))
 
 del patcher
 

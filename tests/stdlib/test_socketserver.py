@@ -9,10 +9,11 @@ from eventlet.green import threading
 
 # to get past the silly 'requires' check
 from test import test_support
+
 test_support.use_resources = ['network']
 
 patcher.inject('test.test_socketserver',
-    globals(),
+               globals(),
     ('SocketServer', SocketServer),
     ('socket', socket),
     ('select', select),
@@ -21,6 +22,7 @@ patcher.inject('test.test_socketserver',
 
 # only a problem with pyevent
 from eventlet import tests
+
 if tests.using_pyevent():
     try:
         SocketServerTest.test_ForkingUDPServer = lambda *a, **kw: None

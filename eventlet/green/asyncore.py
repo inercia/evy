@@ -4,7 +4,7 @@ from eventlet.green import socket
 from eventlet.green import time
 
 patcher.inject("asyncore",
-    globals(),
+               globals(),
     ('select', select),
     ('socket', socket),
     ('time', time))

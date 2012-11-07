@@ -5,22 +5,24 @@ from eventlet import greenthread
 from eventlet.semaphore import Semaphore as LockType
 
 __patched__ = ['get_ident', 'start_new_thread', 'start_new', 'allocate_lock',
-               'allocate', 'exit', 'interrupt_main', 'stack_size', '_local', 
+               'allocate', 'exit', 'interrupt_main', 'stack_size', '_local',
                'LockType', '_count']
 
 error = __thread.error
 __threadcount = 0
 
-def _count():
+def _count ():
     return __threadcount
 
-def get_ident(gr=None):
+
+def get_ident (gr = None):
     if gr is None:
         return id(greenlet.getcurrent())
     else:
         return id(gr)
 
-def __thread_body(func, args, kwargs):
+
+def __thread_body (func, args, kwargs):
     global __threadcount
     __threadcount += 1
     try:
@@ -28,23 +30,24 @@ def __thread_body(func, args, kwargs):
     finally:
         __threadcount -= 1
 
-def start_new_thread(function, args=(), kwargs={}):
+
+def start_new_thread (function, args = (), kwargs = {}):
     g = greenthread.spawn_n(__thread_body, function, args, kwargs)
     return get_ident(g)
-    
+
 start_new = start_new_thread
 
-def allocate_lock(*a):
+def allocate_lock (*a):
     return LockType(1)
 
 allocate = allocate_lock
 
-def exit():
+def exit ():
     raise greenlet.GreenletExit
-    
+
 exit_thread = __thread.exit_thread
 
-def interrupt_main():
+def interrupt_main ():
     curr = greenlet.getcurrent()
     if curr.parent and not curr.parent.dead:
         curr.parent.throw(KeyboardInterrupt())
@@ -53,7 +56,8 @@ def interrupt_main():
 
 if hasattr(__thread, 'stack_size'):
     __original_stack_size__ = __thread.stack_size
-    def stack_size(size=None):
+
+    def stack_size (size = None):
         if size is None:
             return __original_stack_size__()
         if size > __original_stack_size__():

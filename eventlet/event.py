@@ -4,7 +4,7 @@ from eventlet.support import greenlets as greenlet
 __all__ = ['Event']
 
 class NOT_USED:
-    def __repr__(self):
+    def __repr__ (self):
         return 'NOT_USED'
 
 NOT_USED = NOT_USED()
@@ -36,16 +36,17 @@ class Event(object):
     """
     _result = None
     _exc = None
-    def __init__(self):
+
+    def __init__ (self):
         self._waiters = set()
         self.reset()
 
-    def __str__(self):
+    def __str__ (self):
         params = (self.__class__.__name__, hex(id(self)),
                   self._result, self._exc, len(self._waiters))
         return '<%s at %s result=%r _exc=%r _waiters[%d]>' % params
 
-    def reset(self):
+    def reset (self):
         # this is kind of a misfeature and doesn't work perfectly well,
         # it's better to create a new event rather than reset an old one
         # removing documentation so that we don't get new use cases for it
@@ -53,7 +54,7 @@ class Event(object):
         self._result = NOT_USED
         self._exc = None
 
-    def ready(self):
+    def ready (self):
         """ Return true if the :meth:`wait` call will return immediately.
         Used to avoid waiting for things that might take a while to time out.
         For example, you can put a bunch of events into a list, and then visit
@@ -61,13 +62,13 @@ class Event(object):
         and then you can :meth:`wait` on that one."""
         return self._result is not NOT_USED
 
-    def has_exception(self):
+    def has_exception (self):
         return self._exc is not None
 
-    def has_result(self):
+    def has_result (self):
         return self._result is not NOT_USED and self._exc is None
 
-    def poll(self, notready=None):
+    def poll (self, notready = None):
         if self.ready():
             return self.wait()
         return notready
@@ -77,17 +78,17 @@ class Event(object):
     # 1) "poll" does not imply raising
     # 2) it's better not to screw up caller's sys.exc_info() by default
     #    (e.g. if caller wants to calls the function in except or finally)
-    def poll_exception(self, notready=None):
+    def poll_exception (self, notready = None):
         if self.has_exception():
             return self.wait()
         return notready
 
-    def poll_result(self, notready=None):
+    def poll_result (self, notready = None):
         if self.has_result():
             return self.wait()
         return notready
 
-    def wait(self):
+    def wait (self):
         """Wait until another coroutine calls :meth:`send`.
         Returns the value the other coroutine passed to
         :meth:`send`.
@@ -120,7 +121,7 @@ class Event(object):
             current.throw(*self._exc)
         return self._result
 
-    def send(self, result=None, exc=None):
+    def send (self, result = None, exc = None):
         """Makes arrangements for the waiters to be woken with the
         result and then returns immediately to the parent.
 
@@ -157,14 +158,14 @@ class Event(object):
             hub.schedule_call_global(
                 0, self._do_send, self._result, self._exc, waiter)
 
-    def _do_send(self, result, exc, waiter):
+    def _do_send (self, result, exc, waiter):
         if waiter in self._waiters:
             if exc is None:
                 waiter.switch(result)
             else:
                 waiter.throw(*exc)
 
-    def send_exception(self, *args):
+    def send_exception (self, *args):
         """Same as :meth:`send`, but sends an exception to waiters.
         
         The arguments to send_exception are the same as the arguments

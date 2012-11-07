@@ -9,7 +9,7 @@ from eventlet.patcher import slurp_properties
 from eventlet.support import greenlets as greenlet
 
 __patched__ = ['Context', 'Socket']
-slurp_properties(__zmq__, globals(), ignore=__patched__)
+slurp_properties(__zmq__, globals(), ignore = __patched__)
 
 from collections import deque
 
@@ -19,22 +19,23 @@ class _QueueLock(object):
     is called, the threads are awoken in the order they blocked,
     one at a time. This lock can be required recursively by the same
     thread."""
-    def __init__(self):
+
+    def __init__ (self):
         self._waiters = deque()
         self._count = 0
         self._holder = None
         self._hub = hubs.get_hub()
 
-    def __nonzero__(self):
+    def __nonzero__ (self):
         return self._count
 
-    def __enter__(self):
+    def __enter__ (self):
         self.acquire()
-        
-    def __exit__(self, type, value, traceback):
+
+    def __exit__ (self, type, value, traceback):
         self.release()
 
-    def acquire(self):
+    def acquire (self):
         current = greenlet.getcurrent()
         if (self._waiters or self._count > 0) and self._holder is not current:
             # block until lock is free
@@ -48,7 +49,7 @@ class _QueueLock(object):
         self._holder = current
         self._count += 1
 
-    def release(self):
+    def release (self):
         if self._count <= 0:
             raise Exception("Cannot release unacquired lock")
 
@@ -58,22 +59,23 @@ class _QueueLock(object):
             if self._waiters:
                 # wake next
                 self._hub.schedule_call_global(0, self._waiters[0].switch)
-        
+
+
 class _BlockedThread(object):
     """Is either empty, or represents a single blocked thread that
     blocked itself by calling the block() method. The thread can be
     awoken by calling wake(). Wake() can be called multiple times and
     all but the first call will have no effect."""
 
-    def __init__(self):
+    def __init__ (self):
         self._blocked_thread = None
         self._wakeupper = None
         self._hub = hubs.get_hub()
 
-    def __nonzero__(self):
+    def __nonzero__ (self):
         return self._blocked_thread is not None
 
-    def block(self):
+    def block (self):
         if self._blocked_thread is not None:
             raise Exception("Cannot block more than one thread on one BlockedThread")
         self._blocked_thread = greenlet.getcurrent()
@@ -89,7 +91,7 @@ class _BlockedThread(object):
                 self._wakeupper.cancel()
                 self._wakeupper = None
 
-    def wake(self):
+    def wake (self):
         """Schedules the blocked thread to be awoken and return
         True. If wake has already been called or if there is no
         blocked thread, then this call has no effect and returns
@@ -99,11 +101,12 @@ class _BlockedThread(object):
             return True
         return False
 
+
 class Context(__zmq__.Context):
     """Subclass of :class:`zmq.core.context.Context`
     """
 
-    def socket(self, socket_type):
+    def socket (self, socket_type):
         """Overridden method to ensure that the green version of socket is used
 
         Behaves the same as :meth:`zmq.core.context.Context.socket`, but ensures
@@ -114,14 +117,17 @@ class Context(__zmq__.Context):
             raise ZMQError(ENOTSUP)
         return Socket(self, socket_type)
 
-def _wraps(source_fn):
+
+def _wraps (source_fn):
     """A decorator that copies the __name__ and __doc__ from the given
     function
     """
-    def wrapper(dest_fn):
+
+    def wrapper (dest_fn):
         dest_fn.__name__ = source_fn.__name__
         dest_fn.__doc__ = source_fn.__doc__
         return dest_fn
+
     return wrapper
 
 # Implementation notes: Each socket in 0mq contains a pipe that the
@@ -187,7 +193,8 @@ class Socket(_Socket):
         * send_multipart
         * recv_multipart
     """
-    def __init__(self, context, socket_type):
+
+    def __init__ (self, context, socket_type):
         super(Socket, self).__init__(context, socket_type)
 
         self._eventlet_send_event = _BlockedThread()
@@ -195,7 +202,7 @@ class Socket(_Socket):
         self._eventlet_send_lock = _QueueLock()
         self._eventlet_recv_lock = _QueueLock()
 
-        def event(fd):
+        def event (fd):
             # Some events arrived at the zmq socket. This may mean
             # there's a message that can be read or there's space for
             # a message to be written.
@@ -206,7 +213,7 @@ class Socket(_Socket):
         self._eventlet_listener = hub.add(hub.READ, self.getsockopt(FD), event)
 
     @_wraps(_Socket.close)
-    def close(self):
+    def close (self):
         _Socket.close(self)
         if self._eventlet_listener is not None:
             hubs.get_hub().remove(self._eventlet_listener)
@@ -216,7 +223,7 @@ class Socket(_Socket):
             self._eventlet_recv_event.wake()
 
     @_wraps(_Socket.getsockopt)
-    def getsockopt(self, option):
+    def getsockopt (self, option):
         result = _Socket_getsockopt(self, option)
         if option == EVENTS:
             # Getting the events causes the zmq socket to process
@@ -231,7 +238,7 @@ class Socket(_Socket):
         return result
 
     @_wraps(_Socket.send)
-    def send(self, msg, flags=0, copy=True, track=False):
+    def send (self, msg, flags = 0, copy = True, track = False):
         """A send method that's safe to use when multiple greenthreads
         are calling send, send_multipart, recv and recv_multipart on
         the same socket.
@@ -266,7 +273,7 @@ class Socket(_Socket):
 
 
     @_wraps(_Socket.send_multipart)
-    def send_multipart(self, msg_parts, flags=0, copy=True, track=False):
+    def send_multipart (self, msg_parts, flags = 0, copy = True, track = False):
         """A send_multipart method that's safe to use when multiple
         greenthreads are calling send, send_multipart, recv and
         recv_multipart on the same socket.
@@ -280,7 +287,7 @@ class Socket(_Socket):
             return _Socket_send_multipart(self, msg_parts, flags, copy, track)
 
     @_wraps(_Socket.recv)
-    def recv(self, flags=0, copy=True, track=False):
+    def recv (self, flags = 0, copy = True, track = False):
         """A recv method that's safe to use when multiple greenthreads
         are calling send, send_multipart, recv and recv_multipart on
         the same socket.
@@ -311,7 +318,7 @@ class Socket(_Socket):
                     self._eventlet_send_event.wake()
 
     @_wraps(_Socket.recv_multipart)
-    def recv_multipart(self, flags=0, copy=True, track=False):
+    def recv_multipart (self, flags = 0, copy = True, track = False):
         """A recv_multipart method that's safe to use when multiple
         greenthreads are calling send, send_multipart, recv and
         recv_multipart on the same socket.

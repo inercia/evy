@@ -7,7 +7,7 @@ from tests import LimitedTestCase
 from eventlet import greenio
 
 class TestGreenPipeWithStatement(LimitedTestCase):
-    def test_pipe_context(self):
+    def test_pipe_context (self):
         # ensure using a pipe as a context actually closes it.
         r, w = os.pipe()
 

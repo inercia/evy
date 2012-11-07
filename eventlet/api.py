@@ -19,24 +19,28 @@ __all__ = [
     'unspew', 'use_hub', 'with_timeout', 'timeout']
 
 warnings.warn("eventlet.api is deprecated!  Nearly everything in it has moved "
-    "to the eventlet module.", DeprecationWarning, stacklevel=2)
+              "to the eventlet module.", DeprecationWarning, stacklevel = 2)
 
-def get_hub(*a, **kw):
+def get_hub (*a, **kw):
     warnings.warn("eventlet.api.get_hub has moved to eventlet.hubs.get_hub",
-        DeprecationWarning, stacklevel=2)
-    return hubs.get_hub(*a, **kw)    
-def get_default_hub(*a, **kw):
-    warnings.warn("eventlet.api.get_default_hub has moved to"
-        " eventlet.hubs.get_default_hub",
-        DeprecationWarning, stacklevel=2)
-    return hubs.get_default_hub(*a, **kw)
-def use_hub(*a, **kw):
-    warnings.warn("eventlet.api.use_hub has moved to eventlet.hubs.use_hub",
-        DeprecationWarning, stacklevel=2)
-    return hubs.use_hub(*a, **kw)
-    
+                  DeprecationWarning, stacklevel = 2)
+    return hubs.get_hub(*a, **kw)
 
-def switch(coro, result=None, exc=None):
+
+def get_default_hub (*a, **kw):
+    warnings.warn("eventlet.api.get_default_hub has moved to"
+                  " eventlet.hubs.get_default_hub",
+                  DeprecationWarning, stacklevel = 2)
+    return hubs.get_default_hub(*a, **kw)
+
+
+def use_hub (*a, **kw):
+    warnings.warn("eventlet.api.use_hub has moved to eventlet.hubs.use_hub",
+                  DeprecationWarning, stacklevel = 2)
+    return hubs.use_hub(*a, **kw)
+
+
+def switch (coro, result = None, exc = None):
     if exc is not None:
         return coro.throw(exc)
     return coro.switch(result)
@@ -44,21 +48,24 @@ def switch(coro, result=None, exc=None):
 Greenlet = greenlet.greenlet
 
 
-def tcp_listener(address, backlog=50):
+def tcp_listener (address, backlog = 50):
     """
     Listen on the given ``(ip, port)`` *address* with a TCP socket.  Returns a
     socket object on which one should call ``accept()`` to accept a connection
     on the newly bound socket.
     """
-    warnings.warn("""eventlet.api.tcp_listener is deprecated.  Please use eventlet.listen instead.""",
-        DeprecationWarning, stacklevel=2)
+    warnings.warn(
+        """eventlet.api.tcp_listener is deprecated.  Please use eventlet.listen instead.""",
+        DeprecationWarning, stacklevel = 2)
 
     from eventlet import greenio, util
+
     socket = greenio.GreenSocket(util.tcp_socket())
-    util.socket_bind_and_listen(socket, address, backlog=backlog)
+    util.socket_bind_and_listen(socket, address, backlog = backlog)
     return socket
 
-def ssl_listener(address, certificate, private_key):
+
+def ssl_listener (address, certificate, private_key):
     """Listen on the given (ip, port) *address* with a TCP socket that
     can do SSL.  Primarily useful for unit tests, don't use in production.
 
@@ -68,8 +75,10 @@ def ssl_listener(address, certificate, private_key):
     Returns a socket object on which one should call ``accept()`` to
     accept a connection on the newly bound socket.
     """
-    warnings.warn("""eventlet.api.ssl_listener is deprecated.  Please use eventlet.wrap_ssl(eventlet.listen()) instead.""",
-        DeprecationWarning, stacklevel=2)
+    warnings.warn(
+        """eventlet.api.ssl_listener is deprecated.  Please use eventlet.wrap_ssl(eventlet.listen()) instead."""
+        ,
+        DeprecationWarning, stacklevel = 2)
     from eventlet import util
     import socket
 
@@ -78,15 +87,18 @@ def ssl_listener(address, certificate, private_key):
     socket.listen(50)
     return socket
 
-def connect_tcp(address, localaddr=None):
+
+def connect_tcp (address, localaddr = None):
     """
     Create a TCP connection to address ``(host, port)`` and return the socket.
     Optionally, bind to localaddr ``(host, port)`` first.
     """
-    warnings.warn("""eventlet.api.connect_tcp is deprecated.  Please use eventlet.connect instead.""",
-        DeprecationWarning, stacklevel=2)
-        
+    warnings.warn(
+        """eventlet.api.connect_tcp is deprecated.  Please use eventlet.connect instead.""",
+        DeprecationWarning, stacklevel = 2)
+
     from eventlet import greenio, util
+
     desc = greenio.GreenSocket(util.tcp_socket())
     if localaddr is not None:
         desc.bind(localaddr)
@@ -100,7 +112,6 @@ trampoline = hubs.trampoline
 spawn = greenthread.spawn
 spawn_n = greenthread.spawn_n
 
-
 kill = greenthread.kill
 
 call_after = greenthread.call_after
@@ -111,9 +122,11 @@ call_after_global = greenthread.call_after_global
 class _SilentException(BaseException):
     pass
 
+
 class FakeTimer(object):
-    def cancel(self):
+    def cancel (self):
         pass
+
 
 class timeout(object):
     """Raise an exception in the block after timeout.
@@ -137,7 +150,7 @@ class timeout(object):
     When *exc* is ``None``, code block is interrupted silently.
     """
 
-    def __init__(self, seconds, *throw_args):
+    def __init__ (self, seconds, *throw_args):
         self.seconds = seconds
         if seconds is None:
             return
@@ -148,22 +161,22 @@ class timeout(object):
         else:
             self.throw_args = throw_args
 
-    def __enter__(self):
+    def __enter__ (self):
         if self.seconds is None:
             self.timer = FakeTimer()
         else:
             self.timer = exc_after(self.seconds, *self.throw_args)
         return self.timer
 
-    def __exit__(self, typ, value, tb):
+    def __exit__ (self, typ, value, tb):
         self.timer.cancel()
         if typ is _SilentException and value in self.throw_args:
             return True
 
 with_timeout = greenthread.with_timeout
 
-exc_after = greenthread.exc_after  
-    
+exc_after = greenthread.exc_after
+
 sleep = greenthread.sleep
 
 getcurrent = greenlet.getcurrent
@@ -173,7 +186,7 @@ spew = debug.spew
 unspew = debug.unspew
 
 
-def named(name):
+def named (name):
     """Return an object given its name.
 
     The name uses a module-like syntax, eg::
@@ -196,7 +209,8 @@ def named(name):
             import_err_strings.append(err.__str__())
             toimport = '.'.join(toimport.split('.')[:-1])
     if obj is None:
-        raise ImportError('%s could not be imported.  Import errors: %r' % (name, import_err_strings))
+        raise ImportError(
+            '%s could not be imported.  Import errors: %r' % (name, import_err_strings))
     for seg in name.split('.')[1:]:
         try:
             obj = getattr(obj, seg)

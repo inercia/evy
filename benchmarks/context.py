@@ -10,7 +10,7 @@ from eventlet.hubs import pyevent, epolls, poll, selects
 
 CONTEXT_SWITCHES = 100000
 
-def run(event, wait_event):
+def run (event, wait_event):
     counter = 0
     while counter <= CONTEXT_SWITCHES:
         wait_event.wait()
@@ -18,7 +18,8 @@ def run(event, wait_event):
         counter += 1
         event.send()
 
-def test_eventlet():
+
+def test_eventlet ():
     event1 = eventlet.event.Event()
     event2 = eventlet.event.Event()
     event1.send()
@@ -28,22 +29,23 @@ def test_eventlet():
     thread1.wait()
     thread2.wait()
 
+
 class BenchThread(threading.Thread):
-    def __init__(self, event, wait_event):
+    def __init__ (self, event, wait_event):
         threading.Thread.__init__(self)
         self.counter = 0
         self.event = event
         self.wait_event = wait_event
 
-    def run(self):
+    def run (self):
         while self.counter <= CONTEXT_SWITCHES:
             self.wait_event.wait()
             self.wait_event.clear()
             self.counter += 1
             self.event.set()
 
-def test_thread():
 
+def test_thread ():
     event1 = threading.Event()
     event2 = threading.Event()
     event1.set()

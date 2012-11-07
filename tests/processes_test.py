@@ -4,15 +4,16 @@ from tests import LimitedTestCase, main, skip_on_windows
 
 warnings.simplefilter('ignore', DeprecationWarning)
 from eventlet import processes, api
+
 warnings.simplefilter('default', DeprecationWarning)
 
 class TestEchoPool(LimitedTestCase):
-    def setUp(self):
+    def setUp (self):
         super(TestEchoPool, self).setUp()
         self.pool = processes.ProcessPool('echo', ["hello"])
 
     @skip_on_windows
-    def test_echo(self):
+    def test_echo (self):
         result = None
 
         proc = self.pool.get()
@@ -23,7 +24,7 @@ class TestEchoPool(LimitedTestCase):
         self.assertEquals(result, 'hello\n')
 
     @skip_on_windows
-    def test_read_eof(self):
+    def test_read_eof (self):
         proc = self.pool.get()
         try:
             proc.read()
@@ -31,21 +32,21 @@ class TestEchoPool(LimitedTestCase):
         finally:
             self.pool.put(proc)
 
-    @skip_on_windows    
-    def test_empty_echo(self):
+    @skip_on_windows
+    def test_empty_echo (self):
         p = processes.Process('echo', ['-n'])
         self.assertEquals('', p.read())
         self.assertRaises(processes.DeadProcess, p.read)
-            
+
 
 class TestCatPool(LimitedTestCase):
-    def setUp(self):
+    def setUp (self):
         super(TestCatPool, self).setUp()
         api.sleep(0)
         self.pool = processes.ProcessPool('cat')
 
     @skip_on_windows
-    def test_cat(self):
+    def test_cat (self):
         result = None
 
         proc = self.pool.get()
@@ -59,7 +60,7 @@ class TestCatPool(LimitedTestCase):
         self.assertEquals(result, 'goodbye')
 
     @skip_on_windows
-    def test_write_to_dead(self):
+    def test_write_to_dead (self):
         result = None
 
         proc = self.pool.get()
@@ -72,7 +73,7 @@ class TestCatPool(LimitedTestCase):
             self.pool.put(proc)
 
     @skip_on_windows
-    def test_close(self):
+    def test_close (self):
         result = None
 
         proc = self.pool.get()
@@ -85,12 +86,12 @@ class TestCatPool(LimitedTestCase):
 
 
 class TestDyingProcessesLeavePool(LimitedTestCase):
-    def setUp(self):
+    def setUp (self):
         super(TestDyingProcessesLeavePool, self).setUp()
-        self.pool = processes.ProcessPool('echo', ['hello'], max_size=1)
+        self.pool = processes.ProcessPool('echo', ['hello'], max_size = 1)
 
     @skip_on_windows
-    def test_dead_process_not_inserted_into_pool(self):
+    def test_dead_process_not_inserted_into_pool (self):
         proc = self.pool.get()
         try:
             try:

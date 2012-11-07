@@ -32,7 +32,8 @@ profile_orig = __import__('profile')
 __all__ = profile_orig.__all__
 
 from eventlet.patcher import slurp_properties
-slurp_properties(profile_orig, globals(), srckeys=dir(profile_orig))
+
+slurp_properties(profile_orig, globals(), srckeys = dir(profile_orig))
 
 import new
 import sys
@@ -41,27 +42,29 @@ import functools
 
 from eventlet import greenthread
 from eventlet import patcher
+
 thread = patcher.original('thread')  # non-monkeypatched module needed
 
 #This class provides the start() and stop() functions
 class Profile(profile_orig.Profile):
     base = profile_orig.Profile
-    def __init__(self, timer = None, bias=None):
+
+    def __init__ (self, timer = None, bias = None):
         self.current_tasklet = greenthread.getcurrent()
         self.thread_id = thread.get_ident()
         self.base.__init__(self, timer, bias)
         self.sleeping = {}
 
-    def __call__(self, *args):
+    def __call__ (self, *args):
         "make callable, allowing an instance to be the profiler"
-        r =  self.dispatcher(*args)
+        r = self.dispatcher(*args)
 
-    def _setup(self):
+    def _setup (self):
         self.cur, self.timings, self.current_tasklet = None, {}, greenthread.getcurrent()
         self.thread_id = thread.get_ident()
         self.simulate_call("profiler")
 
-    def start(self, name = "start"):
+    def start (self, name = "start"):
         if getattr(self, "running", False):
             return
         self._setup()
@@ -69,21 +72,21 @@ class Profile(profile_orig.Profile):
         self.running = True
         sys.setprofile(self.dispatcher)
 
-    def stop(self):
+    def stop (self):
         sys.setprofile(None)
         self.running = False
         self.TallyTimings()
 
     #special cases for the original run commands, makin sure to
     #clear the timer context.
-    def runctx(self, cmd, globals, locals):
+    def runctx (self, cmd, globals, locals):
         self._setup()
         try:
             return profile_orig.Profile.runctx(self, cmd, globals, locals)
         finally:
             self.TallyTimings()
 
-    def runcall(self, func, *args, **kw):
+    def runcall (self, func, *args, **kw):
         self._setup()
         try:
             return profile_orig.Profile.runcall(self, func, *args, **kw)
@@ -91,7 +94,7 @@ class Profile(profile_orig.Profile):
             self.TallyTimings()
 
 
-    def trace_dispatch_return_extend_back(self, frame, t):
+    def trace_dispatch_return_extend_back (self, frame, t):
         """A hack function to override error checking in parent class.  It
         allows invalid returns (where frames weren't preveiously entered into
         the profiler) which can happen for all the tasklets that suddenly start
@@ -103,12 +106,12 @@ class Profile(profile_orig.Profile):
             self.trace_dispatch_call(frame, 0)
         return self.trace_dispatch_return(frame, t);
 
-    def trace_dispatch_c_return_extend_back(self, frame, t):
+    def trace_dispatch_c_return_extend_back (self, frame, t):
         #same for c return
         if isinstance(self.cur[-2], Profile.fake_frame):
             return False #ignore bogus returns
             self.trace_dispatch_c_call(frame, 0)
-        return self.trace_dispatch_return(frame,t)
+        return self.trace_dispatch_return(frame, t)
 
 
     #Add "return safety" to the dispatchers
@@ -118,10 +121,10 @@ class Profile(profile_orig.Profile):
         "c_return": trace_dispatch_c_return_extend_back,
         })
 
-    def SwitchTasklet(self, t0, t1, t):
+    def SwitchTasklet (self, t0, t1, t):
         #tally the time spent in the old tasklet
         pt, it, et, fn, frame, rcur = self.cur
-        cur = (pt, it+t, et, fn, frame, rcur)
+        cur = (pt, it + t, et, fn, frame, rcur)
 
         #we are switching to a new tasklet, store the old
         self.sleeping[t0] = cur, self.timings
@@ -136,21 +139,22 @@ class Profile(profile_orig.Profile):
             self.simulate_call("new_tasklet")
 
 
-    def ContextWrap(f):
+    def ContextWrap (f):
         @functools.wraps(f)
-        def ContextWrapper(self, arg, t):
+        def ContextWrapper (self, arg, t):
             current = greenthread.getcurrent()
             if current != self.current_tasklet:
                 self.SwitchTasklet(self.current_tasklet, current, t)
                 t = 0.0 #the time was billed to the previous tasklet
             return f(self, arg, t)
+
         return ContextWrapper
 
     #Add automatic tasklet detection to the callbacks.
-    dispatch = dict([(key, ContextWrap(val)) for key,val in dispatch.iteritems()])
+    dispatch = dict([(key, ContextWrap(val)) for key, val in dispatch.iteritems()])
 
 
-    def TallyTimings(self):
+    def TallyTimings (self):
         oldtimings = self.sleeping
         self.sleeping = {}
 
@@ -160,31 +164,31 @@ class Profile(profile_orig.Profile):
         #we must keep the timings dicts separate for each tasklet, since it contains
         #the 'ns' item, recursion count of each function in that tasklet.  This is
         #used in the Unwind dude.
-        for tasklet, (cur,timings) in oldtimings.iteritems():
+        for tasklet, (cur, timings) in oldtimings.iteritems():
             self.Unwind(cur, timings)
 
-            for k,v in timings.iteritems():
+            for k, v in timings.iteritems():
                 if k not in self.timings:
                     self.timings[k] = v
                 else:
                     #accumulate all to the self.timings
                     cc, ns, tt, ct, callers = self.timings[k]
                     #ns should be 0 after unwinding
-                    cc+=v[0]
-                    tt+=v[2]
-                    ct+=v[3]
-                    for k1,v1 in v[4].iteritems():
-                        callers[k1] = callers.get(k1, 0)+v1
+                    cc += v[0]
+                    tt += v[2]
+                    ct += v[3]
+                    for k1, v1 in v[4].iteritems():
+                        callers[k1] = callers.get(k1, 0) + v1
                     self.timings[k] = cc, ns, tt, ct, callers
 
 
-    def Unwind(self, cur, timings):
+    def Unwind (self, cur, timings):
         "A function to unwind a 'cur' frame and tally the results"
         "see profile.trace_dispatch_return() for details"
         #also see simulate_cmd_complete()
         while(cur[-1]):
             rpt, rit, ret, rfn, frame, rcur = cur
-            frame_total = rit+ret
+            frame_total = rit + ret
 
             if rfn in timings:
                 cc, ns, tt, ct, callers = timings[rfn]
@@ -213,7 +217,7 @@ class Profile(profile_orig.Profile):
         return cur
 
 # run statements shamelessly stolen from profile.py
-def run(statement, filename=None, sort=-1):
+def run (statement, filename = None, sort = -1):
     """Run statement under profiler optionally saving results in filename
 
     This function takes a single argument that can be passed to the
@@ -234,7 +238,8 @@ def run(statement, filename=None, sort=-1):
     else:
         return prof.print_stats(sort)
 
-def runctx(statement, globals, locals, filename=None):
+
+def runctx (statement, globals, locals, filename = None):
     """Run statement under profiler, supplying your own globals and locals,
     optionally saving results in filename.
 

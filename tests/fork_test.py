@@ -2,7 +2,7 @@ from tests.patcher_test import ProcessBase
 
 
 class ForkTest(ProcessBase):
-    def test_simple(self):
+    def test_simple (self):
         newmod = '''
 import eventlet
 import os

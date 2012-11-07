@@ -10,11 +10,10 @@ from eventlet.twistedutil.protocol import SpawnFactory
 from eventlet.twistedutil.protocols.basic import LineOnlyReceiverTransport
 
 class Chat:
-
-    def __init__(self):
+    def __init__ (self):
         self.participants = []
 
-    def handler(self, conn):
+    def handler (self, conn):
         peer = conn.getPeer()
         print 'new connection from %s' % (peer, )
         conn.write("Welcome! There're %s participants already\n" % (len(self.participants)))
@@ -37,6 +36,7 @@ class Chat:
 print __doc__
 chat = Chat()
 from twisted.internet import reactor
+
 reactor.listenTCP(8007, SpawnFactory(chat.handler, LineOnlyReceiverTransport))
 reactor.run()
 

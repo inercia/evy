@@ -7,9 +7,9 @@ import linecache
 import re
 import inspect
 
-__all__ = ['spew', 'unspew', 'format_hub_listeners', 'format_hub_timers', 
-           'hub_listener_stacks', 'hub_exceptions', 'tpool_exceptions', 
-           'hub_prevent_multiple_readers', 'hub_timer_stacks', 
+__all__ = ['spew', 'unspew', 'format_hub_listeners', 'format_hub_timers',
+           'hub_listener_stacks', 'hub_exceptions', 'tpool_exceptions',
+           'hub_prevent_multiple_readers', 'hub_timer_stacks',
            'hub_blocking_detection']
 
 _token_splitter = re.compile('\W+')
@@ -17,11 +17,12 @@ _token_splitter = re.compile('\W+')
 class Spew(object):
     """
     """
-    def __init__(self, trace_names=None, show_values=True):
+
+    def __init__ (self, trace_names = None, show_values = True):
         self.trace_names = trace_names
         self.show_values = show_values
 
-    def __call__(self, frame, event, arg):
+    def __call__ (self, frame, event, arg):
         if event == 'line':
             lineno = frame.f_lineno
             if '__file__' in frame.f_globals:
@@ -55,25 +56,26 @@ class Spew(object):
         return self
 
 
-def spew(trace_names=None, show_values=False):
+def spew (trace_names = None, show_values = False):
     """Install a trace hook which writes incredibly detailed logs
     about what code is being executed to stdout.
     """
     sys.settrace(Spew(trace_names, show_values))
 
 
-def unspew():
+def unspew ():
     """Remove the trace hook installed by spew.
     """
     sys.settrace(None)
-    
-    
-def format_hub_listeners():
+
+
+def format_hub_listeners ():
     """ Returns a formatted string of the current listeners on the current
     hub.  This can be useful in determining what's going on in the event system,
     especially when used in conjunction with :func:`hub_listener_stacks`.
     """
     from eventlet import hubs
+
     hub = hubs.get_hub()
     result = ['READERS:']
     for l in hub.get_readers():
@@ -83,19 +85,22 @@ def format_hub_listeners():
         result.append(repr(l))
     return os.linesep.join(result)
 
-def format_hub_timers():
+
+def format_hub_timers ():
     """ Returns a formatted string of the current timers on the current
     hub.  This can be useful in determining what's going on in the event system,
     especially when used in conjunction with :func:`hub_timer_stacks`.
     """
     from eventlet import hubs
+
     hub = hubs.get_hub()
     result = ['TIMERS:']
     for l in hub.timers:
         result.append(repr(l))
     return os.linesep.join(result)
-    
-def hub_listener_stacks(state = False):
+
+
+def hub_listener_stacks (state = False):
     """Toggles whether or not the hub records the stack when clients register 
     listeners on file descriptors.  This can be useful when trying to figure 
     out what the hub is up to at any given moment.  To inspect the stacks
@@ -103,37 +108,48 @@ def hub_listener_stacks(state = False):
     junctures in the application logic.
     """
     from eventlet import hubs
+
     hubs.get_hub().set_debug_listeners(state)
-    
-def hub_timer_stacks(state = False):
+
+
+def hub_timer_stacks (state = False):
     """Toggles whether or not the hub records the stack when timers are set.  
     To inspect the stacks of the current timers, call :func:`format_hub_timers` 
     at critical junctures in the application logic.
     """
     from eventlet.hubs import timer
+
     timer._g_debug = state
 
-def hub_prevent_multiple_readers(state = True):
+
+def hub_prevent_multiple_readers (state = True):
     from eventlet.hubs import hub
+
     hub.g_prevent_multiple_readers = state
-    
-def hub_exceptions(state = True):
+
+
+def hub_exceptions (state = True):
     """Toggles whether the hub prints exceptions that are raised from its
     timers.  This can be useful to see how greenthreads are terminating.
     """
     from eventlet import hubs
+
     hubs.get_hub().set_timer_exceptions(state)
     from eventlet import greenpool
+
     greenpool.DEBUG = state
-    
-def tpool_exceptions(state = False):
+
+
+def tpool_exceptions (state = False):
     """Toggles whether tpool itself prints exceptions that are raised from 
     functions that are executed in it, in addition to raising them like
     it normally does."""
     from eventlet import tpool
+
     tpool.QUIET = not state
 
-def hub_blocking_detection(state = False, resolution = 1):
+
+def hub_blocking_detection (state = False, resolution = 1):
     """Toggles whether Eventlet makes an effort to detect blocking
     behavior in an application.
 
@@ -151,6 +167,7 @@ def hub_blocking_detection(state = False, resolution = 1):
     positives.
     """
     from eventlet import hubs
+
     assert resolution > 0
     hubs.get_hub().debug_blocking = state
     hubs.get_hub().debug_blocking_resolution = resolution

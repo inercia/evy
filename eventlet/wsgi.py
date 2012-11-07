@@ -18,8 +18,8 @@ MAX_REQUEST_LINE = 8192
 MAX_HEADER_LINE = 8192
 MAX_TOTAL_HEADER_SIZE = 65536
 MINIMUM_CHUNK_SIZE = 4096
-DEFAULT_LOG_FORMAT= ('%(client_ip)s - - [%(date_time)s] "%(request_line)s"'
-                     ' %(status_code)s %(body_length)s %(wall_seconds).6f')
+DEFAULT_LOG_FORMAT = ('%(client_ip)s - - [%(date_time)s] "%(request_line)s"'
+                      ' %(status_code)s %(body_length)s %(wall_seconds).6f')
 
 __all__ = ['server', 'format_date_time']
 
@@ -29,12 +29,12 @@ _monthname = [None, # Dummy so we can use 1-based month numbers
               "Jan", "Feb", "Mar", "Apr", "May", "Jun",
               "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
 
-def format_date_time(timestamp):
+def format_date_time (timestamp):
     """Formats a unix timestamp into an HTTP standard string."""
     year, month, day, hh, mm, ss, wd, _y, _z = time.gmtime(timestamp)
     return "%s, %02d %3s %4d %02d:%02d:%02d GMT" % (
         _weekdayname[wd], day, _monthname[month], year, hh, mm, ss
-    )
+        )
 
 # Collections of error codes to compare against.  Not all attributes are set
 # on errno module on all platforms, so some are literals :(
@@ -43,23 +43,21 @@ BROKEN_SOCK = set((errno.EPIPE, errno.ECONNRESET))
 
 # special flag return value for apps
 class _AlreadyHandled(object):
-
-    def __iter__(self):
+    def __iter__ (self):
         return self
 
-    def next(self):
+    def next (self):
         raise StopIteration
 
 ALREADY_HANDLED = _AlreadyHandled()
 
 class Input(object):
-    def __init__(self,
-                 rfile,
-                 content_length,
-                 wfile=None,
-                 wfile_line=None,
-                 chunked_input=False):
-
+    def __init__ (self,
+                  rfile,
+                  content_length,
+                  wfile = None,
+                  wfile_line = None,
+                  chunked_input = False):
         self.rfile = rfile
         if content_length is not None:
             content_length = int(content_length)
@@ -72,7 +70,7 @@ class Input(object):
         self.chunked_input = chunked_input
         self.chunk_length = -1
 
-    def _do_read(self, reader, length=None):
+    def _do_read (self, reader, length = None):
         if self.wfile is not None:
             ## 100 Continue
             self.wfile.write(self.wfile_line)
@@ -92,7 +90,7 @@ class Input(object):
         self.position += len(read)
         return read
 
-    def _chunked_read(self, rfile, length=None, use_readline=False):
+    def _chunked_read (self, rfile, length = None, use_readline = False):
         if self.wfile is not None:
             ## 100 Continue
             self.wfile.write(self.wfile_line)
@@ -144,24 +142,24 @@ class Input(object):
             pass
         return ''.join(response)
 
-    def read(self, length=None):
+    def read (self, length = None):
         if self.chunked_input:
             return self._chunked_read(self.rfile, length)
         return self._do_read(self.rfile.read, length)
 
-    def readline(self, size=None):
+    def readline (self, size = None):
         if self.chunked_input:
             return self._chunked_read(self.rfile, size, True)
         else:
             return self._do_read(self.rfile.readline, size)
 
-    def readlines(self, hint=None):
+    def readlines (self, hint = None):
         return self._do_read(self.rfile.readlines, hint)
 
-    def __iter__(self):
+    def __iter__ (self):
         return iter(self.read())
 
-    def get_socket(self):
+    def get_socket (self):
         return self.rfile._sock
 
 
@@ -174,12 +172,11 @@ class HeadersTooLarge(Exception):
 
 
 class FileObjectForHeaders(object):
-
-    def __init__(self, fp):
+    def __init__ (self, fp):
         self.fp = fp
         self.total_header_size = 0
 
-    def readline(self, size=-1):
+    def readline (self, size = -1):
         sz = size
         if size < 0:
             sz = MAX_HEADER_LINE
@@ -196,7 +193,7 @@ class HttpProtocol(BaseHTTPServer.BaseHTTPRequestHandler):
     protocol_version = 'HTTP/1.1'
     minimum_chunk_size = MINIMUM_CHUNK_SIZE
 
-    def setup(self):
+    def setup (self):
         # overriding SocketServer.setup to correctly handle SSL.Connection objects
         conn = self.connection = self.request
         try:
@@ -212,7 +209,7 @@ class HttpProtocol(BaseHTTPServer.BaseHTTPRequestHandler):
                 raise NotImplementedError("wsgi.py doesn't support sockets "\
                                           "of type %s" % type(conn))
 
-    def handle_one_request(self):
+    def handle_one_request (self):
         if self.server.max_http_version:
             self.protocol_version = self.server.max_http_version
 
@@ -283,7 +280,7 @@ class HttpProtocol(BaseHTTPServer.BaseHTTPRequestHandler):
         finally:
             self.server.outstanding_requests -= 1
 
-    def handle_one_response(self):
+    def handle_one_response (self):
         start = time.time()
         headers_set = []
         headers_sent = []
@@ -294,7 +291,7 @@ class HttpProtocol(BaseHTTPServer.BaseHTTPRequestHandler):
         length = [0]
         status_code = [200]
 
-        def write(data, _writelines=wfile.writelines):
+        def write (data, _writelines = wfile.writelines):
             towrite = []
             if not headers_set:
                 raise AssertionError("write() before start_response()")
@@ -312,14 +309,14 @@ class HttpProtocol(BaseHTTPServer.BaseHTTPRequestHandler):
 
                 client_conn = self.headers.get('Connection', '').lower()
                 send_keep_alive = False
-                if self.close_connection == 0 and \
-                   self.server.keepalive and (client_conn == 'keep-alive' or \
-                    (self.request_version == 'HTTP/1.1' and
-                     not client_conn == 'close')):
-                        # only send keep-alives back to clients that sent them,
-                        # it's redundant for 1.1 connections
-                        send_keep_alive = (client_conn == 'keep-alive')
-                        self.close_connection = 0
+                if self.close_connection == 0 and\
+                   self.server.keepalive and (client_conn == 'keep-alive' or\
+                                              (self.request_version == 'HTTP/1.1' and
+                                               not client_conn == 'close')):
+                    # only send keep-alives back to clients that sent them,
+                    # it's redundant for 1.1 connections
+                    send_keep_alive = (client_conn == 'keep-alive')
+                    self.close_connection = 0
                 else:
                     self.close_connection = 1
 
@@ -347,19 +344,29 @@ class HttpProtocol(BaseHTTPServer.BaseHTTPRequestHandler):
                 _writelines(towrite)
                 length[0] = length[0] + sum(map(len, towrite))
             except UnicodeEncodeError:
-                self.server.log_message("Encountered non-ascii unicode while attempting to write wsgi response: %r" % [x for x in towrite if isinstance(x, unicode)])
+                self.server.log_message(
+                    "Encountered non-ascii unicode while attempting to write wsgi response: %r" % [x
+                                                                                                   for
+                                                                                                   x
+                                                                                                   in
+                                                                                                   towrite
+                                                                                                   if
+                                                                                                   isinstance(
+                                                                                                       x
+                                                                                                       ,
+                                                                                                       unicode)])
                 self.server.log_message(traceback.format_exc())
                 _writelines(
                     ["HTTP/1.1 500 Internal Server Error\r\n",
-                    "Connection: close\r\n",
-                    "Content-type: text/plain\r\n",
-                    "Content-length: 98\r\n",
-                    "Date: %s\r\n" % format_date_time(time.time()),
-                    "\r\n",
-                    ("Internal Server Error: wsgi application passed "
-                     "a unicode object to the server instead of a string.")])
+                     "Connection: close\r\n",
+                     "Content-type: text/plain\r\n",
+                     "Content-length: 98\r\n",
+                     "Date: %s\r\n" % format_date_time(time.time()),
+                     "\r\n",
+                        ("Internal Server Error: wsgi application passed "
+                         "a unicode object to the server instead of a string.")])
 
-        def start_response(status, response_headers, exc_info=None):
+        def start_response (status, response_headers, exc_info = None):
             status_code[0] = status.split()[0]
             if exc_info:
                 try:
@@ -372,7 +379,7 @@ class HttpProtocol(BaseHTTPServer.BaseHTTPRequestHandler):
 
             capitalized_headers = [('-'.join([x.capitalize()
                                               for x in key.split('-')]), value)
-                                   for key, value in response_headers]
+            for key, value in response_headers]
 
             headers_set[:] = [status, capitalized_headers]
             return write
@@ -384,8 +391,8 @@ class HttpProtocol(BaseHTTPServer.BaseHTTPRequestHandler):
                     or isinstance(getattr(result, '_obj', None), _AlreadyHandled)):
                     self.close_connection = 1
                     return
-                if not headers_sent and hasattr(result, '__len__') and \
-                        'Content-Length' not in [h for h, _v in headers_set[1]]:
+                if not headers_sent and hasattr(result, '__len__') and\
+                   'Content-Length' not in [h for h, _v in headers_set[1]]:
                     headers_set[1].append(('Content-Length', str(sum(map(len, result)))))
                 towrite = []
                 towrite_size = 0
@@ -412,15 +419,15 @@ class HttpProtocol(BaseHTTPServer.BaseHTTPRequestHandler):
                     if(self.server.debug):
                         err_body = tb
                     start_response("500 Internal Server Error",
-                                   [('Content-type', 'text/plain'),
-                                    ('Content-length', len(err_body))])
+                        [('Content-type', 'text/plain'),
+                            ('Content-length', len(err_body))])
                     write(err_body)
         finally:
             if hasattr(result, 'close'):
                 result.close()
             if (self.environ['eventlet.input'].chunked_input or
-                    self.environ['eventlet.input'].position \
-                    < self.environ['eventlet.input'].content_length):
+                self.environ['eventlet.input'].position\
+                < self.environ['eventlet.input'].content_length):
                 ## Read and discard body if there was no pending 100-continue
                 if not self.environ['eventlet.input'].wfile:
                     while self.environ['eventlet.input'].read(MINIMUM_CHUNK_SIZE):
@@ -429,18 +436,17 @@ class HttpProtocol(BaseHTTPServer.BaseHTTPRequestHandler):
 
             for hook, args, kwargs in self.environ['eventlet.posthooks']:
                 hook(self.environ, *args, **kwargs)
-            
-            if self.server.log_output:
-                
-                self.server.log_message(self.server.log_format % dict(
-                    client_ip=self.get_client_ip(),
-                    date_time=self.log_date_time_string(),
-                    request_line=self.requestline,
-                    status_code=status_code[0],
-                    body_length=length[0],
-                    wall_seconds=finish - start))
 
-    def get_client_ip(self):
+            if self.server.log_output:
+                self.server.log_message(self.server.log_format % dict(
+                    client_ip = self.get_client_ip(),
+                    date_time = self.log_date_time_string(),
+                    request_line = self.requestline,
+                    status_code = status_code[0],
+                    body_length = length[0],
+                    wall_seconds = finish - start))
+
+    def get_client_ip (self):
         client_ip = self.client_address[0]
         if self.server.log_x_forwarded_for:
             forward = self.headers.get('X-Forwarded-For', '').replace(' ', '')
@@ -448,7 +454,7 @@ class HttpProtocol(BaseHTTPServer.BaseHTTPRequestHandler):
                 client_ip = "%s,%s" % (forward, client_ip)
         return client_ip
 
-    def get_environ(self):
+    def get_environ (self):
         env = self.server.get_environ()
         env['REQUEST_METHOD'] = self.command
         env['SCRIPT_NAME'] = ''
@@ -495,36 +501,34 @@ class HttpProtocol(BaseHTTPServer.BaseHTTPRequestHandler):
             wfile_line = None
         chunked = env.get('HTTP_TRANSFER_ENCODING', '').lower() == 'chunked'
         env['wsgi.input'] = env['eventlet.input'] = Input(
-            self.rfile, length, wfile=wfile, wfile_line=wfile_line,
-            chunked_input=chunked)
+            self.rfile, length, wfile = wfile, wfile_line = wfile_line,
+            chunked_input = chunked)
         env['eventlet.posthooks'] = []
 
         return env
 
-    def finish(self):
+    def finish (self):
         BaseHTTPServer.BaseHTTPRequestHandler.finish(self)
         greenio.shutdown_safe(self.connection)
         self.connection.close()
 
 
-
 class Server(BaseHTTPServer.HTTPServer):
-    def __init__(self,
-                 socket,
-                 address,
-                 app,
-                 log=None,
-                 environ=None,
-                 max_http_version=None,
-                 protocol=HttpProtocol,
-                 minimum_chunk_size=None,
-                 log_x_forwarded_for=True,
-                 keepalive=True,
-                 log_output=True,
-                 log_format=DEFAULT_LOG_FORMAT,
-                 url_length_limit=MAX_REQUEST_LINE,
-                 debug=True):
-
+    def __init__ (self,
+                  socket,
+                  address,
+                  app,
+                  log = None,
+                  environ = None,
+                  max_http_version = None,
+                  protocol = HttpProtocol,
+                  minimum_chunk_size = None,
+                  log_x_forwarded_for = True,
+                  keepalive = True,
+                  log_output = True,
+                  log_format = DEFAULT_LOG_FORMAT,
+                  url_length_limit = MAX_REQUEST_LINE,
+                  debug = True):
         self.outstanding_requests = 0
         self.socket = socket
         self.address = address
@@ -546,7 +550,7 @@ class Server(BaseHTTPServer.HTTPServer):
         self.url_length_limit = url_length_limit
         self.debug = debug
 
-    def get_environ(self):
+    def get_environ (self):
         d = {
             'wsgi.errors': sys.stderr,
             'wsgi.version': (1, 0),
@@ -554,7 +558,7 @@ class Server(BaseHTTPServer.HTTPServer):
             'wsgi.multiprocess': False,
             'wsgi.run_once': False,
             'wsgi.url_scheme': 'http',
-        }
+            }
         # detect secure socket
         if hasattr(self.socket, 'do_handshake'):
             d['wsgi.url_scheme'] = 'https'
@@ -563,15 +567,16 @@ class Server(BaseHTTPServer.HTTPServer):
             d.update(self.environ)
         return d
 
-    def process_request(self, (socket, address)):
+    def process_request (self, (socket, address)):
         proto = self.protocol(socket, address, self)
         proto.handle()
 
-    def log_message(self, message):
+    def log_message (self, message):
         self.log.write(message + '\n')
 
 try:
     import ssl
+
     ACCEPT_EXCEPTIONS = (socket.error, ssl.SSLError)
     ACCEPT_ERRNO = set((errno.EPIPE, errno.EBADF, errno.ECONNRESET,
                         ssl.SSL_ERROR_EOF, ssl.SSL_ERROR_SSL))
@@ -579,21 +584,21 @@ except ImportError:
     ACCEPT_EXCEPTIONS = (socket.error,)
     ACCEPT_ERRNO = set((errno.EPIPE, errno.EBADF, errno.ECONNRESET))
 
-def server(sock, site,
-           log=None,
-           environ=None,
-           max_size=None,
-           max_http_version=DEFAULT_MAX_HTTP_VERSION,
-           protocol=HttpProtocol,
-           server_event=None,
-           minimum_chunk_size=None,
-           log_x_forwarded_for=True,
-           custom_pool=None,
-           keepalive=True,             
-           log_output=True,         
-           log_format=DEFAULT_LOG_FORMAT,
-           url_length_limit=MAX_REQUEST_LINE,
-           debug=True):
+def server (sock, site,
+            log = None,
+            environ = None,
+            max_size = None,
+            max_http_version = DEFAULT_MAX_HTTP_VERSION,
+            protocol = HttpProtocol,
+            server_event = None,
+            minimum_chunk_size = None,
+            log_x_forwarded_for = True,
+            custom_pool = None,
+            keepalive = True,
+            log_output = True,
+            log_format = DEFAULT_LOG_FORMAT,
+            url_length_limit = MAX_REQUEST_LINE,
+            debug = True):
     """  Start up a wsgi server handling requests from the supplied server
     socket.  This function loops forever.  The *sock* object will be closed after server exits,
     but the underlying file descriptor will remain open, so if you have a dup() of *sock*,
@@ -618,16 +623,16 @@ def server(sock, site,
     """
     serv = Server(sock, sock.getsockname(),
                   site, log,
-                  environ=environ,
-                  max_http_version=max_http_version,
-                  protocol=protocol,
-                  minimum_chunk_size=minimum_chunk_size,
-                  log_x_forwarded_for=log_x_forwarded_for,
-                  keepalive=keepalive,
-                  log_output=log_output,
-                  log_format=log_format,
-                  url_length_limit=url_length_limit,
-                  debug=debug)
+                  environ = environ,
+                  max_http_version = max_http_version,
+                  protocol = protocol,
+                  minimum_chunk_size = minimum_chunk_size,
+                  log_x_forwarded_for = log_x_forwarded_for,
+                  keepalive = keepalive,
+                  log_output = log_output,
+                  log_format = log_format,
+                  url_length_limit = url_length_limit,
+                  debug = debug)
     if server_event is not None:
         server_event.send(serv)
     if max_size is None:
@@ -656,10 +661,10 @@ def server(sock, site,
                 try:
                     pool.spawn_n(serv.process_request, client_socket)
                 except AttributeError:
-                    warnings.warn("wsgi's pool should be an instance of " \
-                        "eventlet.greenpool.GreenPool, is %s. Please convert your"\
-                        " call site to use GreenPool instead" % type(pool),
-                        DeprecationWarning, stacklevel=2)
+                    warnings.warn("wsgi's pool should be an instance of "\
+                                  "eventlet.greenpool.GreenPool, is %s. Please convert your"\
+                                  " call site to use GreenPool instead" % type(pool),
+                                  DeprecationWarning, stacklevel = 2)
                     pool.execute_async(serv.process_request, client_socket)
             except ACCEPT_EXCEPTIONS, e:
                 if get_errno(e) not in ACCEPT_ERRNO:

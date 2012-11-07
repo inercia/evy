@@ -7,11 +7,12 @@ from eventlet.hubs import timer
 from eventlet.support import greenlets as greenlet
 import warnings
 
-__all__ = ['getcurrent', 'sleep', 'spawn', 'spawn_n', 'spawn_after', 'spawn_after_local', 'GreenThread'] 
+__all__ = ['getcurrent', 'sleep', 'spawn', 'spawn_n', 'spawn_after', 'spawn_after_local',
+           'GreenThread']
 
 getcurrent = greenlet.getcurrent
 
-def sleep(seconds=0):
+def sleep (seconds = 0):
     """Yield control to another eligible coroutine until at least *seconds* have
     elapsed.
 
@@ -30,9 +31,9 @@ def sleep(seconds=0):
         hub.switch()
     finally:
         timer.cancel()
-        
 
-def spawn(func, *args, **kwargs):
+
+def spawn (func, *args, **kwargs):
     """Create a greenthread to run ``func(*args, **kwargs)``.  Returns a 
     :class:`GreenThread` object which you can use to get the results of the 
     call.
@@ -46,9 +47,9 @@ def spawn(func, *args, **kwargs):
     g = GreenThread(hub.greenlet)
     hub.schedule_call_global(0, g.switch, func, args, kwargs)
     return g
-    
-    
-def spawn_n(func, *args, **kwargs):
+
+
+def spawn_n (func, *args, **kwargs):
     """Same as :func:`spawn`, but returns a ``greenlet`` object from
     which it is not possible to retrieve either a return value or
     whether it raised any exceptions.  This is faster than
@@ -59,9 +60,9 @@ def spawn_n(func, *args, **kwargs):
     :func:`eventlet.debug.hub_exceptions` with False.
     """
     return _spawn_n(0, func, args, kwargs)[1]
-    
-    
-def spawn_after(seconds, func, *args, **kwargs):
+
+
+def spawn_after (seconds, func, *args, **kwargs):
     """Spawns *func* after *seconds* have elapsed.  It runs as scheduled even if 
     the current greenthread has completed.
 
@@ -82,9 +83,9 @@ def spawn_after(seconds, func, *args, **kwargs):
     g = GreenThread(hub.greenlet)
     hub.schedule_call_global(seconds, g.switch, func, args, kwargs)
     return g
-    
-    
-def spawn_after_local(seconds, func, *args, **kwargs):
+
+
+def spawn_after_local (seconds, func, *args, **kwargs):
     """Spawns *func* after *seconds* have elapsed.  The function will NOT be 
     called if the current greenthread has exited.
 
@@ -105,22 +106,22 @@ def spawn_after_local(seconds, func, *args, **kwargs):
     g = GreenThread(hub.greenlet)
     hub.schedule_call_local(seconds, g.switch, func, args, kwargs)
     return g
-    
 
-def call_after_global(seconds, func, *args, **kwargs):
+
+def call_after_global (seconds, func, *args, **kwargs):
     warnings.warn("call_after_global is renamed to spawn_after, which"
-        "has the same signature and semantics (plus a bit extra).  Please do a"
-        " quick search-and-replace on your codebase, thanks!",
-        DeprecationWarning, stacklevel=2)
+                  "has the same signature and semantics (plus a bit extra).  Please do a"
+                  " quick search-and-replace on your codebase, thanks!",
+                  DeprecationWarning, stacklevel = 2)
     return _spawn_n(seconds, func, args, kwargs)[0]
-    
 
-def call_after_local(seconds, function, *args, **kwargs):
+
+def call_after_local (seconds, function, *args, **kwargs):
     warnings.warn("call_after_local is renamed to spawn_after_local, which"
-        "has the same signature and semantics (plus a bit extra).",
-        DeprecationWarning, stacklevel=2)
+                  "has the same signature and semantics (plus a bit extra).",
+                  DeprecationWarning, stacklevel = 2)
     hub = hubs.get_hub()
-    g = greenlet.greenlet(function, parent=hub.greenlet)
+    g = greenlet.greenlet(function, parent = hub.greenlet)
     t = hub.schedule_call_local(seconds, g.switch, *args, **kwargs)
     return t
 
@@ -128,10 +129,10 @@ def call_after_local(seconds, function, *args, **kwargs):
 call_after = call_after_local
 
 
-def exc_after(seconds, *throw_args):
+def exc_after (seconds, *throw_args):
     warnings.warn("Instead of exc_after, which is deprecated, use "
                   "Timeout(seconds, exception)",
-                  DeprecationWarning, stacklevel=2)
+                  DeprecationWarning, stacklevel = 2)
     if seconds is None:  # dummy argument, do nothing
         return timer.Timer(seconds, lambda: None)
     hub = hubs.get_hub()
@@ -141,9 +142,9 @@ def exc_after(seconds, *throw_args):
 TimeoutError = timeout.Timeout
 with_timeout = timeout.with_timeout
 
-def _spawn_n(seconds, func, args, kwargs):
+def _spawn_n (seconds, func, args, kwargs):
     hub = hubs.get_hub()
-    g = greenlet.greenlet(func, parent=hub.greenlet)
+    g = greenlet.greenlet(func, parent = hub.greenlet)
     t = hub.schedule_call_global(seconds, g.switch, *args, **kwargs)
     return t, g
 
@@ -153,19 +154,20 @@ class GreenThread(greenlet.greenlet):
     property of being able to retrieve the return value of the main function.  
     Do not construct GreenThread objects directly; call :func:`spawn` to get one.
     """
-    def __init__(self, parent):
+
+    def __init__ (self, parent):
         greenlet.greenlet.__init__(self, self.main, parent)
         self._exit_event = event.Event()
 
-    def wait(self):
+    def wait (self):
         """ Returns the result of the main function of this GreenThread.  If the   
         result is a normal return value, :meth:`wait` returns it.  If it raised
         an exception, :meth:`wait` will raise the same exception (though the 
         stack trace will unavoidably contain some frames from within the
         greenthread module)."""
         return self._exit_event.wait()
-        
-    def link(self, func, *curried_args, **curried_kwargs):
+
+    def link (self, func, *curried_args, **curried_kwargs):
         """ Set up a function to be called with the results of the GreenThread.
         
         The function must have the following signature::
@@ -186,8 +188,8 @@ class GreenThread(greenlet.greenlet):
         self._exit_funcs.append((func, curried_args, curried_kwargs))
         if self._exit_event.ready():
             self._resolve_links()
-        
-    def main(self, function, args, kwargs):
+
+    def main (self, function, args, kwargs):
         try:
             result = function(*args, **kwargs)
         except:
@@ -197,34 +199,36 @@ class GreenThread(greenlet.greenlet):
         else:
             self._exit_event.send(result)
             self._resolve_links()
-    
-    def _resolve_links(self):
+
+    def _resolve_links (self):
         # ca and ckw are the curried function arguments
         for f, ca, ckw in getattr(self, '_exit_funcs', []):
             f(self, *ca, **ckw)
         self._exit_funcs = [] # so they don't get called again
-    
-    def kill(self, *throw_args):
+
+    def kill (self, *throw_args):
         """Kills the greenthread using :func:`kill`.  After being killed
         all calls to :meth:`wait` will raise *throw_args* (which default 
         to :class:`greenlet.GreenletExit`)."""
         return kill(self, *throw_args)
-        
-    def cancel(self, *throw_args):
+
+    def cancel (self, *throw_args):
         """Kills the greenthread using :func:`kill`, but only if it hasn't 
         already started running.  After being canceled,
         all calls to :meth:`wait` will raise *throw_args* (which default 
         to :class:`greenlet.GreenletExit`)."""
         return cancel(self, *throw_args)
 
-def cancel(g, *throw_args):
+
+def cancel (g, *throw_args):
     """Like :func:`kill`, but only terminates the greenthread if it hasn't
     already started execution.  If the grenthread has already started 
     execution, :func:`cancel` has no effect."""
     if not g:
         kill(g, *throw_args)
 
-def kill(g, *throw_args):
+
+def kill (g, *throw_args):
     """Terminates the target greenthread by raising an exception into it.
     Whatever that greenthread might be doing; be it waiting for I/O or another
     primitive, it sees an exception right away.
@@ -242,11 +246,12 @@ def kill(g, *throw_args):
         # greenlet hasn't started yet and therefore throw won't work
         # on its own; semantically we want it to be as though the main
         # method never got called
-        def just_raise(*a, **kw):
+        def just_raise (*a, **kw):
             if throw_args:
                 raise throw_args[0], throw_args[1], throw_args[2]
             else:
                 raise greenlet.GreenletExit()
+
         g.run = just_raise
         if isinstance(g, GreenThread):
             # it's a GreenThread object, so we want to call its main

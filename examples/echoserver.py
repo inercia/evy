@@ -12,7 +12,7 @@ and then 'quit')
 
 import eventlet
 
-def handle(fd):
+def handle (fd):
     print "client connected"
     while True:
         # pass through every non-eof line

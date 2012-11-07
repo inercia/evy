@@ -3,7 +3,7 @@ import eventlet
 
 CTX = zmq.Context(1)
 
-def bob_client(ctx, count):
+def bob_client (ctx, count):
     print "STARTING BOB"
     bob = zmq.Socket(CTX, zmq.REQ)
     bob.connect("ipc:///tmp/test")
@@ -13,7 +13,8 @@ def bob_client(ctx, count):
         bob.send("HI")
         print "BOB GOT:", bob.recv()
 
-def alice_server(ctx, count):
+
+def alice_server (ctx, count):
     print "STARTING ALICE"
     alice = zmq.Socket(CTX, zmq.REP)
     alice.bind("ipc:///tmp/test")

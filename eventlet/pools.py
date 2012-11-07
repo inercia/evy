@@ -7,6 +7,7 @@ __all__ = ['Pool', 'TokenPool']
 # have to stick this in an exec so it works in 2.4
 try:
     from contextlib import contextmanager
+
     exec('''
 @contextmanager
 def item_impl(self):
@@ -29,7 +30,6 @@ def item_impl(self):
 ''')
 except ImportError:
     item_impl = None
-
 
 
 class Pool(object):
@@ -86,7 +86,8 @@ class Pool(object):
     greenthread calling :meth:`get` to cooperatively yield until an item
     is :meth:`put` in.
     """
-    def __init__(self, min_size=0, max_size=4, order_as_stack=False, create=None):
+
+    def __init__ (self, min_size = 0, max_size = 4, order_as_stack = False, create = None):
         """*order_as_stack* governs the ordering of the items in the free pool.
         If ``False`` (the default), the free items collection (of items that
         were created and were put back in the pool) acts as a round-robin,
@@ -107,7 +108,7 @@ class Pool(object):
             self.current_size += 1
             self.free_items.append(self.create())
 
-    def get(self):
+    def get (self):
         """Return an item from the pool, when one is available.  This may
         cause the calling greenthread to block.
         """
@@ -119,7 +120,7 @@ class Pool(object):
                 created = self.create()
             except:
                 self.current_size -= 1
-                raise                
+                raise
             return created
         self.current_size -= 1 # did not create
         return self.channel.get()
@@ -127,7 +128,7 @@ class Pool(object):
     if item_impl is not None:
         item = item_impl
 
-    def put(self, item):
+    def put (self, item):
         """Put an item back into the pool, when done.  This may
         cause the putting greenthread to block.
         """
@@ -143,7 +144,7 @@ class Pool(object):
             else:
                 self.free_items.append(item)
 
-    def resize(self, new_size):
+    def resize (self, new_size):
         """Resize the pool to *new_size*.
 
         Adjusting this number does not affect existing items checked out of
@@ -154,18 +155,18 @@ class Pool(object):
         """
         self.max_size = new_size
 
-    def free(self):
+    def free (self):
         """Return the number of free items in the pool.  This corresponds
         to the number of :meth:`get` calls needed to empty the pool.
         """
         return len(self.free_items) + self.max_size - self.current_size
 
-    def waiting(self):
+    def waiting (self):
         """Return the number of routines waiting for a pool item.
         """
         return max(0, self.channel.getting() - self.channel.putting())
 
-    def create(self):
+    def create (self):
         """Generate a new pool item.  In order for the pool to
         function, either this method must be overriden in a subclass
         or the pool must be constructed with the `create` argument.
@@ -192,5 +193,6 @@ class TokenPool(Pool):
     that the coroutine which holds the token has a right to consume some
     limited resource.
     """
-    def create(self):
+
+    def create (self):
         return Token()

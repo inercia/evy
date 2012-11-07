@@ -3,7 +3,7 @@ from stackless import greenlet
 import sys
 import types
 
-def emulate():
+def emulate ():
     module = types.ModuleType('greenlet')
     sys.modules['greenlet'] = module
     module.greenlet = greenlet

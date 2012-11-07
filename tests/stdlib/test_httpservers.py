@@ -8,7 +8,7 @@ from eventlet.green import httplib
 from eventlet.green import threading
 
 patcher.inject('test.test_httpservers',
-    globals(),
+               globals(),
     ('BaseHTTPServer', BaseHTTPServer),
     ('SimpleHTTPServer', SimpleHTTPServer),
     ('CGIHTTPServer', CGIHTTPServer),

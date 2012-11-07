@@ -3,7 +3,7 @@ from tests.patcher_test import ProcessBase
 from tests import skip_with_pyevent
 
 class Socket(ProcessBase):
-    def test_patched_thread(self):
+    def test_patched_thread (self):
         new_mod = """from eventlet.green import socket
 socket.gethostbyname('localhost')
 socket.getaddrinfo('localhost', 80)
@@ -16,9 +16,10 @@ socket.getaddrinfo('localhost', 80)
         finally:
             del os.environ['EVENTLET_TPOOL_DNS']
 
+
 class Tpool(ProcessBase):
     @skip_with_pyevent
-    def test_tpool_size(self):
+    def test_tpool_size (self):
         expected = "40"
         normal = "20"
         new_mod = """from eventlet import tpool
@@ -48,7 +49,7 @@ assert highwater[0] > 20, "Highwater %%s  <= %%s" %% (highwater[0], normal)
         finally:
             del os.environ['EVENTLET_THREADPOOL_SIZE']
 
-    def test_tpool_negative(self):
+    def test_tpool_negative (self):
         new_mod = """from eventlet import tpool
 import eventlet
 import time
@@ -68,7 +69,7 @@ except AssertionError:
         finally:
             del os.environ['EVENTLET_THREADPOOL_SIZE']
 
-    def test_tpool_zero(self):
+    def test_tpool_zero (self):
         new_mod = """from eventlet import tpool
 import eventlet
 import time
@@ -87,22 +88,20 @@ tpool.execute(do)
             del os.environ['EVENTLET_THREADPOOL_SIZE']
 
 
-
 class Hub(ProcessBase):
-
-    def setUp(self):
+    def setUp (self):
         super(Hub, self).setUp()
         self.old_environ = os.environ.get('EVENTLET_HUB')
         os.environ['EVENTLET_HUB'] = 'selects'
 
-    def tearDown(self):
+    def tearDown (self):
         if self.old_environ:
             os.environ['EVENTLET_HUB'] = self.old_environ
         else:
             del os.environ['EVENTLET_HUB']
         super(Hub, self).tearDown()
 
-    def test_eventlet_hub(self):
+    def test_eventlet_hub (self):
         new_mod = """from eventlet import hubs
 print hubs.get_hub()
 """

@@ -19,7 +19,7 @@ import re
 url_regex = re.compile(r'\b(([\w-]+://?|www[.])[^\s()<>]+(?:\([\w\d]+\)|([^[:punct:]\s]|/)))')
 
 
-def fetch(url, outq):
+def fetch (url, outq):
     """Fetch a url and push any urls found into a queue."""
     print "fetching", url
     data = ''
@@ -29,8 +29,8 @@ def fetch(url, outq):
         new_url = url_match.group(0)
         outq.put(new_url)
 
-            
-def producer(start_url):
+
+def producer (start_url):
     """Recursively crawl starting from *start_url*.  Returns a set of 
     urls that were found."""
     pool = eventlet.GreenPool()
@@ -38,7 +38,7 @@ def producer(start_url):
     q = eventlet.Queue()
     q.put(start_url)
     # keep looping if there are new urls, or workers that may produce more urls
-    while True: 
+    while True:
         while not q.empty():
             url = q.get()
             # limit requests to eventlet.net so we don't crash all over the internet
@@ -48,7 +48,7 @@ def producer(start_url):
         pool.waitall()
         if q.empty():
             break
-        
+
     return seen
 
 

@@ -2,12 +2,13 @@ from eventlet import coros, proc, api
 from eventlet.semaphore import Semaphore
 
 import warnings
+
 warnings.warn("The pool module is deprecated.  Please use the "
-        "eventlet.GreenPool and eventlet.GreenPile classes instead.",
-        DeprecationWarning, stacklevel=2)
+              "eventlet.GreenPool and eventlet.GreenPile classes instead.",
+              DeprecationWarning, stacklevel = 2)
 
 class Pool(object):
-    def __init__(self, min_size=0, max_size=4, track_events=False):
+    def __init__ (self, min_size = 0, max_size = 4, track_events = False):
         if min_size > max_size:
             raise ValueError('min_size cannot be bigger than max_size')
         self.max_size = max_size
@@ -18,7 +19,7 @@ class Pool(object):
         else:
             self.results = None
 
-    def resize(self, new_max_size):
+    def resize (self, new_max_size):
         """ Change the :attr:`max_size` of the pool.
 
         If the pool gets resized when there are more than *new_max_size*
@@ -26,21 +27,21 @@ class Pool(object):
         discarded.  The return value of :meth:`free` will be negative in this
         situation.
         """
-        max_size_delta = new_max_size - self.max_size 
+        max_size_delta = new_max_size - self.max_size
         self.sem.counter += max_size_delta
         self.max_size = new_max_size
 
     @property
-    def current_size(self):
+    def current_size (self):
         """ The number of coroutines that are currently executing jobs. """
         return len(self.procs)
 
-    def free(self):
+    def free (self):
         """ Returns the number of coroutines that are available for doing
         work."""
         return self.sem.counter
 
-    def execute(self, func, *args, **kwargs):
+    def execute (self, func, *args, **kwargs):
         """Execute func in one of the coroutines maintained
         by the pool, when one is free.
 
@@ -71,24 +72,24 @@ class Pool(object):
 
     execute_async = execute
 
-    def _execute(self, evt, func, args, kw):
+    def _execute (self, evt, func, args, kw):
         p = self.execute(func, *args, **kw)
         p.link(evt)
         return p
 
-    def waitall(self):
+    def waitall (self):
         """ Calling this function blocks until every coroutine 
         completes its work (i.e. there are 0 running coroutines)."""
         return self.procs.waitall()
 
     wait_all = waitall
 
-    def wait(self):
+    def wait (self):
         """Wait for the next execute in the pool to complete,
         and return the result."""
         return self.results.wait()
-        
-    def waiting(self):
+
+    def waiting (self):
         """Return the number of coroutines waiting to execute.
         """
         if self.sem.balance < 0:
@@ -96,11 +97,11 @@ class Pool(object):
         else:
             return 0
 
-    def killall(self):
+    def killall (self):
         """ Kill every running coroutine as immediately as possible."""
         return self.procs.killall()
 
-    def launch_all(self, function, iterable):
+    def launch_all (self, function, iterable):
         """For each tuple (sequence) in *iterable*, launch ``function(*tuple)``
         in its own coroutine -- like ``itertools.starmap()``, but in parallel.
         Discard values returned by ``function()``. You should call
@@ -121,7 +122,7 @@ class Pool(object):
         for tup in iterable:
             self.execute(function, *tup)
 
-    def process_all(self, function, iterable):
+    def process_all (self, function, iterable):
         """For each tuple (sequence) in *iterable*, launch ``function(*tuple)``
         in its own coroutine -- like ``itertools.starmap()``, but in parallel.
         Discard values returned by ``function()``. Don't return until all
@@ -140,7 +141,7 @@ class Pool(object):
         self.launch_all(function, iterable)
         self.wait_all()
 
-    def generate_results(self, function, iterable, qsize=None):
+    def generate_results (self, function, iterable, qsize = None):
         """For each tuple (sequence) in *iterable*, launch ``function(*tuple)``
         in its own coroutine -- like ``itertools.starmap()``, but in parallel.
         Yield each of the values returned by ``function()``, in the order
@@ -254,14 +255,14 @@ class Pool(object):
             index, args = tuples.next()
         except StopIteration:
             return
-        # From this point forward, 'args' is the current arguments tuple and
+            # From this point forward, 'args' is the current arguments tuple and
         # 'index+1' counts how many such tuples we've seen.
         # This implementation relies on the fact that _execute() accepts an
         # event-like object, and -- unless it's None -- the completed
         # coroutine calls send(result). We slyly pass a queue rather than an
         # event -- the same queue instance for all coroutines. This is why our
         # queue interface intentionally resembles the event interface.
-        q = coros.queue(max_size=qsize)
+        q = coros.queue(max_size = qsize)
         # How many results have we yielded so far?
         finished = 0
         # This first loop is only until we've launched all the coroutines. Its
@@ -294,7 +295,7 @@ class Pool(object):
                     self._execute(q, function, args, {})
                     # We've consumed that args tuple, advance to next.
                     index, args = tuples.next()
-                # Okay, we've filled up the pool again, yield a result -- which
+                    # Okay, we've filled up the pool again, yield a result -- which
                 # will probably wait for a coroutine to complete. Although we do
                 # have q.ready(), so we could iterate without waiting, we avoid
                 # that because every yield could involve considerable real time.
@@ -306,7 +307,7 @@ class Pool(object):
                 finished += 1
         except StopIteration:
             pass
-        # Here we've exhausted the input iterable. index+1 is the total number
+            # Here we've exhausted the input iterable. index+1 is the total number
         # of coroutines we've launched. We probably haven't yielded that many
         # results yet. Wait for the rest of the results, yielding them as they
         # arrive.

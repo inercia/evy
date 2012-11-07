@@ -6,7 +6,7 @@ from eventlet.green import time
 from eventlet.green import urllib
 
 patcher.inject('urllib2',
-    globals(),
+               globals(),
     ('httplib', httplib),
     ('socket', socket),
     ('time', time),

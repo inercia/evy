@@ -5,16 +5,16 @@ from eventlet import Queue
 from eventlet import pools
 
 class IntPool(pools.Pool):
-    def create(self):
+    def create (self):
         self.current_integer = getattr(self, 'current_integer', 0) + 1
         return self.current_integer
 
 
 class TestIntPool(TestCase):
-    def setUp(self):
-        self.pool = IntPool(min_size=0, max_size=4)
+    def setUp (self):
+        self.pool = IntPool(min_size = 0, max_size = 4)
 
-    def test_integers(self):
+    def test_integers (self):
         # Do not actually use this pattern in your code. The pool will be
         # exhausted, and unrestoreable.
         # If you do a get, you should ALWAYS do a put, probably like this:
@@ -31,16 +31,17 @@ class TestIntPool(TestCase):
         self.assertEquals(self.pool.get(), 3)
         self.assertEquals(self.pool.get(), 4)
 
-    def test_free(self):
+    def test_free (self):
         self.assertEquals(self.pool.free(), 4)
         gotten = self.pool.get()
         self.assertEquals(self.pool.free(), 3)
         self.pool.put(gotten)
         self.assertEquals(self.pool.free(), 4)
 
-    def test_exhaustion(self):
+    def test_exhaustion (self):
         waiter = Queue(0)
-        def consumer():
+
+        def consumer ():
             gotten = None
             try:
                 gotten = self.pool.get()
@@ -62,9 +63,10 @@ class TestIntPool(TestCase):
         # wait for the consumer
         self.assertEquals(waiter.get(), one)
 
-    def test_blocks_on_pool(self):
+    def test_blocks_on_pool (self):
         waiter = Queue(0)
-        def greedy():
+
+        def greedy ():
             self.pool.get()
             self.pool.get()
             self.pool.get()
@@ -92,7 +94,7 @@ class TestIntPool(TestCase):
 
         eventlet.kill(killable)
 
-    def test_ordering(self):
+    def test_ordering (self):
         # normal case is that items come back out in the
         # same order they are put
         one, two = self.pool.get(), self.pool.get()
@@ -101,29 +103,31 @@ class TestIntPool(TestCase):
         self.assertEquals(self.pool.get(), one)
         self.assertEquals(self.pool.get(), two)
 
-    def test_putting_to_queue(self):
+    def test_putting_to_queue (self):
         timer = eventlet.Timeout(0.1)
         try:
             size = 2
-            self.pool = IntPool(min_size=0, max_size=size)
+            self.pool = IntPool(min_size = 0, max_size = size)
             queue = Queue()
             results = []
-            def just_put(pool_item, index):
+
+            def just_put (pool_item, index):
                 self.pool.put(pool_item)
                 queue.put(index)
+
             for index in xrange(size + 1):
                 pool_item = self.pool.get()
                 eventlet.spawn(just_put, pool_item, index)
 
-            for _ in range(size+1):
+            for _ in range(size + 1):
                 x = queue.get()
                 results.append(x)
             self.assertEqual(sorted(results), range(size + 1))
         finally:
             timer.cancel()
 
-    def test_resize(self):
-        pool = IntPool(max_size=2)
+    def test_resize (self):
+        pool = IntPool(max_size = 2)
         a = pool.get()
         b = pool.get()
         self.assertEquals(pool.free(), 0)
@@ -137,17 +141,18 @@ class TestIntPool(TestCase):
         # resize larger and assert that there are more free items
         pool.resize(2)
         self.assertEquals(pool.free(), 2)
-        
-    def test_create_contention(self):
+
+    def test_create_contention (self):
         creates = [0]
-        def sleep_create():
+
+        def sleep_create ():
             creates[0] += 1
             eventlet.sleep()
             return "slept"
-            
-        p = pools.Pool(max_size=4, create=sleep_create)
 
-        def do_get():
+        p = pools.Pool(max_size = 4, create = sleep_create)
+
+        def do_get ():
             x = p.get()
             self.assertEquals(x, "slept")
             p.put(x)
@@ -161,7 +166,8 @@ class TestIntPool(TestCase):
 
 class TestAbstract(TestCase):
     mode = 'static'
-    def test_abstract(self):
+
+    def test_abstract (self):
         ## Going for 100% coverage here
         ## A Pool cannot be used without overriding create()
         pool = pools.Pool()
@@ -170,10 +176,11 @@ class TestAbstract(TestCase):
 
 class TestIntPool2(TestCase):
     mode = 'static'
-    def setUp(self):
-        self.pool = IntPool(min_size=3, max_size=3)
 
-    def test_something(self):
+    def setUp (self):
+        self.pool = IntPool(min_size = 3, max_size = 3)
+
+    def test_something (self):
         self.assertEquals(len(self.pool.free_items), 3)
         ## Cover the clause in get where we get from the free list instead of creating
         ## an item on get
@@ -183,10 +190,11 @@ class TestIntPool2(TestCase):
 
 class TestOrderAsStack(TestCase):
     mode = 'static'
-    def setUp(self):
-        self.pool = IntPool(max_size=3, order_as_stack=True)
 
-    def test_ordering(self):
+    def setUp (self):
+        self.pool = IntPool(max_size = 3, order_as_stack = True)
+
+    def test_ordering (self):
         # items come out in the reverse order they are put
         one, two = self.pool.get(), self.pool.get()
         self.pool.put(one)
@@ -196,16 +204,17 @@ class TestOrderAsStack(TestCase):
 
 
 class RaisePool(pools.Pool):
-    def create(self):
+    def create (self):
         raise RuntimeError()
 
 
 class TestCreateRaises(TestCase):
     mode = 'static'
-    def setUp(self):
-        self.pool = RaisePool(max_size=3)
 
-    def test_it(self):
+    def setUp (self):
+        self.pool = RaisePool(max_size = 3)
+
+    def test_it (self):
         self.assertEquals(self.pool.free(), 3)
         self.assertRaises(RuntimeError, self.pool.get)
         self.assertEquals(self.pool.free(), 3)

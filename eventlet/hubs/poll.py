@@ -2,6 +2,7 @@ import sys
 import errno
 import signal
 from eventlet import patcher
+
 select = patcher.original('select')
 time = patcher.original('time')
 sleep = time.sleep
@@ -14,7 +15,7 @@ READ_MASK = select.POLLIN | select.POLLPRI
 WRITE_MASK = select.POLLOUT
 
 class Hub(BaseHub):
-    def __init__(self, clock=time.time):
+    def __init__ (self, clock = time.time):
         super(Hub, self).__init__(clock)
         self.poll = select.poll()
         # poll.modify is new to 2.6
@@ -23,16 +24,16 @@ class Hub(BaseHub):
         except AttributeError:
             self.modify = self.poll.register
 
-    def add(self, evtype, fileno, cb):
+    def add (self, evtype, fileno, cb):
         listener = super(Hub, self).add(evtype, fileno, cb)
-        self.register(fileno, new=True)
+        self.register(fileno, new = True)
         return listener
-    
-    def remove(self, listener):
+
+    def remove (self, listener):
         super(Hub, self).remove(listener)
         self.register(listener.fileno)
 
-    def register(self, fileno, new=False):
+    def register (self, fileno, new = False):
         mask = 0
         if self.listeners[READ].get(fileno):
             mask |= READ_MASK | EXC_MASK
@@ -47,7 +48,7 @@ class Hub(BaseHub):
                         self.modify(fileno, mask)
                     except (IOError, OSError):
                         self.poll.register(fileno, mask)
-            else: 
+            else:
                 try:
                     self.poll.unregister(fileno)
                 except (KeyError, IOError, OSError):
@@ -59,7 +60,7 @@ class Hub(BaseHub):
             self.remove_descriptor(fileno)
             raise
 
-    def remove_descriptor(self, fileno):
+    def remove_descriptor (self, fileno):
         super(Hub, self).remove_descriptor(fileno)
         try:
             self.poll.unregister(fileno)
@@ -68,11 +69,11 @@ class Hub(BaseHub):
             # already removed/invalid
             pass
 
-    def do_poll(self, seconds):
+    def do_poll (self, seconds):
         # poll.poll expects integral milliseconds
         return self.poll.poll(int(seconds * 1000.0))
 
-    def wait(self, seconds=None):
+    def wait (self, seconds = None):
         readers = self.listeners[READ]
         writers = self.listeners[WRITE]
 
@@ -108,7 +109,7 @@ class Hub(BaseHub):
             except:
                 self.squelch_exception(fileno, sys.exc_info())
                 clear_sys_exc_info()
-        
+
         if self.debug_blocking:
             self.block_detect_post()
 

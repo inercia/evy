@@ -7,36 +7,42 @@ import warnings
 
 arm_alarm = None
 if hasattr(signal, 'setitimer'):
-    def alarm_itimer(seconds):
+    def alarm_itimer (seconds):
         signal.setitimer(signal.ITIMER_REAL, seconds)
+
     arm_alarm = alarm_itimer
 else:
     try:
         import itimer
+
         arm_alarm = itimer.alarm
     except ImportError:
-        def alarm_signal(seconds):
+        def alarm_signal (seconds):
             signal.alarm(math.ceil(seconds))
+
         arm_alarm = alarm_signal
 
 from eventlet.support import greenlets as greenlet, clear_sys_exc_info
 from eventlet.hubs import timer
 from eventlet import patcher
+
 time = patcher.original('time')
 
 g_prevent_multiple_readers = True
 
-READ="read"
-WRITE="write"
+READ = "read"
+WRITE = "write"
 
 class FdListener(object):
-    def __init__(self, evtype, fileno, cb):
+    def __init__ (self, evtype, fileno, cb):
         assert (evtype is READ or evtype is WRITE)
         self.evtype = evtype
         self.fileno = fileno
         self.cb = cb
-    def __repr__(self):
+
+    def __repr__ (self):
         return "%s(%r, %r, %r)" % (type(self).__name__, self.evtype, self.fileno, self.cb)
+
     __str__ = __repr__
 
 
@@ -44,22 +50,25 @@ noop = FdListener(READ, 0, lambda x: None)
 
 # in debug mode, track the call site that created the listener
 class DebugListener(FdListener):
-    def __init__(self, evtype, fileno, cb):
+    def __init__ (self, evtype, fileno, cb):
         self.where_called = traceback.format_stack()
         self.greenlet = greenlet.getcurrent()
         super(DebugListener, self).__init__(evtype, fileno, cb)
-    def __repr__(self):
+
+    def __repr__ (self):
         return "DebugListener(%r, %r, %r, %r)\n%sEndDebugFdListener" % (
             self.evtype,
             self.fileno,
             self.cb,
             self.greenlet,
             ''.join(self.where_called))
+
     __str__ = __repr__
 
 
-def alarm_handler(signum, frame):
+def alarm_handler (signum, frame):
     import inspect
+
     raise RuntimeError("Blocking detector ALARMED at" + str(inspect.getframeinfo(frame)))
 
 
@@ -72,9 +81,9 @@ class BaseHub(object):
     READ = READ
     WRITE = WRITE
 
-    def __init__(self, clock=time.time):
-        self.listeners = {READ:{}, WRITE:{}}
-        self.secondaries = {READ:{}, WRITE:{}}
+    def __init__ (self, clock = time.time):
+        self.listeners = {READ: {}, WRITE: {}}
+        self.secondaries = {READ: {}, WRITE: {}}
 
         self.clock = clock
         self.greenlet = greenlet.greenlet(self.run)
@@ -88,7 +97,7 @@ class BaseHub(object):
         self.debug_blocking = False
         self.debug_blocking_resolution = 1
 
-    def block_detect_pre(self):
+    def block_detect_pre (self):
         # shortest alarm we can possibly raise is one second
         tmp = signal.signal(signal.SIGALRM, alarm_handler)
         if tmp != alarm_handler:
@@ -96,13 +105,13 @@ class BaseHub(object):
 
         arm_alarm(self.debug_blocking_resolution)
 
-    def block_detect_post(self):
+    def block_detect_post (self):
         if (hasattr(self, "_old_signal_handler") and
             self._old_signal_handler):
             signal.signal(signal.SIGALRM, self._old_signal_handler)
         signal.alarm(0)
 
-    def add(self, evtype, fileno, cb):
+    def add (self, evtype, fileno, cb):
         """ Signals an intent to or write a particular file descriptor.
 
         The *evtype* argument is either the constant READ or WRITE.
@@ -117,20 +126,20 @@ class BaseHub(object):
         if fileno in bucket:
             if g_prevent_multiple_readers:
                 raise RuntimeError("Second simultaneous %s on fileno %s "\
-                     "detected.  Unless you really know what you're doing, "\
-                     "make sure that only one greenthread can %s any "\
-                     "particular socket.  Consider using a pools.Pool. "\
-                     "If you do know what you're doing and want to disable "\
-                     "this error, call "\
-                     "eventlet.debug.hub_multiple_reader_prevention(False)" % (
-                     evtype, fileno, evtype))
-            # store off the second listener in another structure
+                                   "detected.  Unless you really know what you're doing, "\
+                                   "make sure that only one greenthread can %s any "\
+                                   "particular socket.  Consider using a pools.Pool. "\
+                                   "If you do know what you're doing and want to disable "\
+                                   "this error, call "\
+                                   "eventlet.debug.hub_multiple_reader_prevention(False)" % (
+                    evtype, fileno, evtype))
+                # store off the second listener in another structure
             self.secondaries[evtype].setdefault(fileno, []).append(listener)
         else:
             bucket[fileno] = listener
         return listener
 
-    def remove(self, listener):
+    def remove (self, listener):
         fileno = listener.fileno
         evtype = listener.evtype
         self.listeners[evtype].pop(fileno, None)
@@ -143,7 +152,7 @@ class BaseHub(object):
             if not sec:
                 del self.secondaries[evtype][fileno]
 
-    def remove_descriptor(self, fileno):
+    def remove_descriptor (self, fileno):
         """ Completely remove all listeners for this fileno.  For internal use
         only."""
         listeners = []
@@ -157,7 +166,7 @@ class BaseHub(object):
             except Exception, e:
                 self.squelch_generic_exception(sys.exc_info())
 
-    def ensure_greenlet(self):
+    def ensure_greenlet (self):
         if self.greenlet.dead:
             # create new greenlet sharing same parent as original
             new = greenlet.greenlet(self.run, self.greenlet.parent)
@@ -168,7 +177,7 @@ class BaseHub(object):
             self.greenlet.parent = new
             self.greenlet = new
 
-    def switch(self):
+    def switch (self):
         cur = greenlet.getcurrent()
         assert cur is not self.greenlet, 'Cannot switch to MAINLOOP from MAINLOOP'
         switch_out = getattr(cur, 'switch_out', None)
@@ -186,7 +195,7 @@ class BaseHub(object):
         clear_sys_exc_info()
         return self.greenlet.switch()
 
-    def squelch_exception(self, fileno, exc_info):
+    def squelch_exception (self, fileno, exc_info):
         traceback.print_exception(*exc_info)
         sys.stderr.write("Removing descriptor: %r\n" % (fileno,))
         sys.stderr.flush()
@@ -196,19 +205,19 @@ class BaseHub(object):
             sys.stderr.write("Exception while removing descriptor! %r\n" % (e,))
             sys.stderr.flush()
 
-    def wait(self, seconds=None):
+    def wait (self, seconds = None):
         raise NotImplementedError("Implement this in a subclass")
 
-    def default_sleep(self):
+    def default_sleep (self):
         return 60.0
 
-    def sleep_until(self):
+    def sleep_until (self):
         t = self.timers
         if not t:
             return None
         return t[0][0]
 
-    def run(self, *a, **kw):
+    def run (self, *a, **kw):
         """Run the runloop until abort is called.
         """
         # accept and discard variable arguments because they will be
@@ -244,7 +253,7 @@ class BaseHub(object):
             self.running = False
             self.stopping = False
 
-    def abort(self, wait=False):
+    def abort (self, wait = False):
         """Stop the runloop. If run is executing, it will exit after
         completing the next runloop iteration.
 
@@ -263,33 +272,33 @@ class BaseHub(object):
             # the main greenlet
             self.switch()
 
-    def squelch_generic_exception(self, exc_info):
+    def squelch_generic_exception (self, exc_info):
         if self.debug_exceptions:
             traceback.print_exception(*exc_info)
             sys.stderr.flush()
             clear_sys_exc_info()
 
-    def squelch_timer_exception(self, timer, exc_info):
+    def squelch_timer_exception (self, timer, exc_info):
         if self.debug_exceptions:
             traceback.print_exception(*exc_info)
             sys.stderr.flush()
             clear_sys_exc_info()
 
-    def add_timer(self, timer):
+    def add_timer (self, timer):
         scheduled_time = self.clock() + timer.seconds
         self.next_timers.append((scheduled_time, timer))
         return scheduled_time
 
-    def timer_canceled(self, timer):
+    def timer_canceled (self, timer):
         self.timers_canceled += 1
         len_timers = len(self.timers) + len(self.next_timers)
-        if len_timers > 1000 and len_timers/2 <= self.timers_canceled:
+        if len_timers > 1000 and len_timers / 2 <= self.timers_canceled:
             self.timers_canceled = 0
             self.timers = [t for t in self.timers if not t[1].called]
             self.next_timers = [t for t in self.next_timers if not t[1].called]
             heapq.heapify(self.timers)
 
-    def prepare_timers(self):
+    def prepare_timers (self):
         heappush = heapq.heappush
         t = self.timers
         for item in self.next_timers:
@@ -299,7 +308,7 @@ class BaseHub(object):
                 heappush(t, item)
         del self.next_timers[:]
 
-    def schedule_call_local(self, seconds, cb, *args, **kw):
+    def schedule_call_local (self, seconds, cb, *args, **kw):
         """Schedule a callable to be called after 'seconds' seconds have
         elapsed. Cancel the timer if greenlet has exited.
             seconds: The number of seconds to wait.
@@ -311,7 +320,7 @@ class BaseHub(object):
         self.add_timer(t)
         return t
 
-    def schedule_call_global(self, seconds, cb, *args, **kw):
+    def schedule_call_global (self, seconds, cb, *args, **kw):
         """Schedule a callable to be called after 'seconds' seconds have
         elapsed. The timer will NOT be canceled if the current greenlet has
         exited before the timer fires.
@@ -324,7 +333,7 @@ class BaseHub(object):
         self.add_timer(t)
         return t
 
-    def fire_timers(self, when):
+    def fire_timers (self, when):
         t = self.timers
         heappop = heapq.heappop
 
@@ -352,20 +361,20 @@ class BaseHub(object):
 
     # for debugging:
 
-    def get_readers(self):
+    def get_readers (self):
         return self.listeners[READ].values()
 
-    def get_writers(self):
+    def get_writers (self):
         return self.listeners[WRITE].values()
 
-    def get_timers_count(hub):
+    def get_timers_count (hub):
         return len(hub.timers) + len(hub.next_timers)
 
-    def set_debug_listeners(self, value):
+    def set_debug_listeners (self, value):
         if value:
             self.lclass = DebugListener
         else:
             self.lclass = FdListener
 
-    def set_timer_exceptions(self, value):
+    def set_timer_exceptions (self, value):
         self.debug_exceptions = value

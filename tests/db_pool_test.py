@@ -12,7 +12,8 @@ import eventlet
 
 class DBTester(object):
     __test__ = False  # so that nose doesn't try to execute this directly
-    def setUp(self):
+
+    def setUp (self):
         self.create_db()
         self.connection = None
         connection = self._dbmodule.connect(**self._auth)
@@ -24,12 +25,12 @@ class DBTester(object):
         connection.commit()
         cursor.close()
 
-    def tearDown(self):
+    def tearDown (self):
         if self.connection:
             self.connection.close()
         self.drop_db()
 
-    def set_up_dummy_table(self, connection=None):
+    def set_up_dummy_table (self, connection = None):
         close_connection = False
         if connection is None:
             close_connection = True
@@ -52,35 +53,36 @@ class Mock(object):
 
 class DBConnectionPool(DBTester):
     __test__ = False  # so that nose doesn't try to execute this directly
-    def setUp(self):
+
+    def setUp (self):
         super(DBConnectionPool, self).setUp()
         self.pool = self.create_pool()
         self.connection = self.pool.get()
 
-    def tearDown(self):
+    def tearDown (self):
         if self.connection:
             self.pool.put(self.connection)
         self.pool.clear()
         super(DBConnectionPool, self).tearDown()
 
-    def assert_cursor_works(self, cursor):
+    def assert_cursor_works (self, cursor):
         cursor.execute("select 1")
         rows = cursor.fetchall()
         self.assert_(rows)
 
-    def test_connecting(self):
+    def test_connecting (self):
         self.assert_(self.connection is not None)
 
-    def test_create_cursor(self):
+    def test_create_cursor (self):
         cursor = self.connection.cursor()
         cursor.close()
 
-    def test_run_query(self):
+    def test_run_query (self):
         cursor = self.connection.cursor()
         self.assert_cursor_works(cursor)
         cursor.close()
 
-    def test_run_bad_query(self):
+    def test_run_bad_query (self):
         cursor = self.connection.cursor()
         try:
             cursor.execute("garbage blah blah")
@@ -91,7 +93,7 @@ class DBConnectionPool(DBTester):
             pass
         cursor.close()
 
-    def test_put_none(self):
+    def test_put_none (self):
         # the pool is of size 1, and its only connection is out
         self.assert_(self.pool.free() == 0)
         self.pool.put(None)
@@ -102,38 +104,38 @@ class DBConnectionPool(DBTester):
         self.assert_(conn2.cursor)
         self.pool.put(conn2)
 
-    def test_close_does_a_put(self):
+    def test_close_does_a_put (self):
         self.assert_(self.pool.free() == 0)
         self.connection.close()
         self.assert_(self.pool.free() == 1)
         self.assertRaises(AttributeError, self.connection.cursor)
 
     @skipped
-    def test_deletion_does_a_put(self):
+    def test_deletion_does_a_put (self):
         # doing a put on del causes some issues if __del__ is called in the
         # main coroutine, so, not doing that for now
         self.assert_(self.pool.free() == 0)
         self.connection = None
         self.assert_(self.pool.free() == 1)
 
-    def test_put_doesnt_double_wrap(self):
+    def test_put_doesnt_double_wrap (self):
         self.pool.put(self.connection)
         conn = self.pool.get()
         self.assert_(not isinstance(conn._base, db_pool.PooledConnectionWrapper))
         self.pool.put(conn)
 
-    def test_bool(self):
+    def test_bool (self):
         self.assert_(self.connection)
         self.connection.close()
         self.assert_(not self.connection)
 
-    def fill_up_table(self, conn):
+    def fill_up_table (self, conn):
         curs = conn.cursor()
         for i in range(1000):
             curs.execute('insert into test_table (value_int) values (%s)' % i)
         conn.commit()
 
-    def test_returns_immediately(self):
+    def test_returns_immediately (self):
         self.pool = self.create_pool()
         conn = self.pool.get()
         self.set_up_dummy_table(conn)
@@ -142,11 +144,13 @@ class DBConnectionPool(DBTester):
         results = []
         SHORT_QUERY = "select * from test_table"
         evt = event.Event()
-        def a_query():
+
+        def a_query ():
             self.assert_cursor_works(curs)
             curs.execute(SHORT_QUERY)
             results.append(2)
             evt.send()
+
         eventlet.spawn(a_query)
         results.append(1)
         self.assertEqual([1], results)
@@ -154,14 +158,14 @@ class DBConnectionPool(DBTester):
         self.assertEqual([1, 2], results)
         self.pool.put(conn)
 
-    def test_connection_is_clean_after_put(self):
+    def test_connection_is_clean_after_put (self):
         self.pool = self.create_pool()
         conn = self.pool.get()
         self.set_up_dummy_table(conn)
         curs = conn.cursor()
         for i in range(10):
             curs.execute('insert into test_table (value_int) values (%s)' % i)
-        # do not commit  :-)
+            # do not commit  :-)
         self.pool.put(conn)
         del conn
         conn2 = self.pool.get()
@@ -174,7 +178,7 @@ class DBConnectionPool(DBTester):
         self.assertEqual(10, curs2.rowcount)
         self.pool.put(conn2)
 
-    def test_visibility_from_other_connections(self):
+    def test_visibility_from_other_connections (self):
         self.pool = self.create_pool(3)
         conn = self.pool.get()
         conn2 = self.pool.get()
@@ -205,7 +209,7 @@ class DBConnectionPool(DBTester):
             self.pool.put(conn)
 
     @skipped
-    def test_two_simultaneous_connections(self):
+    def test_two_simultaneous_connections (self):
         # timing-sensitive test, disabled until we come up with a better
         # way to do this
         self.pool = self.create_pool(2)
@@ -222,13 +226,16 @@ class DBConnectionPool(DBTester):
         SHORT_QUERY = "select * from test_table where row_id <= 20"
 
         evt = event.Event()
-        def long_running_query():
+
+        def long_running_query ():
             self.assert_cursor_works(curs)
             curs.execute(LONG_QUERY)
             results.append(1)
             evt.send()
+
         evt2 = event.Event()
-        def short_running_query():
+
+        def short_running_query ():
             self.assert_cursor_works(curs2)
             curs2.execute(SHORT_QUERY)
             results.append(2)
@@ -241,19 +248,19 @@ class DBConnectionPool(DBTester):
         results.sort()
         self.assertEqual([1, 2], results)
 
-    def test_clear(self):
+    def test_clear (self):
         self.pool = self.create_pool()
         self.pool.put(self.connection)
         self.pool.clear()
         self.assertEqual(len(self.pool.free_items), 0)
 
-    def test_clear_warmup(self):
+    def test_clear_warmup (self):
         """Clear implicitly created connections (min_size > 0)"""
-        self.pool = self.create_pool(min_size=1)
+        self.pool = self.create_pool(min_size = 1)
         self.pool.clear()
         self.assertEqual(len(self.pool.free_items), 0)
 
-    def test_unwrap_connection(self):
+    def test_unwrap_connection (self):
         self.assert_(isinstance(self.connection,
                                 db_pool.GenericConnectionWrapper))
         conn = self.pool._unwrap_connection(self.connection)
@@ -269,8 +276,8 @@ class DBConnectionPool(DBTester):
         self.assertEquals('hi', self.pool._unwrap_connection(x))
         conn.close()
 
-    def test_safe_close(self):
-        self.pool._safe_close(self.connection, quiet=True)
+    def test_safe_close (self):
+        self.pool._safe_close(self.connection, quiet = True)
         self.assertEquals(len(self.pool.free_items), 1)
 
         self.pool._safe_close(None)
@@ -278,40 +285,44 @@ class DBConnectionPool(DBTester):
 
         # now we're really going for 100% coverage
         x = Mock()
-        def fail():
+
+        def fail ():
             raise KeyboardInterrupt()
+
         x.close = fail
         self.assertRaises(KeyboardInterrupt, self.pool._safe_close, x)
 
         x = Mock()
-        def fail2():
-            raise RuntimeError("if this line has been printed, the test succeeded")
-        x.close = fail2
-        self.pool._safe_close(x, quiet=False)
 
-    def test_zero_max_idle(self):
+        def fail2 ():
+            raise RuntimeError("if this line has been printed, the test succeeded")
+
+        x.close = fail2
+        self.pool._safe_close(x, quiet = False)
+
+    def test_zero_max_idle (self):
         self.pool.put(self.connection)
         self.pool.clear()
-        self.pool = self.create_pool(max_size=2, max_idle=0)
+        self.pool = self.create_pool(max_size = 2, max_idle = 0)
         self.connection = self.pool.get()
         self.connection.close()
         self.assertEquals(len(self.pool.free_items), 0)
 
-    def test_zero_max_age(self):
+    def test_zero_max_age (self):
         self.pool.put(self.connection)
         self.pool.clear()
-        self.pool = self.create_pool(max_size=2, max_age=0)
+        self.pool = self.create_pool(max_size = 2, max_age = 0)
         self.connection = self.pool.get()
         self.connection.close()
         self.assertEquals(len(self.pool.free_items), 0)
 
     @skipped
-    def test_max_idle(self):
+    def test_max_idle (self):
         # This test is timing-sensitive.  Rename the function without
         # the "dont" to run it, but beware that it could fail or take
         # a while.
 
-        self.pool = self.create_pool(max_size=2, max_idle=0.02)
+        self.pool = self.create_pool(max_size = 2, max_idle = 0.02)
         self.connection = self.pool.get()
         self.connection.close()
         self.assertEquals(len(self.pool.free_items), 1)
@@ -329,12 +340,12 @@ class DBConnectionPool(DBTester):
         self.assertEquals(len(self.pool.free_items), 0)
 
     @skipped
-    def test_max_idle_many(self):
+    def test_max_idle_many (self):
         # This test is timing-sensitive.  Rename the function without
         # the "dont" to run it, but beware that it could fail or take
         # a while.
 
-        self.pool = self.create_pool(max_size=2, max_idle=0.02)
+        self.pool = self.create_pool(max_size = 2, max_idle = 0.02)
         self.connection, conn2 = self.pool.get(), self.pool.get()
         self.connection.close()
         eventlet.sleep(0.01)
@@ -345,12 +356,12 @@ class DBConnectionPool(DBTester):
         self.assertEquals(len(self.pool.free_items), 1)
 
     @skipped
-    def test_max_age(self):
+    def test_max_age (self):
         # This test is timing-sensitive.  Rename the function without
         # the "dont" to run it, but beware that it could fail or take
         # a while.
 
-        self.pool = self.create_pool(max_size=2, max_age=0.05)
+        self.pool = self.create_pool(max_size = 2, max_age = 0.05)
         self.connection = self.pool.get()
         self.connection.close()
         self.assertEquals(len(self.pool.free_items), 1)
@@ -363,12 +374,12 @@ class DBConnectionPool(DBTester):
         self.assertEquals(len(self.pool.free_items), 0)
 
     @skipped
-    def test_max_age_many(self):
+    def test_max_age_many (self):
         # This test is timing-sensitive.  Rename the function without
         # the "dont" to run it, but beware that it could fail or take
         # a while.
 
-        self.pool = self.create_pool(max_size=2, max_age=0.15)
+        self.pool = self.create_pool(max_size = 2, max_age = 0.15)
         self.connection, conn2 = self.pool.get(), self.pool.get()
         self.connection.close()
         self.assertEquals(len(self.pool.free_items), 1)
@@ -379,21 +390,23 @@ class DBConnectionPool(DBTester):
         conn2.close()  # should not be added to the free items
         self.assertEquals(len(self.pool.free_items), 0)
 
-    def test_waiters_get_woken(self):
+    def test_waiters_get_woken (self):
         # verify that when there's someone waiting on an empty pool
         # and someone puts an immediately-closed connection back in
         # the pool that the waiter gets woken
         self.pool.put(self.connection)
         self.pool.clear()
-        self.pool = self.create_pool(max_size=1, max_age=0)
+        self.pool = self.create_pool(max_size = 1, max_age = 0)
 
         self.connection = self.pool.get()
         self.assertEquals(self.pool.free(), 0)
         self.assertEquals(self.pool.waiting(), 0)
         e = event.Event()
-        def retrieve(pool, ev):
+
+        def retrieve (pool, ev):
             c = pool.get()
             ev.send(c)
+
         eventlet.spawn(retrieve, self.pool, e)
         eventlet.sleep(0) # these two sleeps should advance the retrieve
         eventlet.sleep(0) # coroutine until it's waiting in get()
@@ -408,13 +421,15 @@ class DBConnectionPool(DBTester):
         self.pool.put(conn)
 
     @skipped
-    def test_0_straight_benchmark(self):
+    def test_0_straight_benchmark (self):
         """ Benchmark; don't run unless you want to wait a while."""
         import time
+
         iterations = 20000
         c = self.connection.cursor()
         self.connection.commit()
-        def bench(c):
+
+        def bench (c):
             for i in xrange(iterations):
                 c.execute('select 1')
 
@@ -424,66 +439,69 @@ class DBConnectionPool(DBTester):
             start = time.time()
             bench(c)
             end = time.time()
-            results.append(end-start)
+            results.append(end - start)
 
         print "\n%u iterations took an average of %f seconds, (%s) in %s\n" % (
-            iterations, sum(results)/len(results), results, type(self))
+            iterations, sum(results) / len(results), results, type(self))
 
-    def test_raising_create(self):
+    def test_raising_create (self):
         # if the create() method raises an exception the pool should
         # not lose any connections
-        self.pool = self.create_pool(max_size=1, module=RaisingDBModule())
+        self.pool = self.create_pool(max_size = 1, module = RaisingDBModule())
         self.assertRaises(RuntimeError, self.pool.get)
         self.assertEquals(self.pool.free(), 1)
 
 
 class RaisingDBModule(object):
-    def connect(self, *args, **kw):
+    def connect (self, *args, **kw):
         raise RuntimeError()
 
 
 class TpoolConnectionPool(DBConnectionPool):
     __test__ = False  # so that nose doesn't try to execute this directly
-    def create_pool(self, min_size=0, max_size=1, max_idle=10, max_age=10,
-                    connect_timeout=0.5, module=None):
+
+    def create_pool (self, min_size = 0, max_size = 1, max_idle = 10, max_age = 10,
+                     connect_timeout = 0.5, module = None):
         if module is None:
             module = self._dbmodule
         return db_pool.TpooledConnectionPool(module,
-            min_size=min_size, max_size=max_size,
-            max_idle=max_idle, max_age=max_age,
-            connect_timeout = connect_timeout,
-            **self._auth)
+                                             min_size = min_size, max_size = max_size,
+                                             max_idle = max_idle, max_age = max_age,
+                                             connect_timeout = connect_timeout,
+                                             **self._auth)
 
 
     @skip_with_pyevent
-    def setUp(self):
+    def setUp (self):
         super(TpoolConnectionPool, self).setUp()
 
-    def tearDown(self):
+    def tearDown (self):
         super(TpoolConnectionPool, self).tearDown()
         from eventlet import tpool
-        tpool.killall()
 
+        tpool.killall()
 
 
 class RawConnectionPool(DBConnectionPool):
     __test__ = False  # so that nose doesn't try to execute this directly
-    def create_pool(self, min_size=0, max_size=1, max_idle=10, max_age=10,
-                    connect_timeout=0.5, module=None):
+
+    def create_pool (self, min_size = 0, max_size = 1, max_idle = 10, max_age = 10,
+                     connect_timeout = 0.5, module = None):
         if module is None:
             module = self._dbmodule
         return db_pool.RawConnectionPool(module,
-            min_size=min_size, max_size=max_size,
-            max_idle=max_idle, max_age=max_age,
-            connect_timeout=connect_timeout,
-            **self._auth)
+                                         min_size = min_size, max_size = max_size,
+                                         max_idle = max_idle, max_age = max_age,
+                                         connect_timeout = connect_timeout,
+                                         **self._auth)
 
 get_auth = get_database_auth
 
-def mysql_requirement(_f):
+def mysql_requirement (_f):
     verbose = os.environ.get('eventlet_test_mysql_verbose')
     try:
         import MySQLdb
+
         try:
             auth = get_auth()['MySQLdb'].copy()
             MySQLdb.connect(**auth)
@@ -497,6 +515,7 @@ def mysql_requirement(_f):
         if verbose:
             print >> sys.stderr, ">> Skipping mysql tests, MySQLdb not importable"
         return False
+
 
 class MysqlConnectionPool(object):
     dummy_table_sql = """CREATE TEMPORARY TABLE test_table
@@ -513,16 +532,17 @@ class MysqlConnectionPool(object):
         ) ENGINE=InnoDB;"""
 
     @skip_unless(mysql_requirement)
-    def setUp(self):
+    def setUp (self):
         import MySQLdb
+
         self._dbmodule = MySQLdb
         self._auth = get_auth()['MySQLdb']
         super(MysqlConnectionPool, self).setUp()
 
-    def tearDown(self):
+    def tearDown (self):
         super(MysqlConnectionPool, self).tearDown()
 
-    def create_db(self):
+    def create_db (self):
         auth = self._auth.copy()
         try:
             self.drop_db()
@@ -530,14 +550,14 @@ class MysqlConnectionPool(object):
             pass
         dbname = 'test%s' % os.getpid()
         db = self._dbmodule.connect(**auth).cursor()
-        db.execute("create database "+dbname)
+        db.execute("create database " + dbname)
         db.close()
         self._auth['db'] = dbname
         del db
 
-    def drop_db(self):
+    def drop_db (self):
         db = self._dbmodule.connect(**self._auth).cursor()
-        db.execute("drop database "+self._auth['db'])
+        db.execute("drop database " + self._auth['db'])
         db.close()
         del db
 
@@ -545,12 +565,15 @@ class MysqlConnectionPool(object):
 class Test01MysqlTpool(MysqlConnectionPool, TpoolConnectionPool, TestCase):
     __test__ = True
 
+
 class Test02MysqlRaw(MysqlConnectionPool, RawConnectionPool, TestCase):
     __test__ = True
 
-def postgres_requirement(_f):
+
+def postgres_requirement (_f):
     try:
         import psycopg2
+
         try:
             auth = get_auth()['psycopg2'].copy()
             psycopg2.connect(**auth)
@@ -577,16 +600,17 @@ class Psycopg2ConnectionPool(object):
         );"""
 
     @skip_unless(postgres_requirement)
-    def setUp(self):
+    def setUp (self):
         import psycopg2
+
         self._dbmodule = psycopg2
         self._auth = get_auth()['psycopg2']
         super(Psycopg2ConnectionPool, self).setUp()
 
-    def tearDown(self):
+    def tearDown (self):
         super(Psycopg2ConnectionPool, self).tearDown()
 
-    def create_db(self):
+    def create_db (self):
         dbname = 'test%s' % os.getpid()
         self._auth['database'] = dbname
         try:
@@ -598,22 +622,24 @@ class Psycopg2ConnectionPool(object):
         conn = self._dbmodule.connect(**auth)
         conn.set_isolation_level(0)
         db = conn.cursor()
-        db.execute("create database "+dbname)
+        db.execute("create database " + dbname)
         db.close()
         del db
 
-    def drop_db(self):
+    def drop_db (self):
         auth = self._auth.copy()
         auth.pop('database')  # can't drop database we connected to
         conn = self._dbmodule.connect(**auth)
         conn.set_isolation_level(0)
         db = conn.cursor()
-        db.execute("drop database "+self._auth['database'])
+        db.execute("drop database " + self._auth['database'])
         db.close()
         del db
 
+
 class Test01Psycopg2Tpool(Psycopg2ConnectionPool, TpoolConnectionPool, TestCase):
     __test__ = True
+
 
 class Test02Psycopg2Raw(Psycopg2ConnectionPool, RawConnectionPool, TestCase):
     __test__ = True

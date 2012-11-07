@@ -8,38 +8,37 @@ from eventlet.hubs.hub import BaseHub, FdListener, READ, WRITE
 
 
 class event_wrapper(object):
-
-    def __init__(self, impl=None, seconds=None):
+    def __init__ (self, impl = None, seconds = None):
         self.impl = impl
         self.seconds = seconds
 
-    def __repr__(self):
+    def __repr__ (self):
         if self.impl is not None:
             return repr(self.impl)
         else:
             return object.__repr__(self)
 
-    def __str__(self):
+    def __str__ (self):
         if self.impl is not None:
             return str(self.impl)
         else:
             return object.__str__(self)
 
-    def cancel(self):
+    def cancel (self):
         if self.impl is not None:
             self.impl.delete()
             self.impl = None
 
     @property
-    def pending(self):
+    def pending (self):
         return bool(self.impl and self.impl.pending())
 
-class Hub(BaseHub):
 
+class Hub(BaseHub):
     SYSTEM_EXCEPTIONS = (KeyboardInterrupt, SystemExit)
 
-    def __init__(self):
-        super(Hub,self).__init__()
+    def __init__ (self):
+        super(Hub, self).__init__()
         event.init()
 
         self.signal_exc_info = None
@@ -48,7 +47,7 @@ class Hub(BaseHub):
             lambda signalnum, frame: self.greenlet.parent.throw(KeyboardInterrupt))
         self.events_to_add = []
 
-    def dispatch(self):
+    def dispatch (self):
         loop = event.loop
         while True:
             for e in self.events_to_add:
@@ -68,7 +67,7 @@ class Hub(BaseHub):
             if result != 0:
                 return result
 
-    def run(self):
+    def run (self):
         while True:
             try:
                 self.dispatch()
@@ -84,24 +83,25 @@ class Hub(BaseHub):
                 else:
                     self.squelch_timer_exception(None, sys.exc_info())
 
-    def abort(self, wait=True):
+    def abort (self, wait = True):
         self.schedule_call_global(0, self.greenlet.throw, greenlet.GreenletExit)
         if wait:
             assert self.greenlet is not greenlet.getcurrent(), "Can't abort with wait from inside the hub's greenlet."
             self.switch()
 
-    def _getrunning(self):
+    def _getrunning (self):
         return bool(self.greenlet)
 
-    def _setrunning(self, value):
+    def _setrunning (self, value):
         pass  # exists for compatibility with BaseHub
+
     running = property(_getrunning, _setrunning)
 
-    def add(self, evtype, fileno, real_cb):
+    def add (self, evtype, fileno, real_cb):
         # this is stupid: pyevent won't call a callback unless it's a function,
         # so we have to force it to be one here
         if isinstance(real_cb, types.BuiltinMethodType):
-            def cb(_d):
+            def cb (_d):
                 real_cb(_d)
         else:
             cb = real_cb
@@ -111,22 +111,23 @@ class Hub(BaseHub):
         elif evtype is WRITE:
             evt = event.write(fileno, cb, fileno)
 
-        return super(Hub,self).add(evtype, fileno, evt)
+        return super(Hub, self).add(evtype, fileno, evt)
 
-    def signal(self, signalnum, handler):
-        def wrapper():
+    def signal (self, signalnum, handler):
+        def wrapper ():
             try:
                 handler(signalnum, None)
             except:
                 self.signal_exc_info = sys.exc_info()
                 event.abort()
+
         return event_wrapper(event.signal(signalnum, wrapper))
 
-    def remove(self, listener):
+    def remove (self, listener):
         super(Hub, self).remove(listener)
         listener.cb.delete()
 
-    def remove_descriptor(self, fileno):
+    def remove_descriptor (self, fileno):
         for lcontainer in self.listeners.itervalues():
             listener = lcontainer.pop(fileno, None)
             if listener:
@@ -137,36 +138,37 @@ class Hub(BaseHub):
                 except:
                     traceback.print_exc()
 
-    def schedule_call_local(self, seconds, cb, *args, **kwargs):
+    def schedule_call_local (self, seconds, cb, *args, **kwargs):
         current = greenlet.getcurrent()
         if current is self.greenlet:
             return self.schedule_call_global(seconds, cb, *args, **kwargs)
         event_impl = event.event(_scheduled_call_local, (cb, args, kwargs, current))
-        wrapper = event_wrapper(event_impl, seconds=seconds)
+        wrapper = event_wrapper(event_impl, seconds = seconds)
         self.events_to_add.append(wrapper)
         return wrapper
 
     schedule_call = schedule_call_local
 
-    def schedule_call_global(self, seconds, cb, *args, **kwargs):
+    def schedule_call_global (self, seconds, cb, *args, **kwargs):
         event_impl = event.event(_scheduled_call, (cb, args, kwargs))
-        wrapper = event_wrapper(event_impl, seconds=seconds)
+        wrapper = event_wrapper(event_impl, seconds = seconds)
         self.events_to_add.append(wrapper)
         return wrapper
 
-    def _version_info(self):
+    def _version_info (self):
         baseversion = event.__version__
         return baseversion
 
 
-def _scheduled_call(event_impl, handle, evtype, arg):
+def _scheduled_call (event_impl, handle, evtype, arg):
     cb, args, kwargs = arg
     try:
         cb(*args, **kwargs)
     finally:
         event_impl.delete()
 
-def _scheduled_call_local(event_impl, handle, evtype, arg):
+
+def _scheduled_call_local (event_impl, handle, evtype, arg):
     cb, args, kwargs, caller_greenlet = arg
     try:
         if not caller_greenlet.dead:

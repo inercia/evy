@@ -3,7 +3,7 @@ from eventlet.green import asyncore
 from eventlet.green import socket
 
 patcher.inject('asynchat',
-    globals(),
+               globals(),
     ('asyncore', asyncore),
     ('socket', socket))
 

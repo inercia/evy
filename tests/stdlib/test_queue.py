@@ -4,7 +4,7 @@ from eventlet.green import threading
 from eventlet.green import time
 
 patcher.inject('test.test_queue',
-    globals(),
+               globals(),
     ('Queue', Queue),
     ('threading', threading),
     ('time', time))

@@ -15,7 +15,7 @@ if len(sys.argv) >= 2:
 
 l = []
 
-def work(n):
+def work (n):
     l.append(n)
 
 timeouts = [random.uniform(0, 10) for x in xrange(timer_count)]
@@ -33,9 +33,9 @@ for timeout in timeouts:
     scheduled.append(t)
 
 hub.prepare_timers()
-hub.fire_timers(time.time()+11)
+hub.fire_timers(time.time() + 11)
 hub.prepare_timers()
 
 end = time.time()
 
-print "Duration: %f" % (end-start,)
+print "Duration: %f" % (end - start,)

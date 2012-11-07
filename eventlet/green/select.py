@@ -5,7 +5,7 @@ from eventlet.hubs import get_hub
 
 __patched__ = ['select']
 
-def get_fileno(obj):
+def get_fileno (obj):
     # The purpose of this function is to exactly replicate
     # the behavior of the select module when confronted with
     # abnormal filenos; the details are extensively tested in
@@ -22,7 +22,8 @@ def get_fileno(obj):
             raise TypeError("Expected int or long, got " + type(rv))
         return rv
 
-def select(read_list, write_list, error_list, timeout=None):
+
+def select (read_list, write_list, error_list, timeout = None):
     # error checking like this is required by the stdlib unit tests
     if timeout is not None:
         try:
@@ -35,7 +36,7 @@ def select(read_list, write_list, error_list, timeout=None):
     assert hub.greenlet is not current, 'do not call blocking functions from the mainloop'
     ds = {}
     for r in read_list:
-        ds[get_fileno(r)] = {'read' : r}
+        ds[get_fileno(r)] = {'read': r}
     for w in write_list:
         ds.setdefault(get_fileno(w), {})['write'] = w
     for e in error_list:
@@ -43,19 +44,19 @@ def select(read_list, write_list, error_list, timeout=None):
 
     listeners = []
 
-    def on_read(d):
+    def on_read (d):
         original = ds[get_fileno(d)]['read']
         current.switch(([original], [], []))
 
-    def on_write(d):
+    def on_write (d):
         original = ds[get_fileno(d)]['write']
         current.switch(([], [original], []))
 
-    def on_error(d, _err=None):
+    def on_error (d, _err = None):
         original = ds[get_fileno(d)]['error']
         current.switch(([], [], [original]))
 
-    def on_timeout():
+    def on_timeout ():
         current.switch(([], [], []))
 
     if timeout is not None:

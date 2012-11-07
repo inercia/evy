@@ -1,6 +1,7 @@
 import errno
 from eventlet.support import get_errno
 from eventlet import patcher
+
 time = patcher.original('time')
 select = patcher.original("select")
 if hasattr(select, 'epoll'):
@@ -33,7 +34,7 @@ from eventlet.hubs.poll import READ, WRITE
 # are identical in value to the poll constants
 
 class Hub(poll.Hub):
-    def __init__(self, clock=time.time):
+    def __init__ (self, clock = time.time):
         BaseHub.__init__(self, clock)
         self.poll = epoll()
         try:
@@ -42,20 +43,20 @@ class Hub(poll.Hub):
         except AttributeError:
             self.modify = self.poll.register
 
-    def add(self, evtype, fileno, cb):
+    def add (self, evtype, fileno, cb):
         oldlisteners = bool(self.listeners[READ].get(fileno) or
                             self.listeners[WRITE].get(fileno))
         listener = BaseHub.add(self, evtype, fileno, cb)
         try:
             if not oldlisteners:
                 # Means we've added a new listener
-                self.register(fileno, new=True)
+                self.register(fileno, new = True)
             else:
-                self.register(fileno, new=False)
+                self.register(fileno, new = False)
         except IOError, ex:    # ignore EEXIST, #80
             if get_errno(ex) != errno.EEXIST:
                 raise
         return listener
 
-    def do_poll(self, seconds):
+    def do_poll (self, seconds):
         return self.poll.poll(seconds)

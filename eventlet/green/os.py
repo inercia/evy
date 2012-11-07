@@ -1,5 +1,6 @@
 os_orig = __import__("os")
 import errno
+
 socket = __import__("socket")
 
 from eventlet import greenio
@@ -11,10 +12,10 @@ from eventlet.patcher import slurp_properties
 __all__ = os_orig.__all__
 __patched__ = ['fdopen', 'read', 'write', 'wait', 'waitpid']
 
-slurp_properties(os_orig, globals(), 
-    ignore=__patched__, srckeys=dir(os_orig))
+slurp_properties(os_orig, globals(),
+                 ignore = __patched__, srckeys = dir(os_orig))
 
-def fdopen(fd, *args, **kw):
+def fdopen (fd, *args, **kw):
     """fdopen(fd [, mode='r' [, bufsize]]) -> file_object
     
     Return an open file object connected to a file descriptor."""
@@ -26,7 +27,8 @@ def fdopen(fd, *args, **kw):
         raise OSError(*e.args)
 
 __original_read__ = os_orig.read
-def read(fd, n):
+
+def read (fd, n):
     """read(fd, buffersize) -> string
     
     Read a file descriptor."""
@@ -40,10 +42,11 @@ def read(fd, n):
             if get_errno(e) == errno.EPIPE:
                 return ''
             raise
-        hubs.trampoline(fd, read=True)
+        hubs.trampoline(fd, read = True)
 
 __original_write__ = os_orig.write
-def write(fd, st):
+
+def write (fd, st):
     """write(fd, string) -> byteswritten
     
     Write a string to a file descriptor.
@@ -57,16 +60,18 @@ def write(fd, st):
         except socket.error, e:
             if get_errno(e) != errno.EPIPE:
                 raise
-        hubs.trampoline(fd, write=True)
-    
-def wait():
+        hubs.trampoline(fd, write = True)
+
+
+def wait ():
     """wait() -> (pid, status)
     
     Wait for completion of a child process."""
-    return waitpid(0,0)
+    return waitpid(0, 0)
 
 __original_waitpid__ = os_orig.waitpid
-def waitpid(pid, options):
+
+def waitpid (pid, options):
     """waitpid(...)
     waitpid(pid, options) -> (pid, status)
     

@@ -6,23 +6,23 @@ from eventlet.event import Event
 
 
 class TestQueue(LimitedTestCase):
-
     @silence_warnings
-    def test_send_first(self):
+    def test_send_first (self):
         q = coros.queue()
         q.send('hi')
         self.assertEquals(q.wait(), 'hi')
 
     @silence_warnings
-    def test_send_exception_first(self):
+    def test_send_exception_first (self):
         q = coros.queue()
-        q.send(exc=RuntimeError())
+        q.send(exc = RuntimeError())
         self.assertRaises(RuntimeError, q.wait)
 
     @silence_warnings
-    def test_send_last(self):
+    def test_send_last (self):
         q = coros.queue()
-        def waiter(q):
+
+        def waiter (q):
             timer = eventlet.Timeout(0.1)
             self.assertEquals(q.wait(), 'hi2')
             timer.cancel()
@@ -33,11 +33,11 @@ class TestQueue(LimitedTestCase):
         q.send('hi2')
 
     @silence_warnings
-    def test_max_size(self):
+    def test_max_size (self):
         q = coros.queue(2)
         results = []
 
-        def putter(q):
+        def putter (q):
             q.send('a')
             results.append('a')
             q.send('b')
@@ -55,13 +55,14 @@ class TestQueue(LimitedTestCase):
         self.assertEquals(q.wait(), 'c')
 
     @silence_warnings
-    def test_zero_max_size(self):
+    def test_zero_max_size (self):
         q = coros.queue(0)
-        def sender(evt, q):
+
+        def sender (evt, q):
             q.send('hi')
             evt.send('done')
 
-        def receiver(evt, q):
+        def receiver (evt, q):
             x = q.wait()
             evt.send(x)
 
@@ -72,18 +73,18 @@ class TestQueue(LimitedTestCase):
         sleep(0)
         self.assert_(not e1.ready())
         spawn(receiver, e2, q)
-        self.assertEquals(e2.wait(),'hi')
-        self.assertEquals(e1.wait(),'done')
+        self.assertEquals(e2.wait(), 'hi')
+        self.assertEquals(e1.wait(), 'done')
 
     @silence_warnings
-    def test_multiple_waiters(self):
+    def test_multiple_waiters (self):
         # tests that multiple waiters get their results back
         q = coros.queue()
 
         sendings = ['1', '2', '3', '4']
         gts = [eventlet.spawn(q.wait)
-                for x in sendings]
-                
+               for x in sendings]
+
         eventlet.sleep(0.01) # get 'em all waiting
 
         q.send(sendings[0])
@@ -96,10 +97,10 @@ class TestQueue(LimitedTestCase):
         self.assertEquals(results, set(sendings))
 
     @silence_warnings
-    def test_waiters_that_cancel(self):
+    def test_waiters_that_cancel (self):
         q = coros.queue()
 
-        def do_receive(q, evt):
+        def do_receive (q, evt):
             eventlet.Timeout(0, RuntimeError())
             try:
                 result = q.wait()
@@ -116,20 +117,21 @@ class TestQueue(LimitedTestCase):
         self.assertEquals(q.wait(), 'hi')
 
     @silence_warnings
-    def test_senders_that_die(self):
+    def test_senders_that_die (self):
         q = coros.queue()
 
-        def do_send(q):
+        def do_send (q):
             q.send('sent')
 
         spawn(do_send, q)
         self.assertEquals(q.wait(), 'sent')
 
     @silence_warnings
-    def test_two_waiters_one_dies(self):
-        def waiter(q, evt):
+    def test_two_waiters_one_dies (self):
+        def waiter (q, evt):
             evt.send(q.wait())
-        def do_receive(q, evt):
+
+        def do_receive (q, evt):
             eventlet.Timeout(0, RuntimeError())
             try:
                 result = q.wait()
@@ -148,8 +150,8 @@ class TestQueue(LimitedTestCase):
         self.assertEquals(waiting_evt.wait(), 'hi')
 
     @silence_warnings
-    def test_two_bogus_waiters(self):
-        def do_receive(q, evt):
+    def test_two_bogus_waiters (self):
+        def do_receive (q, evt):
             eventlet.Timeout(0, RuntimeError())
             try:
                 result = q.wait()
@@ -167,10 +169,10 @@ class TestQueue(LimitedTestCase):
         self.assertEquals(e1.wait(), 'timed out')
         self.assertEquals(e2.wait(), 'timed out')
         self.assertEquals(q.wait(), 'sent')
-                
+
     @silence_warnings
-    def test_waiting(self):
-        def do_wait(q, evt):
+    def test_waiting (self):
+        def do_wait (q, evt):
             result = q.wait()
             evt.send(result)
 
@@ -187,15 +189,14 @@ class TestQueue(LimitedTestCase):
 
 
 class TestChannel(LimitedTestCase):
-
     @silence_warnings
-    def test_send(self):
+    def test_send (self):
         sleep(0.1)
         channel = coros.queue(0)
 
         events = []
 
-        def another_greenlet():
+        def another_greenlet ():
             events.append(channel.wait())
             events.append(channel.wait())
 
@@ -211,12 +212,12 @@ class TestChannel(LimitedTestCase):
 
 
     @silence_warnings
-    def test_wait(self):
+    def test_wait (self):
         sleep(0.1)
         channel = coros.queue(0)
         events = []
 
-        def another_greenlet():
+        def another_greenlet ():
             events.append('sending hello')
             channel.send('hello')
             events.append('sending world')
@@ -231,10 +232,11 @@ class TestChannel(LimitedTestCase):
 
         self.assertEqual(['waiting', 'sending hello', 'hello', 'sending world', 'world'], events)
         sleep(0)
-        self.assertEqual(['waiting', 'sending hello', 'hello', 'sending world', 'world', 'sent world'], events)
+        self.assertEqual(
+            ['waiting', 'sending hello', 'hello', 'sending world', 'world', 'sent world'], events)
 
     @silence_warnings
-    def test_waiters(self):
+    def test_waiters (self):
         c = coros.Channel()
         w1 = eventlet.spawn(c.wait)
         w2 = eventlet.spawn(c.wait)
@@ -252,7 +254,7 @@ class TestChannel(LimitedTestCase):
         s3.wait()
         # NOTE: we don't guarantee that waiters are served in order
         results = sorted([w1.wait(), w2.wait(), w3.wait()])
-        self.assertEquals(results, [1,2,3])
+        self.assertEquals(results, [1, 2, 3])
 
-if __name__=='__main__':
+if __name__ == '__main__':
     main()

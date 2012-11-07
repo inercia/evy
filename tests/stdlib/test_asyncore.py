@@ -7,7 +7,7 @@ from eventlet.green import time
 
 patcher.inject("test.test_asyncore", globals())
 
-def new_closeall_check(self, usedefault):
+def new_closeall_check (self, usedefault):
     # Check that close_all() closes everything in a given map
 
     l = []
@@ -38,7 +38,7 @@ def new_closeall_check(self, usedefault):
 
     for c in l:
         self.assertEqual(c.socket.closed, True)
-        
+
 HelperFunctionTests.closeall_check = new_closeall_check
 
 try:
@@ -52,6 +52,7 @@ try:
     # temporarily disabling these tests in the python2.7/pyevent configuration
     from tests import using_pyevent
     import sys
+
     if using_pyevent(None) and sys.version_info >= (2, 7):
         TestAPI_UseSelect.test_handle_accept = lambda *a, **kw: None
         TestAPI_UseSelect.test_handle_close = lambda *a, **kw: None

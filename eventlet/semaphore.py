@@ -19,32 +19,32 @@ class Semaphore(object):
     If not specified, *value* defaults to 1.
     """
 
-    def __init__(self, value=1):
-        self.counter  = value
+    def __init__ (self, value = 1):
+        self.counter = value
         if value < 0:
             raise ValueError("Semaphore must be initialized with a positive "
                              "number, got %s" % value)
         self._waiters = set()
 
-    def __repr__(self):
+    def __repr__ (self):
         params = (self.__class__.__name__, hex(id(self)),
                   self.counter, len(self._waiters))
         return '<%s at %s c=%s _w[%s]>' % params
 
-    def __str__(self):
+    def __str__ (self):
         params = (self.__class__.__name__, self.counter, len(self._waiters))
         return '<%s c=%s _w[%s]>' % params
 
-    def locked(self):
+    def locked (self):
         """Returns true if a call to acquire would block."""
         return self.counter <= 0
 
-    def bounded(self):
+    def bounded (self):
         """Returns False; for consistency with
         :class:`~eventlet.semaphore.CappedSemaphore`."""
         return False
 
-    def acquire(self, blocking=True):
+    def acquire (self, blocking = True):
         """Acquire a semaphore.
 
         When invoked without arguments: if the internal counter is larger than
@@ -74,10 +74,10 @@ class Semaphore(object):
         self.counter -= 1
         return True
 
-    def __enter__(self):
+    def __enter__ (self):
         self.acquire()
 
-    def release(self, blocking=True):
+    def release (self, blocking = True):
         """Release a semaphore, incrementing the internal counter by one. When
         it was zero on entry and another thread is waiting for it to become
         larger than zero again, wake up that thread.
@@ -89,16 +89,16 @@ class Semaphore(object):
             hubs.get_hub().schedule_call_global(0, self._do_acquire)
         return True
 
-    def _do_acquire(self):
-        if self._waiters and self.counter>0:
+    def _do_acquire (self):
+        if self._waiters and self.counter > 0:
             waiter = self._waiters.pop()
             waiter.switch()
 
-    def __exit__(self, typ, val, tb):
+    def __exit__ (self, typ, val, tb):
         self.release()
 
     @property
-    def balance(self):
+    def balance (self):
         """An integer value that represents how many new calls to
         :meth:`acquire` or :meth:`release` would be needed to get the counter to
         0.  If it is positive, then its value is the number of acquires that can
@@ -120,11 +120,12 @@ class BoundedSemaphore(Semaphore):
     semaphores are used to guard resources with limited capacity. If the
     semaphore is released too many times it's a sign of a bug. If not given,
     *value* defaults to 1."""
-    def __init__(self, value=1):
+
+    def __init__ (self, value = 1):
         super(BoundedSemaphore, self).__init__(value)
         self.original_counter = value
 
-    def release(self, blocking=True):
+    def release (self, blocking = True):
         """Release a semaphore, incrementing the internal counter by one. If
         the counter would exceed the initial value, raises ValueError.  When
         it was zero on entry and another thread is waiting for it to become
@@ -135,6 +136,7 @@ class BoundedSemaphore(Semaphore):
         if self.counter >= self.original_counter:
             raise ValueError, "Semaphore released too many times"
         return super(BoundedSemaphore, self).release(blocking)
+
 
 class CappedSemaphore(object):
     """A blockingly bounded semaphore.
@@ -158,7 +160,8 @@ class CappedSemaphore(object):
       with sem:
         do_some_stuff()
     """
-    def __init__(self, count, limit):
+
+    def __init__ (self, count, limit):
         if count < 0:
             raise ValueError("CappedSemaphore must be initialized with a "
                              "positive number, got %s" % count)
@@ -166,27 +169,27 @@ class CappedSemaphore(object):
             # accidentally, this also catches the case when limit is None
             raise ValueError("'count' cannot be more than 'limit'")
         self.lower_bound = Semaphore(count)
-        self.upper_bound = Semaphore(limit-count)
+        self.upper_bound = Semaphore(limit - count)
 
-    def __repr__(self):
+    def __repr__ (self):
         params = (self.__class__.__name__, hex(id(self)),
                   self.balance, self.lower_bound, self.upper_bound)
         return '<%s at %s b=%s l=%s u=%s>' % params
 
-    def __str__(self):
+    def __str__ (self):
         params = (self.__class__.__name__, self.balance,
                   self.lower_bound, self.upper_bound)
         return '<%s b=%s l=%s u=%s>' % params
 
-    def locked(self):
+    def locked (self):
         """Returns true if a call to acquire would block."""
         return self.lower_bound.locked()
 
-    def bounded(self):
+    def bounded (self):
         """Returns true if a call to release would block."""
         return self.upper_bound.locked()
 
-    def acquire(self, blocking=True):
+    def acquire (self, blocking = True):
         """Acquire a semaphore.
 
         When invoked without arguments: if the internal counter is larger than
@@ -216,10 +219,10 @@ class CappedSemaphore(object):
             # a need to care about such inconsistency
             raise
 
-    def __enter__(self):
+    def __enter__ (self):
         self.acquire()
 
-    def release(self, blocking=True):
+    def release (self, blocking = True):
         """Release a semaphore.  In this class, this behaves very much like
         an :meth:`acquire` but in the opposite direction.
 
@@ -235,11 +238,11 @@ class CappedSemaphore(object):
             self.lower_bound.counter -= 1
             raise
 
-    def __exit__(self, typ, val, tb):
+    def __exit__ (self, typ, val, tb):
         self.release()
 
     @property
-    def balance(self):
+    def balance (self):
         """An integer value that represents how many new calls to
         :meth:`acquire` or :meth:`release` would be needed to get the counter to
         0.  If it is positive, then its value is the number of acquires that can

@@ -15,18 +15,18 @@ try:
     spawn_n = greenthread.spawn_n
     spawn_after = greenthread.spawn_after
     kill = greenthread.kill
-    
+
     Timeout = timeout.Timeout
     with_timeout = timeout.with_timeout
-    
+
     GreenPool = greenpool.GreenPool
     GreenPile = greenpool.GreenPile
-    
+
     Queue = queue.Queue
-    
+
     import_patched = patcher.import_patched
     monkey_patch = patcher.monkey_patch
-    
+
     connect = convenience.connect
     listen = convenience.listen
     serve = convenience.serve
@@ -34,7 +34,7 @@ try:
     wrap_ssl = convenience.wrap_ssl
 
     getcurrent = greenlet.greenlet.getcurrent
-    
+
     # deprecated    
     TimeoutError = timeout.Timeout
     exc_after = greenthread.exc_after
@@ -46,4 +46,5 @@ except ImportError, e:
     if 'greenlet' not in str(e):
         # any other exception should be printed
         import traceback
+
         traceback.print_exc()

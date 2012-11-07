@@ -5,14 +5,14 @@ from eventlet import hubs
 from eventlet.hubs import timer
 
 class TestTimer(TestCase):
-    def test_copy(self):
+    def test_copy (self):
         t = timer.Timer(0, lambda: None)
         t2 = t.copy()
         assert t.seconds == t2.seconds
         assert t.tpl == t2.tpl
         assert t.called == t2.called
 
-    def test_schedule(self):
+    def test_schedule (self):
         hub = hubs.get_hub()
         # clean up the runloop, preventing side effects from previous tests
         # on this thread
@@ -31,7 +31,7 @@ class TestTimer(TestCase):
         hub.switch()
         assert called
         assert not hub.running
-        
+
 
 if __name__ == '__main__':
     main()

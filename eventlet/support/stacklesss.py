@@ -13,15 +13,15 @@ coro_args = {}
 tasklet_to_greenlet = {}
 
 
-def getcurrent():
+def getcurrent ():
     return tasklet_to_greenlet[stackless.getcurrent()]
 
 
 class FirstSwitch(object):
-    def __init__(self, gr):
+    def __init__ (self, gr):
         self.gr = gr
 
-    def __call__(self, *args, **kw):
+    def __call__ (self, *args, **kw):
         #print "first call", args, kw
         gr = self.gr
         del gr.switch
@@ -34,7 +34,7 @@ class FirstSwitch(object):
 
 
 class greenlet(object):
-    def __init__(self, run=None, parent=None):
+    def __init__ (self, run = None, parent = None):
         self.dead = False
         if parent is None:
             parent = getcurrent()
@@ -45,7 +45,7 @@ class greenlet(object):
 
         self.switch = FirstSwitch(self)
 
-    def switch(self, *args):
+    def switch (self, *args):
         #print "switch", args
         global caller
         caller = stackless.getcurrent()
@@ -57,10 +57,10 @@ class greenlet(object):
         rval = coro_args[self]
         return rval
 
-    def run(self):
+    def run (self):
         pass
 
-    def __bool__(self):
+    def __bool__ (self):
         return self.run is None and not self.dead
 
 
@@ -68,7 +68,7 @@ class GreenletExit(Exception):
     pass
 
 
-def emulate():
+def emulate ():
     module = types.ModuleType('greenlet')
     sys.modules['greenlet'] = module
     module.greenlet = greenlet

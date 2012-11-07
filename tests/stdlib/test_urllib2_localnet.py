@@ -6,11 +6,11 @@ from eventlet.green import socket
 from eventlet.green import urllib2
 
 patcher.inject('test.test_urllib2_localnet',
-    globals(),
+               globals(),
     ('BaseHTTPServer', BaseHTTPServer),
     ('threading', threading),
     ('socket', socket),
     ('urllib2', urllib2))
-        
+
 if __name__ == "__main__":
     test_main()

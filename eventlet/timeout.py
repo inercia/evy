@@ -43,18 +43,18 @@ class Timeout(BaseException):
     with-block won't see it.
     """
 
-    def __init__(self, seconds=None, exception=None):
+    def __init__ (self, seconds = None, exception = None):
         self.seconds = seconds
         self.exception = exception
         self.timer = None
         self.start()
 
-    def start(self):
+    def start (self):
         """Schedule the timeout.  This is called on construction, so
         it should not be called explicitly, unless the timer has been
         canceled."""
-        assert not self.pending, \
-               '%r is already started; to restart it, cancel it first' % self
+        assert not self.pending,\
+        '%r is already started; to restart it, cancel it first' % self
         if self.seconds is None: # "fake" timeout (never expires)
             self.timer = None
         elif self.exception is None or isinstance(self.exception, bool): # timeout that raises self
@@ -66,14 +66,14 @@ class Timeout(BaseException):
         return self
 
     @property
-    def pending(self):
+    def pending (self):
         """True if the timeout is scheduled to be raised."""
         if self.timer is not None:
             return self.timer.pending
         else:
             return False
 
-    def cancel(self):
+    def cancel (self):
         """If the timeout is pending, cancel it.  If not using
         Timeouts in ``with`` statements, always call cancel() in a
         ``finally`` after the block of code that is getting timed out.
@@ -83,7 +83,7 @@ class Timeout(BaseException):
             self.timer.cancel()
             self.timer = None
 
-    def __repr__(self):
+    def __repr__ (self):
         try:
             classname = self.__class__.__name__
         except AttributeError: # Python < 2.5
@@ -99,7 +99,7 @@ class Timeout(BaseException):
         return '<%s at %s seconds=%s%s%s>' % (
             classname, hex(id(self)), self.seconds, exception, pending)
 
-    def __str__(self):
+    def __str__ (self):
         """
         >>> raise Timeout
         Traceback (most recent call last):
@@ -119,18 +119,18 @@ class Timeout(BaseException):
         else:
             return '%s second%s (%s)' % (self.seconds, suffix, self.exception)
 
-    def __enter__(self):
+    def __enter__ (self):
         if self.timer is None:
             self.start()
         return self
 
-    def __exit__(self, typ, value, tb):
+    def __exit__ (self, typ, value, tb):
         self.cancel()
         if value is self and self.exception is False:
             return True
 
 
-def with_timeout(seconds, function, *args, **kwds):
+def with_timeout (seconds, function, *args, **kwds):
     """Wrap a call to some (yielding) function with a timeout; if the called
     function fails to return before the timeout, cancel it and return a flag
     value.

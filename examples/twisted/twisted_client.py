@@ -16,7 +16,8 @@ conn.loseWriteConnection()
 print conn.read()
 
 # read from SSL connection line by line
-conn = GreenClientCreator(reactor, LineOnlyReceiverTransport).connectSSL('sf.net', 443, ssl.ClientContextFactory())
+conn = GreenClientCreator(reactor, LineOnlyReceiverTransport).connectSSL('sf.net', 443,
+                                                                         ssl.ClientContextFactory())
 conn.write('GET / HTTP/1.0\r\n\r\n')
 try:
     for num, line in enumerate(conn):

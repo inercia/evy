@@ -27,30 +27,29 @@ use_hub('zeromq')
 ctx = zmq.Context()
 
 class IDName(object):
-
-    def __init__(self):
+    def __init__ (self):
         self.id = uuid1()
         self.name = None
 
-    def __str__(self):
+    def __str__ (self):
         if self.name:
             return self.name
         else:
             return str(self.id)
 
-    def pack_message(self, msg):
+    def pack_message (self, msg):
         return self, msg
 
-    def unpack_message(self, msg):
+    def unpack_message (self, msg):
         sender, message = msg
-        sender_name = 'you said' if sender.id == self.id \
-                                 else '%s says' % sender
+        sender_name = 'you said' if sender.id == self.id\
+        else '%s says' % sender
         return "%s: %s" % (sender_name, message)
 
 
 participants = defaultdict(IDName)
 
-def subscribe_and_distribute(sub_socket):
+def subscribe_and_distribute (sub_socket):
     global participants
     while True:
         msg = sub_socket.recv_pyobj()
@@ -62,8 +61,9 @@ def subscribe_and_distribute(sub_socket):
                 except:
                     del participants[ws]
 
+
 @websocket.WebSocketWSGI
-def handle(ws):
+def handle (ws):
     global pub_socket
     name_id = participants[ws]
     ws.send("Connected as %s, change name with 'name: new_name'" % name_id)
@@ -81,8 +81,9 @@ def handle(ws):
             sleep()
     finally:
         del participants[ws]
-                  
-def dispatch(environ, start_response):
+
+
+def dispatch (environ, start_response):
     """Resolves to the web page or the websocket depending on the path."""
     global port
     if environ['PATH_INFO'] == '/chat':
@@ -90,14 +91,14 @@ def dispatch(environ, start_response):
     else:
         start_response('200 OK', [('content-type', 'text/html')])
         return [open(os.path.join(
-                     os.path.dirname(__file__), 
-                     'websocket_chat.html')).read() % dict(port=port)]
+            os.path.dirname(__file__),
+            'websocket_chat.html')).read() % dict(port = port)]
 
 port = None
 
 if __name__ == "__main__":
     usage = 'usage: websocket_chat -p pub address -s sub address port number'
-    if len (sys.argv) != 6:
+    if len(sys.argv) != 6:
         print usage
         sys.exit(1)
 

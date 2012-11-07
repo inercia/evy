@@ -1,14 +1,14 @@
 import eventlet, sys
 from eventlet.green import socket, zmq
 from eventlet.hubs import use_hub
+
 use_hub('zeromq')
 
 ADDR = 'ipc:///tmp/chat'
 
 ctx = zmq.Context()
 
-def publish(writer):
-
+def publish (writer):
     print "connected"
     socket = ctx.socket(zmq.SUB)
 
@@ -23,10 +23,9 @@ def publish(writer):
         writer.flush()
 
 
-PORT=3001
+PORT = 3001
 
-def read_chat_forever(reader, pub_socket):
-
+def read_chat_forever (reader, pub_socket):
     line = reader.readline()
     who = 'someone'
     while line:

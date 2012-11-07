@@ -11,57 +11,61 @@ __patched__ = ['_start_new_thread', '_allocate_lock', '_get_ident', '_sleep',
 __orig_threading = patcher.original('threading')
 __threadlocal = __orig_threading.local()
 
-
 patcher.inject('threading',
-    globals(),
+               globals(),
     ('thread', thread),
     ('time', time))
 
 del patcher
 
-
 _count = 1
+
 class _GreenThread(object):
     """Wrapper for GreenThread objects to provide Thread-like attributes
     and methods"""
-    def __init__(self, g):
+
+    def __init__ (self, g):
         global _count
         self._g = g
         self._name = 'GreenThread-%d' % _count
         _count += 1
 
-    def __repr__(self):
+    def __repr__ (self):
         return '<_GreenThread(%s, %r)>' % (self._name, self._g)
 
-    def join(self, timeout=None):
+    def join (self, timeout = None):
         return self._g.wait()
 
-    def getName(self):
+    def getName (self):
         return self._name
+
     get_name = getName
 
-    def setName(self, name):
+    def setName (self, name):
         self._name = str(name)
+
     set_name = setName
 
     name = property(getName, setName)
 
     ident = property(lambda self: id(self._g))
 
-    def isAlive(self):
+    def isAlive (self):
         return True
+
     is_alive = isAlive
 
     daemon = property(lambda self: True)
 
-    def isDaemon(self):
+    def isDaemon (self):
         return self.daemon
+
     is_daemon = isDaemon
 
 
 __threading = None
 
-def _fixup_thread(t):
+def _fixup_thread (t):
     # Some third-party packages (lockfile) will try to patch the
     # threading.Thread class with a get_name attribute if it doesn't
     # exist. Since we might return Thread objects from the original
@@ -78,7 +82,7 @@ def _fixup_thread(t):
     return t
 
 
-def current_thread():
+def current_thread ():
     g = greenlet.getcurrent()
     if not g:
         # Not currently in a greenthread, fall back to standard function
@@ -88,13 +92,14 @@ def current_thread():
         active = __threadlocal.active
     except AttributeError:
         active = __threadlocal.active = {}
-    
+
     try:
         t = active[id(g)]
     except KeyError:
         # Add green thread to active if we can clean it up on exit
-        def cleanup(g):
+        def cleanup (g):
             del active[id(g)]
+
         try:
             g.link(cleanup)
         except AttributeError:

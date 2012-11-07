@@ -2,6 +2,7 @@ import sys
 import errno
 from eventlet import patcher
 from eventlet.support import get_errno, clear_sys_exc_info
+
 select = patcher.original('select')
 time = patcher.original('time')
 
@@ -13,7 +14,7 @@ except AttributeError:
     BAD_SOCK = set((errno.EBADF,))
 
 class Hub(BaseHub):
-    def _remove_bad_fds(self):
+    def _remove_bad_fds (self):
         """ Iterate through fds, removing the ones that are bad per the
         operating system.
         """
@@ -24,7 +25,7 @@ class Hub(BaseHub):
                 if get_errno(e) in BAD_SOCK:
                     self.remove_descriptor(fd)
 
-    def wait(self, seconds=None):
+    def wait (self, seconds = None):
         readers = self.listeners[READ]
         writers = self.listeners[WRITE]
         if not readers and not writers:
@@ -32,7 +33,8 @@ class Hub(BaseHub):
                 time.sleep(seconds)
             return
         try:
-            r, w, er = select.select(readers.keys(), writers.keys(), readers.keys() + writers.keys(), seconds)
+            r, w, er = select.select(readers.keys(), writers.keys(), readers.keys() + writers.keys()
+                                     , seconds)
         except select.error, e:
             if get_errno(e) == errno.EINTR:
                 return
@@ -45,7 +47,7 @@ class Hub(BaseHub):
         for fileno in er:
             readers.get(fileno, noop).cb(fileno)
             writers.get(fileno, noop).cb(fileno)
-            
+
         for listeners, events in ((readers, r), (writers, w)):
             for fileno in events:
                 try:

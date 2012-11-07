@@ -5,7 +5,7 @@ Demonstrates how to use the eventlet.green.socket module.
 import eventlet
 from eventlet.green import socket
 
-def geturl(url):
+def geturl (url):
     c = socket.socket()
     ip = socket.gethostbyname(url)
     c.connect((ip, 80))

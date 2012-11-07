@@ -40,16 +40,16 @@ from eventlet.green import _socket_nodns
 from eventlet.green import time
 from eventlet.green import select
 
-dns = patcher.import_patched('dns', 
-                             socket=_socket_nodns,
-                             time=time,
-                             select=select)
-for pkg in ('dns.query', 'dns.exception', 'dns.inet', 'dns.message', 
-            'dns.rdatatype','dns.resolver', 'dns.reversename'):
-   setattr(dns, pkg.split('.')[1], patcher.import_patched(pkg, 
-                                                          socket=_socket_nodns,
-                                                          time=time,
-                                                          select=select))
+dns = patcher.import_patched('dns',
+                             socket = _socket_nodns,
+                             time = time,
+                             select = select)
+for pkg in ('dns.query', 'dns.exception', 'dns.inet', 'dns.message',
+            'dns.rdatatype', 'dns.resolver', 'dns.reversename'):
+    setattr(dns, pkg.split('.')[1], patcher.import_patched(pkg,
+                                                           socket = _socket_nodns,
+                                                           time = time,
+                                                           select = select))
 
 socket = _socket_nodns
 
@@ -59,19 +59,22 @@ DNS_QUERY_TIMEOUT = 10.0
 # Resolver instance used to perfrom DNS lookups.
 #
 class FakeAnswer(list):
-   expiration = 0
+    expiration = 0
+
+
 class FakeRecord(object):
-   pass
+    pass
+
 
 class ResolverProxy(object):
-    def __init__(self, *args, **kwargs):
+    def __init__ (self, *args, **kwargs):
         self._resolver = None
         self._filename = kwargs.get('filename', '/etc/resolv.conf')
         self._hosts = {}
         if kwargs.pop('dev', False):
             self._load_etc_hosts()
 
-    def _load_etc_hosts(self):
+    def _load_etc_hosts (self):
         try:
             fd = open('/etc/hosts', 'r')
             contents = fd.read()
@@ -89,10 +92,10 @@ class ResolverProxy(object):
             for part in parts[1:]:
                 self._hosts[part] = ip
 
-    def clear(self):
+    def clear (self):
         self._resolver = None
 
-    def query(self, *args, **kwargs):
+    def query (self, *args, **kwargs):
         if self._resolver is None:
             self._resolver = dns.resolver.Resolver(filename = self._filename)
             self._resolver.cache = dns.resolver.Cache()
@@ -108,12 +111,13 @@ class ResolverProxy(object):
             answer.append(record)
             return answer
         return self._resolver.query(*args, **kwargs)
-#
+
+    #
 # cache
 #
-resolver  = ResolverProxy(dev=True)
+resolver = ResolverProxy(dev = True)
 
-def resolve(name):
+def resolve (name):
     error = None
     rrset = None
 
@@ -134,10 +138,11 @@ def resolve(name):
         else:
             sys.stderr.write('DNS error: %r %r\n' % (name, error))
     return rrset
+
 #
 # methods
 #
-def getaliases(host):
+def getaliases (host):
     """Checks for aliases of the given hostname (cname records)
     returns a list of alias targets
     will return an empty list if no aliases
@@ -160,7 +165,8 @@ def getaliases(host):
 
     return cnames
 
-def getaddrinfo(host, port, family=0, socktype=0, proto=0, flags=0):
+
+def getaddrinfo (host, port, family = 0, socktype = 0, proto = 0, flags = 0):
     """Replacement for Python's socket.getaddrinfo.
 
     Currently only supports IPv4.  At present, flags are not
@@ -178,7 +184,8 @@ def getaddrinfo(host, port, family=0, socktype=0, proto=0, flags=0):
         value.append((socket.AF_INET, socktype, proto, '', (rr.address, port)))
     return value
 
-def gethostbyname(hostname):
+
+def gethostbyname (hostname):
     """Replacement for Python's socket.gethostbyname.
 
     Currently only supports IPv4.
@@ -189,7 +196,8 @@ def gethostbyname(hostname):
     rrset = resolve(hostname)
     return rrset[0].address
 
-def gethostbyname_ex(hostname):
+
+def gethostbyname_ex (hostname):
     """Replacement for Python's socket.gethostbyname_ex.
 
     Currently only supports IPv4.
@@ -204,7 +212,8 @@ def gethostbyname_ex(hostname):
         addrs.append(rr.address)
     return (hostname, [], addrs)
 
-def getnameinfo(sockaddr, flags):
+
+def getnameinfo (sockaddr, flags):
     """Replacement for Python's socket.getnameinfo.
 
     Currently only supports IPv4.
@@ -214,7 +223,7 @@ def getnameinfo(sockaddr, flags):
     except (ValueError, TypeError):
         if not isinstance(sockaddr, tuple):
             del sockaddr  # to pass a stdlib test that is
-                          # hyper-careful about reference counts
+            # hyper-careful about reference counts
             raise TypeError('getnameinfo() argument 1 must be a tuple')
         else:
             # must be ipv6 sockaddr, pretending we don't know how to resolve it
@@ -227,11 +236,11 @@ def getnameinfo(sockaddr, flags):
 
     if is_ipv4_addr(host):
         try:
-            rrset =	resolver.query(
+            rrset = resolver.query(
                 dns.reversename.from_address(host), dns.rdatatype.PTR)
             if len(rrset) > 1:
                 raise socket.error('sockaddr resolved to multiple addresses')
-            host = rrset[0].target.to_text(omit_final_dot=True)
+            host = rrset[0].target.to_text(omit_final_dot = True)
         except dns.exception.Timeout, e:
             if flags & socket.NI_NAMEREQD:
                 raise socket.gaierror((socket.EAI_AGAIN, 'Lookup timed out'))
@@ -258,7 +267,8 @@ def getnameinfo(sockaddr, flags):
 
     return (host, port)
 
-def is_ipv4_addr(host):
+
+def is_ipv4_addr (host):
     """is_ipv4_addr returns true if host is a valid IPv4 address in
     dotted quad notation.
     """
@@ -271,7 +281,8 @@ def is_ipv4_addr(host):
         return True
     return False
 
-def _net_read(sock, count, expiration):
+
+def _net_read (sock, count, expiration):
     """coro friendly replacement for dns.query._net_write
     Read the specified number of bytes from sock.  Keep trying until we
     either get the desired amount, or we hit EOF.
@@ -292,7 +303,8 @@ def _net_read(sock, count, expiration):
         s = s + n
     return s
 
-def _net_write(sock, data, expiration):
+
+def _net_write (sock, data, expiration):
     """coro friendly replacement for dns.query._net_write
     Write the specified data to the socket.
     A Timeout exception will be raised if the operation is not completed
@@ -308,9 +320,10 @@ def _net_write(sock, data, expiration):
             if expiration - time.time() <= 0.0:
                 raise dns.exception.Timeout
 
-def udp(
-    q, where, timeout=DNS_QUERY_TIMEOUT, port=53, af=None, source=None,
-    source_port=0, ignore_unexpected=False):
+
+def udp (
+        q, where, timeout = DNS_QUERY_TIMEOUT, port = 53, af = None, source = None,
+        source_port = 0, ignore_unexpected = False):
     """coro friendly replacement for dns.query.udp
     Return the response obtained after sending a query via UDP.
 
@@ -376,17 +389,18 @@ def udp(
             if not ignore_unexpected:
                 raise dns.query.UnexpectedSource(
                     'got a response from %s instead of %s'
-                        % (from_address, destination))
+                    % (from_address, destination))
     finally:
         s.close()
 
-    r = dns.message.from_wire(wire, keyring=q.keyring, request_mac=q.mac)
+    r = dns.message.from_wire(wire, keyring = q.keyring, request_mac = q.mac)
     if not q.is_response(r):
         raise dns.query.BadResponse()
     return r
 
-def tcp(q, where, timeout=DNS_QUERY_TIMEOUT, port=53,
-   af=None, source=None, source_port=0):
+
+def tcp (q, where, timeout = DNS_QUERY_TIMEOUT, port = 53,
+         af = None, source = None, source_port = 0):
     """coro friendly replacement for dns.query.tcp
     Return the response obtained after sending a query via TCP.
 
@@ -448,13 +462,14 @@ def tcp(q, where, timeout=DNS_QUERY_TIMEOUT, port=53,
         wire = _net_read(s, l, expiration)
     finally:
         s.close()
-    r = dns.message.from_wire(wire, keyring=q.keyring, request_mac=q.mac)
+    r = dns.message.from_wire(wire, keyring = q.keyring, request_mac = q.mac)
     if not q.is_response(r):
         raise dns.query.BadResponse()
     return r
 
-def reset():
-   resolver.clear()
+
+def reset ():
+    resolver.clear()
 
 # Install our coro-friendly replacements for the tcp and udp query methods.
 dns.query.tcp = tcp

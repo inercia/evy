@@ -7,29 +7,30 @@ from tests import mock, LimitedTestCase, using_pyevent, skip_unless
 from unittest import TestCase
 
 from threading import Thread
+
 try:
     from eventlet.green import zmq
 except ImportError:
     zmq = {}    # for systems lacking zmq, skips tests instead of barfing
 
-def zmq_supported(_):
+def zmq_supported (_):
     try:
         import zmq
     except ImportError:
         return False
     return not using_pyevent(_)
 
-class TestUpstreamDownStream(LimitedTestCase):
 
-    def setUp(self):
+class TestUpstreamDownStream(LimitedTestCase):
+    def setUp (self):
         super(TestUpstreamDownStream, self).setUp()
         self.sockets = []
 
-    def tearDown(self):
+    def tearDown (self):
         self.clear_up_sockets()
         super(TestUpstreamDownStream, self).tearDown()
 
-    def create_bound_pair(self, type1, type2, interface='tcp://127.0.0.1'):
+    def create_bound_pair (self, type1, type2, interface = 'tcp://127.0.0.1'):
         """Create a bound socket pair using a random port."""
         self.context = context = zmq.Context()
         s1 = context.socket(type1)
@@ -40,12 +41,12 @@ class TestUpstreamDownStream(LimitedTestCase):
         self.sockets.append(s2)
         return s1, s2, port
 
-    def clear_up_sockets(self):
+    def clear_up_sockets (self):
         for sock in self.sockets:
             sock.close()
         self.sockets = None
 
-    def assertRaisesErrno(self, errno, func, *args):
+    def assertRaisesErrno (self, errno, func, *args):
         try:
             func(*args)
         except zmq.ZMQError, e:
@@ -55,15 +56,15 @@ got '%s'" % (zmq.ZMQError(errno), zmq.ZMQError(e.errno)))
             self.fail("Function did not raise any error")
 
     @skip_unless(zmq_supported)
-    def test_recv_spawned_before_send_is_non_blocking(self):
+    def test_recv_spawned_before_send_is_non_blocking (self):
         req, rep, port = self.create_bound_pair(zmq.PAIR, zmq.PAIR)
-#       req.connect(ipc)
-#       rep.bind(ipc)
+        #       req.connect(ipc)
+        #       rep.bind(ipc)
         sleep()
-        msg = dict(res=None)
+        msg = dict(res = None)
         done = event.Event()
 
-        def rx():
+        def rx ():
             msg['res'] = rep.recv()
             done.send('done')
 
@@ -73,7 +74,7 @@ got '%s'" % (zmq.ZMQError(errno), zmq.ZMQError(e.errno)))
         self.assertEqual(msg['res'], 'test')
 
     @skip_unless(zmq_supported)
-    def test_close_socket_raises_enotsup(self):
+    def test_close_socket_raises_enotsup (self):
         req, rep, port = self.create_bound_pair(zmq.PAIR, zmq.PAIR)
 
         rep.close()
@@ -82,7 +83,7 @@ got '%s'" % (zmq.ZMQError(errno), zmq.ZMQError(e.errno)))
         self.assertRaisesErrno(zmq.ENOTSUP, req.send, 'test')
 
     @skip_unless(zmq_supported)
-    def test_close_xsocket_raises_enotsup(self):
+    def test_close_xsocket_raises_enotsup (self):
         req, rep, port = self.create_bound_pair(zmq.XREQ, zmq.XREP)
 
         rep.close()
@@ -91,12 +92,12 @@ got '%s'" % (zmq.ZMQError(errno), zmq.ZMQError(e.errno)))
         self.assertRaisesErrno(zmq.ENOTSUP, req.send, 'test')
 
     @skip_unless(zmq_supported)
-    def test_send_1k_req_rep(self):
+    def test_send_1k_req_rep (self):
         req, rep, port = self.create_bound_pair(zmq.REQ, zmq.REP)
         sleep()
         done = event.Event()
 
-        def tx():
+        def tx ():
             tx_i = 0
             req.send(str(tx_i))
             while req.recv() != 'done':
@@ -104,44 +105,46 @@ got '%s'" % (zmq.ZMQError(errno), zmq.ZMQError(e.errno)))
                 req.send(str(tx_i))
             done.send(0)
 
-        def rx():
+        def rx ():
             while True:
                 rx_i = rep.recv()
                 if rx_i == "1000":
                     rep.send('done')
                     break
                 rep.send('i')
+
         spawn(tx)
         spawn(rx)
         final_i = done.wait()
         self.assertEqual(final_i, 0)
 
     @skip_unless(zmq_supported)
-    def test_send_1k_push_pull(self):
+    def test_send_1k_push_pull (self):
         down, up, port = self.create_bound_pair(zmq.PUSH, zmq.PULL)
         sleep()
 
         done = event.Event()
 
-        def tx():
+        def tx ():
             tx_i = 0
             while tx_i <= 1000:
                 tx_i += 1
                 down.send(str(tx_i))
 
-        def rx():
+        def rx ():
             while True:
                 rx_i = up.recv()
                 if rx_i == "1000":
                     done.send(0)
                     break
+
         spawn(tx)
         spawn(rx)
         final_i = done.wait()
         self.assertEqual(final_i, 0)
 
     @skip_unless(zmq_supported)
-    def test_send_1k_pub_sub(self):
+    def test_send_1k_pub_sub (self):
         pub, sub_all, port = self.create_bound_pair(zmq.PUB, zmq.SUB)
         sub1 = self.context.socket(zmq.SUB)
         sub2 = self.context.socket(zmq.SUB)
@@ -159,7 +162,7 @@ got '%s'" % (zmq.ZMQError(errno), zmq.ZMQError(e.errno)))
 
         sleep(0.2)
 
-        def rx(sock, done_evt, msg_count=10000):
+        def rx (sock, done_evt, msg_count = 10000):
             count = 0
             while count < msg_count:
                 msg = sock.recv()
@@ -170,9 +173,9 @@ got '%s'" % (zmq.ZMQError(errno), zmq.ZMQError(e.errno)))
 
             done_evt.send(count)
 
-        def tx(sock):
+        def tx (sock):
             for i in range(1, 1001):
-                msg = "sub%s %s" % ([2,1][i % 2], i)
+                msg = "sub%s %s" % ([2, 1][i % 2], i)
                 sock.send(msg)
                 sleep()
             sock.send('sub1 LAST')
@@ -190,14 +193,14 @@ got '%s'" % (zmq.ZMQError(errno), zmq.ZMQError(e.errno)))
         self.assertEqual(sub_all_count, 1000)
 
     @skip_unless(zmq_supported)
-    def test_change_subscription(self):
+    def test_change_subscription (self):
         pub, sub, port = self.create_bound_pair(zmq.PUB, zmq.SUB)
         sub.setsockopt(zmq.SUBSCRIBE, 'test')
 
         sleep(0.2)
         sub_done = event.Event()
 
-        def rx(sock, done_evt):
+        def rx (sock, done_evt):
             count = 0
             sub = 'test'
             while True:
@@ -212,7 +215,7 @@ got '%s'" % (zmq.ZMQError(errno), zmq.ZMQError(e.errno)))
                 count += 1
             done_evt.send(count)
 
-        def tx(sock):
+        def tx (sock):
             for i in range(1, 101):
                 msg = "test %s" % i
                 if i != 50:
@@ -229,7 +232,7 @@ got '%s'" % (zmq.ZMQError(errno), zmq.ZMQError(e.errno)))
         self.assertEqual(rx_count, 50)
 
     @skip_unless(zmq_supported)
-    def test_recv_multipart_bug68(self):
+    def test_recv_multipart_bug68 (self):
         req, rep, port = self.create_bound_pair(zmq.REQ, zmq.REP)
         msg = ['']
         req.send_multipart(msg)
@@ -238,39 +241,39 @@ got '%s'" % (zmq.ZMQError(errno), zmq.ZMQError(e.errno)))
 
         # Send a message back the other way
         msg2 = [""]
-        rep.send_multipart(msg2, copy=False)
+        rep.send_multipart(msg2, copy = False)
         # When receiving a copy it's a zmq.core.message.Message you get back
-        recieved_msg = req.recv_multipart(copy=False)
+        recieved_msg = req.recv_multipart(copy = False)
         # So it needs to be converted to a string
         # I'm calling str(m) consciously here; Message has a .data attribute
         # but it's private __str__ appears to be the way to go
         self.assertEqual([str(m) for m in recieved_msg], msg2)
 
     @skip_unless(zmq_supported)
-    def test_recv_noblock_bug76(self):
+    def test_recv_noblock_bug76 (self):
         req, rep, port = self.create_bound_pair(zmq.REQ, zmq.REP)
         self.assertRaisesErrno(zmq.EAGAIN, rep.recv, zmq.NOBLOCK)
         self.assertRaisesErrno(zmq.EAGAIN, rep.recv, zmq.NOBLOCK, True)
 
     @skip_unless(zmq_supported)
-    def test_send_during_recv(self):
+    def test_send_during_recv (self):
         sender, receiver, port = self.create_bound_pair(zmq.XREQ, zmq.XREQ)
         sleep()
 
         num_recvs = 30
         done_evts = [event.Event() for _ in range(num_recvs)]
 
-        def slow_rx(done, msg):
+        def slow_rx (done, msg):
             self.assertEqual(sender.recv(), msg)
             done.send(0)
 
-        def tx():
+        def tx ():
             tx_i = 0
             while tx_i <= 1000:
                 sender.send(str(tx_i))
                 tx_i += 1
-    
-        def rx():
+
+        def rx ():
             while True:
                 rx_i = receiver.recv()
                 if rx_i == "1000":
@@ -289,24 +292,24 @@ got '%s'" % (zmq.ZMQError(errno), zmq.ZMQError(e.errno)))
 
 
     @skip_unless(zmq_supported)
-    def test_send_during_recv_multipart(self):
+    def test_send_during_recv_multipart (self):
         sender, receiver, port = self.create_bound_pair(zmq.XREQ, zmq.XREQ)
         sleep()
 
         num_recvs = 30
         done_evts = [event.Event() for _ in range(num_recvs)]
 
-        def slow_rx(done, msg):
+        def slow_rx (done, msg):
             self.assertEqual(sender.recv_multipart(), msg)
             done.send(0)
 
-        def tx():
+        def tx ():
             tx_i = 0
             while tx_i <= 1000:
                 sender.send_multipart([str(tx_i), '1', '2', '3'])
                 tx_i += 1
 
-        def rx():
+        def rx ():
             while True:
                 rx_i = receiver.recv_multipart()
                 if rx_i == ["1000", '1', '2', '3']:
@@ -324,22 +327,22 @@ got '%s'" % (zmq.ZMQError(errno), zmq.ZMQError(e.errno)))
             final_i = done_evts[i].wait()
             self.assertEqual(final_i, 0)
 
-            
+
     # Need someway to ensure a thread is blocked on send... This isn't working 
     @skip_unless(zmq_supported)
-    def test_recv_during_send(self):
+    def test_recv_during_send (self):
         sender, receiver, port = self.create_bound_pair(zmq.XREQ, zmq.XREQ)
         sleep()
 
         num_recvs = 30
         done = event.Event()
-        
+
         sender.setsockopt(zmq.HWM, 10)
         sender.setsockopt(zmq.SNDBUF, 10)
-        
+
         receiver.setsockopt(zmq.RCVBUF, 10)
-        
-        def tx():
+
+        def tx ():
             tx_i = 0
             while tx_i <= 1000:
                 sender.send(str(tx_i))
@@ -351,13 +354,13 @@ got '%s'" % (zmq.ZMQError(errno), zmq.ZMQError(e.errno)))
         self.assertEqual(final_i, 0)
 
     @skip_unless(zmq_supported)
-    def test_close_during_recv(self):
+    def test_close_during_recv (self):
         sender, receiver, port = self.create_bound_pair(zmq.XREQ, zmq.XREQ)
         sleep()
         done1 = event.Event()
         done2 = event.Event()
 
-        def rx(e):
+        def rx (e):
             self.assertRaisesErrno(zmq.ENOTSUP, receiver.recv)
             e.send()
 
@@ -370,14 +373,15 @@ got '%s'" % (zmq.ZMQError(errno), zmq.ZMQError(e.errno)))
         done1.wait()
         done2.wait()
 
+
 class TestQueueLock(LimitedTestCase):
     @skip_unless(zmq_supported)
-    def test_queue_lock_order(self):
+    def test_queue_lock_order (self):
         q = zmq._QueueLock()
         s = semaphore.Semaphore(0)
         results = []
 
-        def lock(x):
+        def lock (x):
             with q:
                 results.append(x)
             s.release()
@@ -396,10 +400,10 @@ class TestQueueLock(LimitedTestCase):
         s.acquire()
         s.acquire()
         s.acquire()
-        self.assertEquals(results, [1,2,3])
-        
+        self.assertEquals(results, [1, 2, 3])
+
     @skip_unless(zmq_supported)
-    def test_count(self):
+    def test_count (self):
         q = zmq._QueueLock()
         self.assertFalse(q)
         q.acquire()
@@ -412,7 +416,7 @@ class TestQueueLock(LimitedTestCase):
         self.assertFalse(q)
 
     @skip_unless(zmq_supported)
-    def test_errors(self):
+    def test_errors (self):
         q = zmq._QueueLock()
 
         with self.assertRaises(Exception):
@@ -425,7 +429,7 @@ class TestQueueLock(LimitedTestCase):
             q.release()
 
     @skip_unless(zmq_supported)
-    def test_nested_acquire(self):
+    def test_nested_acquire (self):
         q = zmq._QueueLock()
         self.assertFalse(q)
         q.acquire()
@@ -433,7 +437,8 @@ class TestQueueLock(LimitedTestCase):
 
         s = semaphore.Semaphore(0)
         results = []
-        def lock(x):
+
+        def lock (x):
             with q:
                 results.append(x)
             s.release()
@@ -450,14 +455,15 @@ class TestQueueLock(LimitedTestCase):
         s.acquire()
         self.assertEquals(results, [1])
 
+
 class TestBlockedThread(LimitedTestCase):
     @skip_unless(zmq_supported)
-    def test_block(self):
+    def test_block (self):
         e = zmq._BlockedThread()
         done = event.Event()
         self.assertFalse(e)
 
-        def block():
+        def block ():
             e.block()
             done.send(1)
 

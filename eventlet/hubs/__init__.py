@@ -8,7 +8,7 @@ __all__ = ["use_hub", "get_hub", "get_default_hub", "trampoline"]
 threading = patcher.original('threading')
 _threadlocal = threading.local()
 
-def get_default_hub():
+def get_default_hub ():
     """Select the default hub implementation based on what multiplexing
     libraries are installed.  The order that the hubs are tried is:
     
@@ -22,8 +22,8 @@ def get_default_hub():
     
     .. include:: ../../doc/common.txt
     .. note :: |internal|
-    """    
-    
+    """
+
     # pyevent hub disabled for now because it is not thread-safe
     #try:
     #    import eventlet.hubs.pyevent
@@ -34,17 +34,20 @@ def get_default_hub():
     select = patcher.original('select')
     try:
         import eventlet.hubs.epolls
+
         return eventlet.hubs.epolls
     except ImportError:
         if hasattr(select, 'poll'):
             import eventlet.hubs.poll
+
             return eventlet.hubs.poll
         else:
             import eventlet.hubs.selects
+
             return eventlet.hubs.selects
 
 
-def use_hub(mod=None):
+def use_hub (mod = None):
     """Use the module *mod*, containing a class called Hub, as the
     event hub. Usually not required; the default hub is usually fine.  
     
@@ -69,7 +72,8 @@ def use_hub(mod=None):
     else:
         _threadlocal.Hub = mod
 
-def get_hub():
+
+def get_hub ():
     """Get the current event hub singleton object.
     
     .. note :: |internal|
@@ -85,8 +89,9 @@ def get_hub():
     return hub
 
 from eventlet import timeout
-def trampoline(fd, read=None, write=None, timeout=None, 
-               timeout_exc=timeout.Timeout):
+
+def trampoline (fd, read = None, write = None, timeout = None,
+                timeout_exc = timeout.Timeout):
     """Suspend the current coroutine until the given socket object or file
     descriptor is ready to *read*, ready to *write*, or the specified
     *timeout* elapses, depending on arguments specified.

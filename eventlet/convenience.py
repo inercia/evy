@@ -6,7 +6,7 @@ from eventlet import greenpool
 from eventlet.green import socket
 from eventlet.support import greenlets as greenlet
 
-def connect(addr, family=socket.AF_INET, bind=None):
+def connect (addr, family = socket.AF_INET, bind = None):
     """Convenience function for opening client sockets.
 
     :param addr: Address of the server to connect to.  For TCP sockets, this is a (host, port) tuple.
@@ -21,7 +21,7 @@ def connect(addr, family=socket.AF_INET, bind=None):
     return sock
 
 
-def listen(addr, family=socket.AF_INET, backlog=50):
+def listen (addr, family = socket.AF_INET, backlog = 50):
     """Convenience function for opening server sockets.  This
     socket can be used in :func:`~eventlet.serve` or a custom ``accept()`` loop.
 
@@ -39,11 +39,13 @@ def listen(addr, family=socket.AF_INET, backlog=50):
     sock.listen(backlog)
     return sock
 
+
 class StopServe(Exception):
     """Exception class used for quitting :func:`~eventlet.serve` gracefully."""
     pass
 
-def _stop_checker(t, server_gt, conn):
+
+def _stop_checker (t, server_gt, conn):
     try:
         try:
             t.wait()
@@ -54,7 +56,8 @@ def _stop_checker(t, server_gt, conn):
     except Exception:
         greenthread.kill(server_gt, *sys.exc_info())
 
-def serve(sock, handle, concurrency=1000):
+
+def serve (sock, handle, concurrency = 1000):
     """Runs a server on the supplied socket.  Calls the function *handle* in a 
     separate greenthread for every incoming client connection.  *handle* takes
     two arguments: the client socket object, and the client address::
@@ -86,7 +89,7 @@ def serve(sock, handle, concurrency=1000):
     """
     pool = greenpool.GreenPool(concurrency)
     server_gt = greenthread.getcurrent()
- 
+
     while True:
         try:
             conn, addr = sock.accept()
@@ -97,7 +100,7 @@ def serve(sock, handle, concurrency=1000):
             return
 
 
-def wrap_ssl(sock, *a, **kw):
+def wrap_ssl (sock, *a, **kw):
     """Convenience function for converting a regular socket into an
     SSL socket.  Has the same interface as :func:`ssl.wrap_socket`,
     but works on 2.5 or earlier, using PyOpenSSL (though note that it
@@ -117,15 +120,17 @@ def wrap_ssl(sock, *a, **kw):
 
 try:
     from eventlet.green import ssl
+
     wrap_ssl_impl = ssl.wrap_socket
 except ImportError:
     # < 2.6, trying PyOpenSSL
     try:
         from eventlet.green.OpenSSL import SSL
-        def wrap_ssl_impl(sock, keyfile=None, certfile=None, server_side=False,
-                          cert_reqs=None, ssl_version=None, ca_certs=None,
-                          do_handshake_on_connect=True, 
-                          suppress_ragged_eofs=True, ciphers=None):
+
+        def wrap_ssl_impl (sock, keyfile = None, certfile = None, server_side = False,
+                           cert_reqs = None, ssl_version = None, ca_certs = None,
+                           do_handshake_on_connect = True,
+                           suppress_ragged_eofs = True, ciphers = None):
             # theoretically the ssl_version could be respected in this
             # next line
             context = SSL.Context(SSL.SSLv23_METHOD)
@@ -142,7 +147,7 @@ except ImportError:
                 connection.set_connect_state()
             return connection
     except ImportError:
-        def wrap_ssl_impl(*a, **kw):
+        def wrap_ssl_impl (*a, **kw):
             raise ImportError("To use SSL with Eventlet, "
                               "you must install PyOpenSSL or use Python 2.6 or later.")
         

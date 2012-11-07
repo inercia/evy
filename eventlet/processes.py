@@ -1,9 +1,9 @@
 import warnings
-warnings.warn("eventlet.processes is deprecated in favor of "
- "eventlet.green.subprocess, which is API-compatible with the standard "
- " library subprocess module.",
-    DeprecationWarning, stacklevel=2)
 
+warnings.warn("eventlet.processes is deprecated in favor of "
+              "eventlet.green.subprocess, which is API-compatible with the standard "
+              " library subprocess module.",
+              DeprecationWarning, stacklevel = 2)
 
 import errno
 import os
@@ -18,7 +18,8 @@ from eventlet import greenio
 class DeadProcess(RuntimeError):
     pass
 
-def cooperative_wait(pobj, check_interval=0.01):
+
+def cooperative_wait (pobj, check_interval = 0.01):
     """ Waits for a child process to exit, returning the status
     code.
 
@@ -48,7 +49,8 @@ def cooperative_wait(pobj, check_interval=0.01):
 class Process(object):
     """Construct Process objects, then call read, and write on them."""
     process_number = 0
-    def __init__(self, command, args, dead_callback=lambda:None):
+
+    def __init__ (self, command, args, dead_callback = lambda: None):
         self.process_number = self.process_number + 1
         Process.process_number = self.process_number
         self.command = command
@@ -56,7 +58,7 @@ class Process(object):
         self._dead_callback = dead_callback
         self.run()
 
-    def run(self):
+    def run (self):
         self.dead = False
         self.started = False
         self.popen4 = None
@@ -65,7 +67,8 @@ class Process(object):
         self.popen4 = popen2.Popen4([self.command] + self.args)
         child_stdout_stderr = self.popen4.fromchild
         child_stdin = self.popen4.tochild
-        self.child_stdout_stderr = greenio.GreenPipe(child_stdout_stderr, child_stdout_stderr.mode, 0)
+        self.child_stdout_stderr = greenio.GreenPipe(child_stdout_stderr, child_stdout_stderr.mode,
+                                                     0)
         self.child_stdin = greenio.GreenPipe(child_stdin, child_stdin.mode, 0)
 
         self.sendall = self.child_stdin.write
@@ -74,23 +77,23 @@ class Process(object):
         self.readline = self.child_stdout_stderr.readline
         self._read_first_result = False
 
-    def wait(self):
+    def wait (self):
         return cooperative_wait(self.popen4)
 
-    def dead_callback(self):
+    def dead_callback (self):
         self.wait()
         self.dead = True
         if self._dead_callback:
             self._dead_callback()
 
-    def makefile(self, mode, *arg):
+    def makefile (self, mode, *arg):
         if mode.startswith('r'):
             return self.child_stdout_stderr
         if mode.startswith('w'):
             return self.child_stdin
         raise RuntimeError("Unknown mode", mode)
 
-    def read(self, amount=None):
+    def read (self, amount = None):
         """Reads from the stdout and stderr of the child process.
         The first call to read() will return a string; subsequent
         calls may raise a DeadProcess when EOF occurs on the pipe.
@@ -104,7 +107,7 @@ class Process(object):
             self._read_first_result = True
         return result
 
-    def write(self, stuff):
+    def write (self, stuff):
         written = 0
         try:
             written = self.child_stdin.write(stuff)
@@ -116,29 +119,29 @@ class Process(object):
             self.dead_callback()
             raise DeadProcess
 
-    def flush(self):
+    def flush (self):
         self.child_stdin.flush()
 
-    def close(self):
+    def close (self):
         self.child_stdout_stderr.close()
         self.child_stdin.close()
         self.dead_callback()
 
-    def close_stdin(self):
+    def close_stdin (self):
         self.child_stdin.close()
 
-    def kill(self, sig=None):
+    def kill (self, sig = None):
         if sig == None:
             sig = signal.SIGTERM
         pid = self.getpid()
         os.kill(pid, sig)
 
-    def getpid(self):
+    def getpid (self):
         return self.popen4.pid
 
 
 class ProcessPool(pools.Pool):
-    def __init__(self, command, args=None, min_size=0, max_size=4):
+    def __init__ (self, command, args = None, min_size = 0, max_size = 4):
         """*command*
             the command to run
         """
@@ -148,14 +151,16 @@ class ProcessPool(pools.Pool):
         self.args = args
         pools.Pool.__init__(self, min_size, max_size)
 
-    def create(self):
+    def create (self):
         """Generate a process
         """
-        def dead_callback():
+
+        def dead_callback ():
             self.current_size -= 1
+
         return Process(self.command, self.args, dead_callback)
 
-    def put(self, item):
+    def put (self, item):
         if not item.dead:
             if item.popen4.poll() != -1:
                 item.dead_callback()

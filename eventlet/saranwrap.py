@@ -7,9 +7,10 @@ from eventlet.processes import Process, DeadProcess
 from eventlet import pools
 
 import warnings
+
 warnings.warn("eventlet.saranwrap is deprecated due to underuse.  If you love "
-        "it, let us know by emailing eventletdev@lists.secondlife.com",
-        DeprecationWarning, stacklevel=2)
+              "it, let us know by emailing eventletdev@lists.secondlife.com",
+              DeprecationWarning, stacklevel = 2)
 
 # debugging hooks
 _g_debug_mode = False
@@ -17,7 +18,7 @@ if _g_debug_mode:
     import traceback
     import tempfile
 
-def pythonpath_sync():
+def pythonpath_sync ():
     """
     apply the current ``sys.path`` to the environment variable ``PYTHONPATH``,
     so that child processes have the same paths as the caller does.
@@ -25,7 +26,8 @@ def pythonpath_sync():
     pypath = os.pathsep.join(sys.path)
     os.environ['PYTHONPATH'] = pypath
 
-def wrap(obj, dead_callback = None):
+
+def wrap (obj, dead_callback = None):
     """
     wrap in object in another process through a saranwrap proxy
     :param object: The object to wrap.
@@ -37,8 +39,8 @@ def wrap(obj, dead_callback = None):
     pythonpath_sync()
     if _g_debug_mode:
         p = Process(sys.executable,
-                    ["-W", "ignore", __file__, '--child',
-                     '--logfile', os.path.join(tempfile.gettempdir(), 'saranwrap.log')],
+            ["-W", "ignore", __file__, '--child',
+             '--logfile', os.path.join(tempfile.gettempdir(), 'saranwrap.log')],
                     dead_callback)
     else:
         p = Process(sys.executable, ["-W", "ignore", __file__, '--child'], dead_callback)
@@ -46,7 +48,8 @@ def wrap(obj, dead_callback = None):
     prox.obj = obj
     return prox.obj
 
-def wrap_module(fqname, dead_callback = None):
+
+def wrap_module (fqname, dead_callback = None):
     """
     wrap a module in another process through a saranwrap proxy
 
@@ -57,16 +60,17 @@ def wrap_module(fqname, dead_callback = None):
     global _g_debug_mode
     if _g_debug_mode:
         p = Process(sys.executable,
-                    ["-W", "ignore", __file__, '--module', fqname,
-                     '--logfile', os.path.join(tempfile.gettempdir(), 'saranwrap.log')],
+            ["-W", "ignore", __file__, '--module', fqname,
+             '--logfile', os.path.join(tempfile.gettempdir(), 'saranwrap.log')],
                     dead_callback)
     else:
         p = Process(sys.executable,
-                    ["-W", "ignore", __file__, '--module', fqname,], dead_callback)
-    prox = Proxy(ChildProcess(p,p))
+            ["-W", "ignore", __file__, '--module', fqname, ], dead_callback)
+    prox = Proxy(ChildProcess(p, p))
     return prox
 
-def status(proxy):
+
+def status (proxy):
     """
     get the status from the server through a proxy
 
@@ -75,37 +79,47 @@ def status(proxy):
     """
     return proxy.__local_dict['_cp'].make_request(Request('status', {}))
 
+
 class BadResponse(Exception):
     """This exception is raised by an saranwrap client when it could
     parse but cannot understand the response from the server."""
     pass
+
 
 class BadRequest(Exception):
     """This exception is raised by a saranwrap server when it could parse
     but cannot understand the response from the server."""
     pass
 
+
 class UnrecoverableError(Exception):
     pass
 
+
 class Request(object):
     "A wrapper class for proxy requests to the server."
-    def __init__(self, action, param):
+
+    def __init__ (self, action, param):
         self._action = action
         self._param = param
-    def __str__(self):
-        return "Request `"+self._action+"` "+str(self._param)
-    def __getitem__(self, name):
+
+    def __str__ (self):
+        return "Request `" + self._action + "` " + str(self._param)
+
+    def __getitem__ (self, name):
         return self._param[name]
-    def get(self, name, default = None):
+
+    def get (self, name, default = None):
         try:
             return self[name]
         except KeyError:
             return default
-    def action(self):
+
+    def action (self):
         return self._action
 
-def _read_lp_hunk(stream):
+
+def _read_lp_hunk (stream):
     len_bytes = stream.read(4)
     if len_bytes == '':
         raise EOFError("No more data to read from %s" % stream)
@@ -113,7 +127,8 @@ def _read_lp_hunk(stream):
     body = stream.read(length)
     return body
 
-def _read_response(id, attribute, input, cp):
+
+def _read_response (id, attribute, input, cp):
     """local helper method to read respones from the rpc server."""
     try:
         str = _read_lp_hunk(input)
@@ -134,39 +149,45 @@ def _read_response(id, attribute, input, cp):
     else:
         raise BadResponse(response[0])
 
-def _write_lp_hunk(stream, hunk):
+
+def _write_lp_hunk (stream, hunk):
     write_length = struct.pack('I', len(hunk))
     stream.write(write_length + hunk)
     if hasattr(stream, 'flush'):
         stream.flush()
 
-def _write_request(param, output):
+
+def _write_request (param, output):
     _prnt("request: %s" % param)
     str = Pickle.dumps(param)
     _write_lp_hunk(output, str)
 
-def _is_local(attribute):
+
+def _is_local (attribute):
     "Return ``True`` if the attribute should be handled locally"
-#    return attribute in ('_in', '_out', '_id', '__getattribute__',
-#    '__setattr__', '__dict__')
+    #    return attribute in ('_in', '_out', '_id', '__getattribute__',
+    #    '__setattr__', '__dict__')
     # good enough for now. :)
     if '__local_dict' in attribute:
         return True
     return False
 
-def _prnt(message):
+
+def _prnt (message):
     global _g_debug_mode
     if _g_debug_mode:
         print message
 
 _g_logfile = None
-def _log(message):
+
+def _log (message):
     global _g_logfile
     if _g_logfile:
         _g_logfile.write(str(os.getpid()) + ' ' + message + '\n')
         _g_logfile.flush()
 
-def _unmunge_attr_name(name):
+
+def _unmunge_attr_name (name):
     """ Sometimes attribute names come in with classname prepended, not sure why.
     This function removes said classname, because we're huge hackers and we didn't
     find out what the true right thing to do is.  *TODO: find out. """
@@ -177,12 +198,14 @@ def _unmunge_attr_name(name):
 
     return name
 
+
 class ChildProcess(object):
     """
     This class wraps a remote python process, presumably available in an
     instance of a :class:`Server`.
     """
-    def __init__(self, instr, outstr, dead_list = None):
+
+    def __init__ (self, instr, outstr, dead_list = None):
         """
         :param instr: a file-like object which supports ``read()``.
         :param outstr: a file-like object which supports ``write()`` and
@@ -197,9 +220,9 @@ class ChildProcess(object):
         self._dead_list = dead_list
         self._in = instr
         self._out = outstr
-        self._lock = pools.TokenPool(max_size=1)
+        self._lock = pools.TokenPool(max_size = 1)
 
-    def make_request(self, request, attribute=None):
+    def make_request (self, request, attribute = None):
         _id = request.get('id')
 
         t = self._lock.get()
@@ -211,7 +234,7 @@ class ChildProcess(object):
 
         return retval
 
-    def __del__(self):
+    def __del__ (self):
         self._in.close()
 
 
@@ -224,7 +247,8 @@ class Proxy(object):
     methods on the thing that is exported. The ``dir()`` builtin is not
     supported, so you have to know what has been exported.
     """
-    def __init__(self, cp):
+
+    def __init__ (self, cp):
         """
         :param cp: :class:`ChildProcess` instance that wraps the i/o to the
             child process.
@@ -234,7 +258,7 @@ class Proxy(object):
             _cp = cp,
             _id = None)
 
-    def __getattribute__(self, attribute):
+    def __getattribute__ (self, attribute):
         #_prnt("Proxy::__getattr__: %s" % attribute)
         if _is_local(attribute):
             # call base class getattribute so we actually get the local variable
@@ -250,7 +274,7 @@ class Proxy(object):
 
             _dead_list = my_cp._dead_list
             for dead_object in _dead_list.copy():
-                request = Request('del', {'id':dead_object})
+                request = Request('del', {'id': dead_object})
 
                 my_cp.make_request(request)
                 try:
@@ -260,23 +284,24 @@ class Proxy(object):
 
             # Pass all public attributes across to find out if it is
             # callable or a simple attribute.
-            request = Request('getattr', {'id':my_id, 'attribute':attribute})
-            return my_cp.make_request(request, attribute=attribute)
+            request = Request('getattr', {'id': my_id, 'attribute': attribute})
+            return my_cp.make_request(request, attribute = attribute)
 
-    def __setattr__(self, attribute, value):
+    def __setattr__ (self, attribute, value):
         #_prnt("Proxy::__setattr__: %s" % attribute)
         if _is_local(attribute):
             # It must be local to this actual object, so we have to apply
             # it to the dict in a roundabout way
             attribute = _unmunge_attr_name(attribute)
-            super(Proxy, self).__getattribute__('__dict__')[attribute]=value
+            super(Proxy, self).__getattribute__('__dict__')[attribute] = value
         else:
             my_cp = self.__local_dict['_cp']
             my_id = self.__local_dict['_id']
             # Pass the set attribute across
             request = Request('setattr',
-                              {'id':my_id, 'attribute':attribute, 'value':value})
-            return my_cp.make_request(request, attribute=attribute)
+                    {'id': my_id, 'attribute': attribute, 'value': value})
+            return my_cp.make_request(request, attribute = attribute)
+
 
 class ObjectProxy(Proxy):
     """
@@ -286,7 +311,7 @@ class ObjectProxy(Proxy):
     not need to deal with this class directly.
     """
 
-    def __init__(self, cp, _id):
+    def __init__ (self, cp, _id):
         """
         :param cp: A :class:`ChildProcess` object that wraps the i/o of a child
             process.
@@ -297,64 +322,64 @@ class ObjectProxy(Proxy):
         self.__local_dict['_id'] = _id
         #_prnt("ObjectProxy::__init__ %s" % _id)
 
-    def __del__(self):
+    def __del__ (self):
         my_id = self.__local_dict['_id']
         #_prnt("ObjectProxy::__del__ %s" % my_id)
         self.__local_dict['_cp']._dead_list.add(my_id)
 
-    def __getitem__(self, key):
+    def __getitem__ (self, key):
         my_cp = self.__local_dict['_cp']
         my_id = self.__local_dict['_id']
-        request = Request('getitem', {'id':my_id, 'key':key})
-        return my_cp.make_request(request, attribute=key)
+        request = Request('getitem', {'id': my_id, 'key': key})
+        return my_cp.make_request(request, attribute = key)
 
-    def __setitem__(self, key, value):
+    def __setitem__ (self, key, value):
         my_cp = self.__local_dict['_cp']
         my_id = self.__local_dict['_id']
-        request = Request('setitem', {'id':my_id, 'key':key, 'value':value})
-        return my_cp.make_request(request, attribute=key)
+        request = Request('setitem', {'id': my_id, 'key': key, 'value': value})
+        return my_cp.make_request(request, attribute = key)
 
-    def __eq__(self, rhs):
+    def __eq__ (self, rhs):
         my_cp = self.__local_dict['_cp']
         my_id = self.__local_dict['_id']
-        request = Request('eq', {'id':my_id, 'rhs':rhs.__local_dict['_id']})
+        request = Request('eq', {'id': my_id, 'rhs': rhs.__local_dict['_id']})
         return my_cp.make_request(request)
 
-    def __repr__(self):
+    def __repr__ (self):
         # apparently repr(obj) skips the whole getattribute thing and just calls __repr__
         # directly.  Therefore we just pass it through the normal call pipeline, and
         # tack on a little header so that you can tell it's an object proxy.
-        val =  self.__repr__()
+        val = self.__repr__()
         return "saran:%s" % val
 
-    def __str__(self):
+    def __str__ (self):
         # see description for __repr__, because str(obj) works the same.  We don't
         # tack anything on to the return value here because str values are used as data.
         return self.__str__()
 
-    def __nonzero__(self):
+    def __nonzero__ (self):
         # bool(obj) is another method that skips __getattribute__.
         # There's no good way to just pass
         # the method on, so we use a special message.
         my_cp = self.__local_dict['_cp']
         my_id = self.__local_dict['_id']
-        request = Request('nonzero', {'id':my_id})
+        request = Request('nonzero', {'id': my_id})
         return my_cp.make_request(request)
 
-    def __len__(self):
+    def __len__ (self):
         # see description for __repr__, len(obj) is the same.
         return self.__len__()
 
-    def __contains__(self, item):
+    def __contains__ (self, item):
         # another special name that is normally called without recours to __getattribute__
         return self.__contains__(item)
 
-    def __deepcopy__(self, memo=None):
+    def __deepcopy__ (self, memo = None):
         """Copies the entire external object and returns its
         value. Will only work if the remote object is pickleable."""
         my_cp = self.__local_dict['_cp']
         my_id = self.__local_dict['_id']
-        request = Request('copy', {'id':my_id})
+        request = Request('copy', {'id': my_id})
         return my_cp.make_request(request)
 
     # since the remote object is being serialized whole anyway,
@@ -362,7 +387,7 @@ class ObjectProxy(Proxy):
     __copy__ = __deepcopy__
 
 
-def proxied_type(self):
+def proxied_type (self):
     """ Returns the type of the object in the child process.
 
     Calling type(obj) on a saranwrapped object will always return
@@ -373,11 +398,11 @@ def proxied_type(self):
 
     my_cp = self.__local_dict['_cp']
     my_id = self.__local_dict['_id']
-    request = Request('type', {'id':my_id})
+    request = Request('type', {'id': my_id})
     return my_cp.make_request(request)
 
 
-def getpid(self):
+def getpid (self):
     """ Returns the pid of the child process.  The argument should be
     a saranwrapped object."""
     my_cp = self.__local_dict['_cp']
@@ -392,26 +417,27 @@ class CallableProxy(object):
     and users should not need to deal with this class directly.
     """
 
-    def __init__(self, object_id, name, cp):
+    def __init__ (self, object_id, name, cp):
         #_prnt("CallableProxy::__init__: %s, %s" % (object_id, name))
         self._object_id = object_id
         self._name = name
         self._cp = cp
 
-    def __call__(self, *args, **kwargs):
+    def __call__ (self, *args, **kwargs):
         #_prnt("CallableProxy::__call__: %s, %s" % (args, kwargs))
 
         # Pass the call across. We never build a callable without
         # having already checked if the method starts with '_' so we
         # can safely pass this one to the remote object.
         #_prnt("calling %s %s" % (self._object_id, self._name)
-        request = Request('call', {'id':self._object_id,
-                                   'name':self._name,
-                                   'args':args, 'kwargs':kwargs})
-        return self._cp.make_request(request, attribute=self._name)
+        request = Request('call', {'id': self._object_id,
+                                   'name': self._name,
+                                   'args': args, 'kwargs': kwargs})
+        return self._cp.make_request(request, attribute = self._name)
+
 
 class Server(object):
-    def __init__(self, input, output, export):
+    def __init__ (self, input, output, export):
         """
         :param input: a file-like object which supports ``read()``.
         :param output: a file-like object which supports ``write()`` and
@@ -426,13 +452,13 @@ class Server(object):
         self._next_id = 1
         self._objects = {}
 
-    def handle_status(self, obj, req):
+    def handle_status (self, obj, req):
         return {
-            'object_count':len(self._objects),
-            'next_id':self._next_id,
-            'pid':os.getpid()}
+            'object_count': len(self._objects),
+            'next_id': self._next_id,
+            'pid': os.getpid()}
 
-    def handle_getattr(self, obj, req):
+    def handle_getattr (self, obj, req):
         try:
             return getattr(obj, req['attribute'])
         except AttributeError, e:
@@ -440,9 +466,9 @@ class Server(object):
                 return obj[req['attribute']]
             else:
                 raise e
-        #_log('getattr: %s' % str(response))
+                #_log('getattr: %s' % str(response))
 
-    def handle_setattr(self, obj, req):
+    def handle_setattr (self, obj, req):
         try:
             return setattr(obj, req['attribute'], req['value'])
         except AttributeError, e:
@@ -451,15 +477,15 @@ class Server(object):
             else:
                 raise e
 
-    def handle_getitem(self, obj, req):
+    def handle_getitem (self, obj, req):
         return obj[req['key']]
 
-    def handle_setitem(self, obj, req):
+    def handle_setitem (self, obj, req):
         obj[req['key']] = req['value']
         return None  # *TODO figure out what the actual return value
-                     # of __setitem__ should be
+        # of __setitem__ should be
 
-    def handle_eq(self, obj, req):
+    def handle_eq (self, obj, req):
         #_log("__eq__ %s %s" % (obj, req))
         rhs = None
         try:
@@ -468,7 +494,7 @@ class Server(object):
             return False
         return (obj == rhs)
 
-    def handle_call(self, obj, req):
+    def handle_call (self, obj, req):
         #_log("calling %s " % (req['name']))
         try:
             fn = getattr(obj, req['name'])
@@ -478,9 +504,9 @@ class Server(object):
             else:
                 raise e
 
-        return fn(*req['args'],**req['kwargs'])
+        return fn(*req['args'], **req['kwargs'])
 
-    def handle_del(self, obj, req):
+    def handle_del (self, obj, req):
         id = req['id']
         _log("del %s from %s" % (id, self._objects))
 
@@ -492,16 +518,16 @@ class Server(object):
 
         return None
 
-    def handle_type(self, obj, req):
+    def handle_type (self, obj, req):
         return type(obj)
 
-    def handle_nonzero(self, obj, req):
+    def handle_nonzero (self, obj, req):
         return bool(obj)
 
-    def handle_copy(self, obj, req):
+    def handle_copy (self, obj, req):
         return obj
 
-    def loop(self):
+    def loop (self):
         """Loop forever and respond to all requests."""
         _log("Server::loop")
         while True:
@@ -523,7 +549,7 @@ class Server(object):
                     if id:
                         id = int(id)
                         obj = self._objects[id]
-                    #_log("id, object: %d %s" % (id, obj))
+                        #_log("id, object: %d %s" % (id, obj))
                 except Exception, e:
                     #_log("Exception %s" % str(e))
                     pass
@@ -563,7 +589,7 @@ class Server(object):
             except Exception, e:
                 self.write_exception(e)
 
-    def is_value(self, value):
+    def is_value (self, value):
         """
         Test if *value* should be serialized as a simple dataset.
 
@@ -571,16 +597,16 @@ class Server(object):
         :return: Returns ``True`` if *value* is a simple serializeable set of
             data.
         """
-        return type(value) in (str,unicode,int,float,long,bool,type(None))
+        return type(value) in (str, unicode, int, float, long, bool, type(None))
 
-    def respond(self, body):
+    def respond (self, body):
         _log("responding with: %s" % body)
         #_log("objects: %s" % self._objects)
         s = Pickle.dumps(body)
         _log(repr(s))
         _write_lp_hunk(self._out, s)
 
-    def write_exception(self, e):
+    def write_exception (self, e):
         """Helper method to respond with an exception."""
         #_log("exception: %s" % sys.exc_info()[0])
         # TODO: serialize traceback using generalization of code from mulib.htmlexception
@@ -593,25 +619,27 @@ class Server(object):
 
 
 # test function used for testing return of unpicklable exceptions
-def raise_an_unpicklable_error():
+def raise_an_unpicklable_error ():
     class Unpicklable(Exception):
         pass
+
     raise Unpicklable()
 
 # test function used for testing return of picklable exceptions
-def raise_standard_error():
+def raise_standard_error ():
     raise FloatingPointError()
 
 # test function to make sure print doesn't break the wrapper
-def print_string(str):
+def print_string (str):
     print str
 
 # test function to make sure printing on stdout doesn't break the
 # wrapper
-def err_string(str):
-    print >>sys.stderr, str
+def err_string (str):
+    print >> sys.stderr, str
 
-def named(name):
+
+def named (name):
     """Return an object given its name.
 
     The name uses a module-like syntax, eg::
@@ -644,57 +672,63 @@ def named(name):
             dirobj.sort()
             raise AttributeError(
                 'attribute %r missing from %r (%r) %r.  Import errors: %r' % (
-                seg, obj, dirobj, name, import_err_strings))
+                    seg, obj, dirobj, name, import_err_strings))
     return obj
 
 
-def main():
+def main ():
     import optparse
+
     parser = optparse.OptionParser(
-        usage="usage: %prog [options]",
-        description="Simple saranwrap.Server wrapper")
+        usage = "usage: %prog [options]",
+        description = "Simple saranwrap.Server wrapper")
     parser.add_option(
-        '-c', '--child', default=False, action='store_true',
-        help='Wrap an object serialized via setattr.')
+        '-c', '--child', default = False, action = 'store_true',
+        help = 'Wrap an object serialized via setattr.')
     parser.add_option(
-        '-m', '--module', type='string', dest='module', default=None,
-        help='a module to load and export.')
+        '-m', '--module', type = 'string', dest = 'module', default = None,
+        help = 'a module to load and export.')
     parser.add_option(
-        '-l', '--logfile', type='string', dest='logfile', default=None,
-        help='file to log to.')
+        '-l', '--logfile', type = 'string', dest = 'logfile', default = None,
+        help = 'file to log to.')
     options, args = parser.parse_args()
     global _g_logfile
     if options.logfile:
         _g_logfile = open(options.logfile, 'a')
 
     from eventlet import tpool
+
     base_obj = [None]
     if options.module:
-        def get_module():
+        def get_module ():
             if base_obj[0] is None:
                 base_obj[0] = named(options.module)
             return base_obj[0]
+
         server = Server(tpool.Proxy(sys.stdin),
                         tpool.Proxy(sys.stdout),
                         get_module)
     elif options.child:
-        def get_base():
+        def get_base ():
             if base_obj[0] is None:
                 base_obj[0] = {}
             return base_obj[0]
+
         server = Server(tpool.Proxy(sys.stdin),
                         tpool.Proxy(sys.stdout),
                         get_base)
 
     # *HACK: some modules may emit on stderr, which breaks everything.
     class NullSTDOut(object):
-        def noop(*args):
+        def noop (*args):
             pass
-        def log_write(self, message):
+
+        def log_write (self, message):
             self.message = getattr(self, 'message', '') + message
             if '\n' in message:
                 _log(self.message.rstrip())
                 self.message = ''
+
         write = noop
         read = noop
         flush = noop

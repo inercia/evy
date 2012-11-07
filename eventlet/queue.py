@@ -69,17 +69,18 @@ class Waiter(object):
     """
     __slots__ = ['greenlet']
 
-    def __init__(self):
+    def __init__ (self):
         self.greenlet = None
 
-    def __repr__(self):
+    def __repr__ (self):
         if self.waiting:
             waiting = ' waiting'
         else:
             waiting = ''
-        return '<%s at %s%s greenlet=%r>' % (type(self).__name__, hex(id(self)), waiting, self.greenlet)
+        return '<%s at %s%s greenlet=%r>' % (
+        type(self).__name__, hex(id(self)), waiting, self.greenlet)
 
-    def __str__(self):
+    def __str__ (self):
         """
         >>> print Waiter()
         <Waiter greenlet=None>
@@ -90,14 +91,14 @@ class Waiter(object):
             waiting = ''
         return '<%s%s greenlet=%s>' % (type(self).__name__, waiting, self.greenlet)
 
-    def __nonzero__(self):
+    def __nonzero__ (self):
         return self.greenlet is not None
 
     @property
-    def waiting(self):
+    def waiting (self):
         return self.greenlet is not None
 
-    def switch(self, value=None):
+    def switch (self, value = None):
         """Wake up the greenlet that is calling wait() currently (if there is one).
         Can only be called from Hub's greenlet.
         """
@@ -108,7 +109,7 @@ class Waiter(object):
             except:
                 traceback.print_exc()
 
-    def throw(self, *throw_args):
+    def throw (self, *throw_args):
         """Make greenlet calling wait() wake up (if there is a wait()).
         Can only be called from Hub's greenlet.
         """
@@ -120,7 +121,7 @@ class Waiter(object):
                 traceback.print_exc()
 
     # XXX should be renamed to get() ? and the whole class is called Receiver?
-    def wait(self):
+    def wait (self):
         """Wait until switch() or throw() is called.
         """
         assert self.greenlet is None, 'This Waiter is already used by %r' % (self.greenlet, )
@@ -139,7 +140,7 @@ class LightQueue(object):
     and is a little faster for not having that overhead.
     """
 
-    def __init__(self, maxsize=None):
+    def __init__ (self, maxsize = None):
         if maxsize is None or maxsize < 0: #None is not comparable in 3.x
             self.maxsize = None
         else:
@@ -151,22 +152,22 @@ class LightQueue(object):
 
     # QQQ make maxsize into a property with setter that schedules unlock if necessary
 
-    def _init(self, maxsize):
+    def _init (self, maxsize):
         self.queue = collections.deque()
 
-    def _get(self):
+    def _get (self):
         return self.queue.popleft()
 
-    def _put(self, item):
+    def _put (self, item):
         self.queue.append(item)
 
-    def __repr__(self):
+    def __repr__ (self):
         return '<%s at %s %s>' % (type(self).__name__, hex(id(self)), self._format())
 
-    def __str__(self):
+    def __str__ (self):
         return '<%s %s>' % (type(self).__name__, self._format())
 
-    def _format(self):
+    def _format (self):
         result = 'maxsize=%r' % (self.maxsize, )
         if getattr(self, 'queue', None):
             result += ' queue=%r' % self.queue
@@ -178,41 +179,42 @@ class LightQueue(object):
             result += ' unlocking'
         return result
 
-    def qsize(self):
+    def qsize (self):
         """Return the size of the queue."""
         return len(self.queue)
 
-    def resize(self, size):
+    def resize (self, size):
         """Resizes the queue's maximum size.
 
         If the size is increased, and there are putters waiting, they may be woken up."""
-        if self.maxsize is not None and (size is None or size > self.maxsize): # None is not comparable in 3.x
+        if self.maxsize is not None and (
+        size is None or size > self.maxsize): # None is not comparable in 3.x
             # Maybe wake some stuff up
             self._schedule_unlock()
         self.maxsize = size
-        
-    def putting(self):
+
+    def putting (self):
         """Returns the number of greenthreads that are blocked waiting to put
         items into the queue."""
         return len(self.putters)
-        
-    def getting(self):
+
+    def getting (self):
         """Returns the number of greenthreads that are blocked waiting on an 
         empty queue."""
         return len(self.getters)
 
-    def empty(self):
+    def empty (self):
         """Return ``True`` if the queue is empty, ``False`` otherwise."""
         return not self.qsize()
 
-    def full(self):
+    def full (self):
         """Return ``True`` if the queue is full, ``False`` otherwise.
 
         ``Queue(None)`` is never full.
         """
         return self.maxsize is not None and self.qsize() >= self.maxsize # None is not comparable in 3.x
 
-    def put(self, item, block=True, timeout=None):
+    def put (self, item, block = True, timeout = None):
         """Put an item into the queue.
 
         If optional arg *block* is true and *timeout* is ``None`` (the default),
@@ -256,7 +258,7 @@ class LightQueue(object):
         else:
             raise Full
 
-    def put_nowait(self, item):
+    def put_nowait (self, item):
         """Put an item into the queue without blocking.
 
         Only enqueue the item if a free slot is immediately available.
@@ -264,7 +266,7 @@ class LightQueue(object):
         """
         self.put(item, False)
 
-    def get(self, block=True, timeout=None):
+    def get (self, block = True, timeout = None):
         """Remove and return an item from the queue.
 
         If optional args *block* is true and *timeout* is ``None`` (the default),
@@ -302,7 +304,7 @@ class LightQueue(object):
         else:
             raise Empty
 
-    def get_nowait(self):
+    def get_nowait (self):
         """Remove and return an item from the queue without blocking.
 
         Only get an item if one is immediately available. Otherwise
@@ -310,7 +312,7 @@ class LightQueue(object):
         """
         return self.get(False)
 
-    def _unlock(self):
+    def _unlock (self):
         try:
             while True:
                 if self.qsize() and self.getters:
@@ -335,7 +337,8 @@ class LightQueue(object):
                             putter.switch(putter)
                         else:
                             self.putters.add(putter)
-                elif self.putters and (self.getters or self.maxsize is None or self.qsize() < self.maxsize):
+                elif self.putters and (
+                self.getters or self.maxsize is None or self.qsize() < self.maxsize):
                     putter = self.putters.pop()
                     putter.switch(putter)
                 else:
@@ -343,10 +346,10 @@ class LightQueue(object):
         finally:
             self._event_unlock = None # QQQ maybe it's possible to obtain this info from libevent?
             # i.e. whether this event is pending _OR_ currently executing
-        # testcase: 2 greenlets: while True: q.put(q.get()) - nothing else has a change to execute
-        # to avoid this, schedule unlock with timer(0, ...) once in a while
+            # testcase: 2 greenlets: while True: q.put(q.get()) - nothing else has a change to execute
+            # to avoid this, schedule unlock with timer(0, ...) once in a while
 
-    def _schedule_unlock(self):
+    def _schedule_unlock (self):
         if self._event_unlock is None:
             self._event_unlock = get_hub().schedule_call_global(0, self._unlock)
 
@@ -354,10 +357,10 @@ class LightQueue(object):
 class ItemWaiter(Waiter):
     __slots__ = ['item']
 
-    def __init__(self, item):
+    def __init__ (self, item):
         Waiter.__init__(self)
         self.item = item
-        
+
 
 class Queue(LightQueue):
     '''Create a queue object with a given maximum size.
@@ -371,27 +374,28 @@ class Queue(LightQueue):
     In all other respects, this Queue class resembled the standard library,
     :class:`Queue`.
     '''
-    def __init__(self, maxsize=None):
+
+    def __init__ (self, maxsize = None):
         LightQueue.__init__(self, maxsize)
         self.unfinished_tasks = 0
         self._cond = Event()
 
-    def _format(self):
+    def _format (self):
         result = LightQueue._format(self)
         if self.unfinished_tasks:
             result += ' tasks=%s _cond=%s' % (self.unfinished_tasks, self._cond)
         return result
 
-    def _put(self, item):
+    def _put (self, item):
         LightQueue._put(self, item)
         self._put_bookkeeping()
 
-    def _put_bookkeeping(self):
+    def _put_bookkeeping (self):
         self.unfinished_tasks += 1
         if self._cond.ready():
             self._cond.reset()
 
-    def task_done(self):
+    def task_done (self):
         '''Indicate that a formerly enqueued task is complete. Used by queue consumer threads.
         For each :meth:`get <Queue.get>` used to fetch a task, a subsequent call to :meth:`task_done` tells the queue
         that the processing on the task is complete.
@@ -402,14 +406,14 @@ class Queue(LightQueue):
 
         Raises a :exc:`ValueError` if called more times than there were items placed in the queue.
         '''
-        
+
         if self.unfinished_tasks <= 0:
             raise ValueError('task_done() called too many times')
         self.unfinished_tasks -= 1
         if self.unfinished_tasks == 0:
             self._cond.send(None)
 
-    def join(self):
+    def join (self):
         '''Block until all items in the queue have been gotten and processed.
 
         The count of unfinished tasks goes up whenever an item is added to the queue.
@@ -426,27 +430,27 @@ class PriorityQueue(Queue):
     Entries are typically tuples of the form: ``(priority number, data)``.
     '''
 
-    def _init(self, maxsize):
+    def _init (self, maxsize):
         self.queue = []
 
-    def _put(self, item, heappush=heapq.heappush):
+    def _put (self, item, heappush = heapq.heappush):
         heappush(self.queue, item)
         self._put_bookkeeping()
 
-    def _get(self, heappop=heapq.heappop):
+    def _get (self, heappop = heapq.heappop):
         return heappop(self.queue)
 
 
 class LifoQueue(Queue):
     '''A subclass of :class:`Queue` that retrieves most recently added entries first.'''
 
-    def _init(self, maxsize):
+    def _init (self, maxsize):
         self.queue = []
 
-    def _put(self, item):
+    def _put (self, item):
         self.queue.append(item)
         self._put_bookkeeping()
 
-    def _get(self):
+    def _get (self):
         return self.queue.pop()
 

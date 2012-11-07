@@ -28,35 +28,38 @@ print "importing", patching, socket, patching.socket, patching.urllib
 """
 
 class ProcessBase(LimitedTestCase):
-    TEST_TIMEOUT=3 # starting processes is time-consuming
-    def setUp(self):
+    TEST_TIMEOUT = 3 # starting processes is time-consuming
+
+    def setUp (self):
         self._saved_syspath = sys.path
         self.tempdir = tempfile.mkdtemp('_patcher_test')
-        
-    def tearDown(self):
+
+    def tearDown (self):
         sys.path = self._saved_syspath
         shutil.rmtree(self.tempdir)
-        
-    def write_to_tempfile(self, name, contents):
+
+    def write_to_tempfile (self, name, contents):
         filename = os.path.join(self.tempdir, name + '.py')
         fd = open(filename, "w")
         fd.write(contents)
         fd.close()
-        
-    def launch_subprocess(self, filename):
+
+    def launch_subprocess (self, filename):
         python_path = os.pathsep.join(sys.path + [self.tempdir])
         new_env = os.environ.copy()
         new_env['PYTHONPATH'] = python_path
         if not filename.endswith('.py'):
             filename = filename + '.py'
-        p = subprocess.Popen([sys.executable, 
+        p = subprocess.Popen([sys.executable,
                               os.path.join(self.tempdir, filename)],
-                stdout=subprocess.PIPE, stderr=subprocess.STDOUT, env=new_env)
+                                                                   stdout = subprocess.PIPE,
+                                                                   stderr = subprocess.STDOUT,
+                                                                   env = new_env)
         output, _ = p.communicate()
         lines = output.split("\n")
         return output, lines
 
-    def run_script(self, contents, modname=None):
+    def run_script (self, contents, modname = None):
         if modname is None:
             modname = "testmod"
         self.write_to_tempfile(modname, contents)
@@ -64,7 +67,7 @@ class ProcessBase(LimitedTestCase):
 
 
 class ImportPatched(ProcessBase):
-    def test_patch_a_module(self):
+    def test_patch_a_module (self):
         self.write_to_tempfile("base", base_module_contents)
         self.write_to_tempfile("patching", patching_module_contents)
         self.write_to_tempfile("importing", import_module_contents)
@@ -77,8 +80,8 @@ class ImportPatched(ProcessBase):
         self.assert_('eventlet.green.socket' in lines[2], repr(output))
         self.assert_('eventlet.green.urllib' in lines[2], repr(output))
         self.assert_('eventlet.green.httplib' not in lines[2], repr(output))
-        
-    def test_import_patched_defaults(self):
+
+    def test_import_patched_defaults (self):
         self.write_to_tempfile("base", base_module_contents)
         new_mod = """
 from eventlet import patcher
@@ -93,8 +96,8 @@ print "newmod", base, base.socket, base.urllib.socket.socket
         self.assert_('GreenSocket' in lines[1], repr(output))
 
 
-class MonkeyPatch(ProcessBase):        
-    def test_patched_modules(self):
+class MonkeyPatch(ProcessBase):
+    def test_patched_modules (self):
         new_mod = """
 from eventlet import patcher
 patcher.monkey_patch()
@@ -106,8 +109,8 @@ print "newmod", socket.socket, urllib.socket.socket
         output, lines = self.launch_subprocess('newmod.py')
         self.assert_(lines[0].startswith('newmod'), repr(output))
         self.assertEqual(lines[0].count('GreenSocket'), 2, repr(output))
-        
-    def test_early_patching(self):
+
+    def test_early_patching (self):
         new_mod = """
 from eventlet import patcher
 patcher.monkey_patch()
@@ -120,7 +123,7 @@ print "newmod"
         self.assertEqual(len(lines), 2, repr(output))
         self.assert_(lines[0].startswith('newmod'), repr(output))
 
-    def test_late_patching(self):
+    def test_late_patching (self):
         new_mod = """
 import eventlet
 eventlet.sleep(0.01)
@@ -133,9 +136,9 @@ print "newmod"
         output, lines = self.launch_subprocess('newmod.py')
         self.assertEqual(len(lines), 2, repr(output))
         self.assert_(lines[0].startswith('newmod'), repr(output))
-        
 
-    def test_typeerror(self):
+
+    def test_typeerror (self):
         new_mod = """
 from eventlet import patcher
 patcher.monkey_patch(finagle=True)
@@ -144,9 +147,9 @@ patcher.monkey_patch(finagle=True)
         output, lines = self.launch_subprocess('newmod.py')
         self.assert_(lines[-2].startswith('TypeError'), repr(output))
         self.assert_('finagle' in lines[-2], repr(output))
-        
 
-    def assert_boolean_logic(self, call, expected, not_expected=''):
+
+    def assert_boolean_logic (self, call, expected, not_expected = ''):
         expected_list = ", ".join(['"%s"' % x for x in expected.split(',') if len(x)])
         not_expected_list = ", ".join(['"%s"' % x for x in not_expected.split(',') if len(x)])
         new_mod = """
@@ -168,48 +171,48 @@ print "already_patched", ",".join(sorted(patcher.already_patched.keys()))
         # ditto for MySQLdb
         patched_modules = patched_modules.replace("MySQLdb,", "")
         self.assertEqual(patched_modules, expected,
-                         "Logic:%s\nExpected: %s != %s" %(call, expected,
-                                                          patched_modules))
+                         "Logic:%s\nExpected: %s != %s" % (call, expected,
+                                                           patched_modules))
 
-    def test_boolean(self):
+    def test_boolean (self):
         self.assert_boolean_logic("patcher.monkey_patch()",
-                                         'os,select,socket,thread,time')
+                                  'os,select,socket,thread,time')
 
-    def test_boolean_all(self):
+    def test_boolean_all (self):
         self.assert_boolean_logic("patcher.monkey_patch(all=True)",
-                                         'os,select,socket,thread,time')
+                                  'os,select,socket,thread,time')
 
-    def test_boolean_all_single(self):
+    def test_boolean_all_single (self):
         self.assert_boolean_logic("patcher.monkey_patch(all=True, socket=True)",
-                                         'os,select,socket,thread,time')
+                                  'os,select,socket,thread,time')
 
-    def test_boolean_all_negative(self):
+    def test_boolean_all_negative (self):
         self.assert_boolean_logic("patcher.monkey_patch(all=False, "\
-                                      "socket=False, select=True)",
-                                         'select')
+                                  "socket=False, select=True)",
+                                  'select')
 
-    def test_boolean_single(self):
+    def test_boolean_single (self):
         self.assert_boolean_logic("patcher.monkey_patch(socket=True)",
-                                         'socket')
+                                  'socket')
 
-    def test_boolean_double(self):
+    def test_boolean_double (self):
         self.assert_boolean_logic("patcher.monkey_patch(socket=True,"\
-                                      " select=True)",
-                                         'select,socket')
+                                  " select=True)",
+                                  'select,socket')
 
-    def test_boolean_negative(self):
+    def test_boolean_negative (self):
         self.assert_boolean_logic("patcher.monkey_patch(socket=False)",
-                                         'os,select,thread,time')
+                                  'os,select,thread,time')
 
-    def test_boolean_negative2(self):
+    def test_boolean_negative2 (self):
         self.assert_boolean_logic("patcher.monkey_patch(socket=False,"\
-                                      "time=False)",
-                                         'os,select,thread')
+                                  "time=False)",
+                                  'os,select,thread')
 
-    def test_conflicting_specifications(self):
+    def test_conflicting_specifications (self):
         self.assert_boolean_logic("patcher.monkey_patch(socket=False, "\
-                                      "select=True)",
-                                         'select')
+                                  "select=True)",
+                                  'select')
 
 
 test_monkey_patch_threading = """
@@ -232,10 +235,10 @@ def test_monkey_patch_threading():
 """
 
 class Tpool(ProcessBase):
-    TEST_TIMEOUT=3
+    TEST_TIMEOUT = 3
 
     @skip_with_pyevent
-    def test_simple(self):
+    def test_simple (self):
         new_mod = """
 import eventlet
 from eventlet import patcher
@@ -253,7 +256,7 @@ tpool.killall()
         self.assert_('3' in lines[1], repr(output))
 
     @skip_with_pyevent
-    def test_unpatched_thread(self):
+    def test_unpatched_thread (self):
         new_mod = """import eventlet
 eventlet.monkey_patch(time=False, thread=False)
 from eventlet import tpool
@@ -266,7 +269,7 @@ import time
         self.assertEqual(len(lines), 2, lines)
 
     @skip_with_pyevent
-    def test_patched_thread(self):
+    def test_patched_thread (self):
         new_mod = """import eventlet
 eventlet.monkey_patch(time=False, thread=True)
 from eventlet import tpool
@@ -280,7 +283,7 @@ import time
 
 
 class Subprocess(ProcessBase):
-    def test_monkeypatched_subprocess(self):
+    def test_monkeypatched_subprocess (self):
         new_mod = """import eventlet
 eventlet.monkey_patch()
 from eventlet.green import subprocess
@@ -294,7 +297,7 @@ print "done"
 
 
 class Threading(ProcessBase):
-    def test_orig_thread(self):
+    def test_orig_thread (self):
         new_mod = """import eventlet
 eventlet.monkey_patch()
 from eventlet import patcher
@@ -315,7 +318,7 @@ print len(_threading._active)
         self.assertEqual(lines[1], "1", lines[1])
         self.assertEqual(lines[2], "1", lines[2])
 
-    def test_threading(self):
+    def test_threading (self):
         new_mod = """import eventlet
 eventlet.monkey_patch()
 import threading
@@ -332,7 +335,7 @@ print len(threading._active)
         self.assert_(lines[0].startswith('<_MainThread'), lines[0])
         self.assertEqual(lines[1], "1", lines[1])
 
-    def test_tpool(self):
+    def test_tpool (self):
         new_mod = """import eventlet
 eventlet.monkey_patch()
 from eventlet import tpool
@@ -348,7 +351,7 @@ print len(threading._active)
         self.assert_(lines[0].startswith('<Thread'), lines[0])
         self.assertEqual(lines[1], "1", lines[1])
 
-    def test_greenlet(self):
+    def test_greenlet (self):
         new_mod = """import eventlet
 eventlet.monkey_patch()
 from eventlet import event
@@ -367,7 +370,7 @@ print len(threading._active)
         self.assert_(lines[0].startswith('<_MainThread'), lines[0])
         self.assertEqual(lines[1], "1", lines[1])
 
-    def test_greenthread(self):
+    def test_greenthread (self):
         new_mod = """import eventlet
 eventlet.monkey_patch()
 import threading
@@ -383,7 +386,7 @@ print len(threading._active)
         self.assert_(lines[0].startswith('<_GreenThread'), lines[0])
         self.assertEqual(lines[1], "1", lines[1])
 
-    def test_keyerror(self):
+    def test_keyerror (self):
         new_mod = """import eventlet
 eventlet.monkey_patch()
 """
@@ -404,7 +407,7 @@ t = eventlet.spawn(test)
 t.wait()
 """
 
-    def test_join(self):
+    def test_join (self):
         self.write_to_tempfile("newmod", self.prologue + """
     def test2():
         global t2
@@ -418,7 +421,7 @@ t2.join()
         self.assertEqual(len(lines), 2, "\n".join(lines))
         self.assert_(lines[0].startswith('<_GreenThread'), lines[0])
 
-    def test_name(self):
+    def test_name (self):
         self.write_to_tempfile("newmod", self.prologue + """
     print t.name
     print t.getName()
@@ -441,7 +444,7 @@ t2.join()
         for i in xrange(6, 9):
             self.assertEqual(lines[i], "bar", lines[i])
 
-    def test_ident(self):
+    def test_ident (self):
         self.write_to_tempfile("newmod", self.prologue + """
     print id(t._g)
     print t.ident
@@ -450,7 +453,7 @@ t2.join()
         self.assertEqual(len(lines), 3, "\n".join(lines))
         self.assertEqual(lines[0], lines[1])
 
-    def test_is_alive(self):
+    def test_is_alive (self):
         self.write_to_tempfile("newmod", self.prologue + """
     print t.is_alive()
     print t.isAlive()
@@ -460,7 +463,7 @@ t2.join()
         self.assertEqual(lines[0], "True", lines[0])
         self.assertEqual(lines[1], "True", lines[1])
 
-    def test_is_daemon(self):
+    def test_is_daemon (self):
         self.write_to_tempfile("newmod", self.prologue + """
     print t.is_daemon()
     print t.isDaemon()

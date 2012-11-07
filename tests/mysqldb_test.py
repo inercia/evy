@@ -5,12 +5,13 @@ import traceback
 from tests import skipped, skip_unless, using_pyevent, get_database_auth, LimitedTestCase
 import eventlet
 from eventlet import event
+
 try:
     from eventlet.green import MySQLdb
 except ImportError:
     MySQLdb = False
 
-def mysql_requirement(_f):
+def mysql_requirement (_f):
     """We want to skip tests if using pyevent, MySQLdb is not installed, or if
     there is no database running on the localhost that the auth file grants
     us access to.
@@ -32,8 +33,9 @@ def mysql_requirement(_f):
         traceback.print_exc()
         return False
 
+
 class MySQLdbTester(LimitedTestCase):
-    def setUp(self):
+    def setUp (self):
         self._auth = get_database_auth()['MySQLdb']
         self.create_db()
         self.connection = None
@@ -46,32 +48,32 @@ class MySQLdbTester(LimitedTestCase):
         self.connection.commit()
         cursor.close()
 
-    def tearDown(self):
+    def tearDown (self):
         if self.connection:
             self.connection.close()
         self.drop_db()
 
-    @skip_unless(mysql_requirement)    
-    def create_db(self):
+    @skip_unless(mysql_requirement)
+    def create_db (self):
         auth = self._auth.copy()
         try:
             self.drop_db()
         except Exception:
             pass
-        dbname = 'test_%d_%d' % (os.getpid(), int(time.time()*1000))
+        dbname = 'test_%d_%d' % (os.getpid(), int(time.time() * 1000))
         db = MySQLdb.connect(**auth).cursor()
-        db.execute("create database "+dbname)
+        db.execute("create database " + dbname)
         db.close()
         self._auth['db'] = dbname
         del db
 
-    def drop_db(self):
+    def drop_db (self):
         db = MySQLdb.connect(**self._auth).cursor()
-        db.execute("drop database "+self._auth['db'])
+        db.execute("drop database " + self._auth['db'])
         db.close()
         del db
 
-    def set_up_dummy_table(self, connection=None):
+    def set_up_dummy_table (self, connection = None):
         close_connection = False
         if connection is None:
             close_connection = True
@@ -100,12 +102,14 @@ class MySQLdbTester(LimitedTestCase):
         created TIMESTAMP
         ) ENGINE=InnoDB;"""
 
-    def assert_cursor_yields(self, curs):
+    def assert_cursor_yields (self, curs):
         counter = [0]
-        def tick():
+
+        def tick ():
             while True:
                 counter[0] += 1
                 eventlet.sleep()
+
         gt = eventlet.spawn(tick)
         curs.execute("select 1")
         rows = curs.fetchall()
@@ -113,41 +117,42 @@ class MySQLdbTester(LimitedTestCase):
         self.assert_(counter[0] > 0, counter[0])
         gt.kill()
 
-    def assert_cursor_works(self, cursor):
+    def assert_cursor_works (self, cursor):
         cursor.execute("select 1")
         rows = cursor.fetchall()
         self.assertEqual(rows, ((1L,),))
         self.assert_cursor_yields(cursor)
-        
-    def assert_connection_works(self, conn):
+
+    def assert_connection_works (self, conn):
         curs = conn.cursor()
         self.assert_cursor_works(curs)
 
-    def test_module_attributes(self):
+    def test_module_attributes (self):
         import MySQLdb as orig
+
         for key in dir(orig):
             if key not in ('__author__', '__path__', '__revision__',
                            '__version__', '__loader__'):
                 self.assert_(hasattr(MySQLdb, key), "%s %s" % (key, getattr(orig, key)))
 
-    def test_connecting(self):
+    def test_connecting (self):
         self.assert_(self.connection is not None)
-        
-    def test_connecting_annoyingly(self):
+
+    def test_connecting_annoyingly (self):
         self.assert_connection_works(MySQLdb.Connect(**self._auth))
         self.assert_connection_works(MySQLdb.Connection(**self._auth))
         self.assert_connection_works(MySQLdb.connections.Connection(**self._auth))
 
-    def test_create_cursor(self):
+    def test_create_cursor (self):
         cursor = self.connection.cursor()
         cursor.close()
 
-    def test_run_query(self):
+    def test_run_query (self):
         cursor = self.connection.cursor()
         self.assert_cursor_works(cursor)
         cursor.close()
 
-    def test_run_bad_query(self):
+    def test_run_bad_query (self):
         cursor = self.connection.cursor()
         try:
             cursor.execute("garbage blah blah")
@@ -158,13 +163,13 @@ class MySQLdbTester(LimitedTestCase):
             pass
         cursor.close()
 
-    def fill_up_table(self, conn):
+    def fill_up_table (self, conn):
         curs = conn.cursor()
         for i in range(1000):
             curs.execute('insert into test_table (value_int) values (%s)' % i)
         conn.commit()
 
-    def test_yields(self):
+    def test_yields (self):
         conn = self.connection
         self.set_up_dummy_table(conn)
         self.fill_up_table(conn)
@@ -172,18 +177,20 @@ class MySQLdbTester(LimitedTestCase):
         results = []
         SHORT_QUERY = "select * from test_table"
         evt = event.Event()
-        def a_query():
+
+        def a_query ():
             self.assert_cursor_works(curs)
             curs.execute(SHORT_QUERY)
             results.append(2)
             evt.send()
+
         eventlet.spawn(a_query)
         results.append(1)
         self.assertEqual([1], results)
         evt.wait()
         self.assertEqual([1, 2], results)
 
-    def test_visibility_from_other_connections(self):
+    def test_visibility_from_other_connections (self):
         conn = MySQLdb.connect(**self._auth)
         conn2 = MySQLdb.connect(**self._auth)
         curs = conn.cursor()
@@ -213,8 +220,8 @@ class MySQLdbTester(LimitedTestCase):
 from tests import patcher_test
 
 class MonkeyPatchTester(patcher_test.ProcessBase):
-    @skip_unless(mysql_requirement)    
-    def test_monkey_patching(self):
+    @skip_unless(mysql_requirement)
+    def test_monkey_patching (self):
         output, lines = self.run_script("""
 from eventlet import patcher
 import MySQLdb as m

@@ -3,7 +3,7 @@ from eventlet.green import subprocess
 from eventlet.green import time
 
 patcher.inject('test.test_subprocess',
-    globals(),
+               globals(),
     ('subprocess', subprocess),
     ('time', time))
 
