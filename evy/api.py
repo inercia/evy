@@ -21,23 +21,6 @@ __all__ = [
 warnings.warn("evy.api is deprecated!  Nearly everything in it has moved "
               "to the evy module.", DeprecationWarning, stacklevel = 2)
 
-def get_hub (*a, **kw):
-    warnings.warn("evy.api.get_hub has moved to evy.hubs.get_hub",
-                  DeprecationWarning, stacklevel = 2)
-    return hubs.get_hub(*a, **kw)
-
-
-def get_default_hub (*a, **kw):
-    warnings.warn("evy.api.get_default_hub has moved to"
-                  " evy.hubs.get_default_hub",
-                  DeprecationWarning, stacklevel = 2)
-    return hubs.get_default_hub(*a, **kw)
-
-
-def use_hub (*a, **kw):
-    warnings.warn("evy.api.use_hub has moved to evy.hubs.use_hub",
-                  DeprecationWarning, stacklevel = 2)
-    return hubs.use_hub(*a, **kw)
 
 
 def switch (coro, result = None, exc = None):
@@ -47,73 +30,13 @@ def switch (coro, result = None, exc = None):
 
 Greenlet = greenlet.greenlet
 
-
-def tcp_listener (address, backlog = 50):
-    """
-    Listen on the given ``(ip, port)`` *address* with a TCP socket.  Returns a
-    socket object on which one should call ``accept()`` to accept a connection
-    on the newly bound socket.
-    """
-    warnings.warn(
-        """evy.api.tcp_listener is deprecated.  Please use evy.listen instead.""",
-        DeprecationWarning, stacklevel = 2)
-
-    from evy import greenio, util
-
-    socket = greenio.GreenSocket(util.tcp_socket())
-    util.socket_bind_and_listen(socket, address, backlog = backlog)
-    return socket
-
-
-def ssl_listener (address, certificate, private_key):
-    """Listen on the given (ip, port) *address* with a TCP socket that
-    can do SSL.  Primarily useful for unit tests, don't use in production.
-
-    *certificate* and *private_key* should be the filenames of the appropriate
-    certificate and private key files to use with the SSL socket.
-
-    Returns a socket object on which one should call ``accept()`` to
-    accept a connection on the newly bound socket.
-    """
-    warnings.warn(
-        """evy.api.ssl_listener is deprecated.  Please use evy.wrap_ssl(evy.listen()) instead."""
-        ,
-        DeprecationWarning, stacklevel = 2)
-    from evy import util
-    import socket
-
-    socket = util.wrap_ssl(socket.socket(), certificate, private_key, True)
-    socket.bind(address)
-    socket.listen(50)
-    return socket
-
-
-def connect_tcp (address, localaddr = None):
-    """
-    Create a TCP connection to address ``(host, port)`` and return the socket.
-    Optionally, bind to localaddr ``(host, port)`` first.
-    """
-    warnings.warn(
-        """evy.api.connect_tcp is deprecated.  Please use evy.connect instead.""",
-        DeprecationWarning, stacklevel = 2)
-
-    from evy import greenio, util
-
-    desc = greenio.GreenSocket(util.tcp_socket())
-    if localaddr is not None:
-        desc.bind(localaddr)
-    desc.connect(address)
-    return desc
-
 TimeoutError = greenthread.TimeoutError
 
 trampoline = hubs.trampoline
 
 spawn = greenthread.spawn
 spawn_n = greenthread.spawn_n
-
 kill = greenthread.kill
-
 call_after = greenthread.call_after
 call_after_local = greenthread.call_after_local
 call_after_global = greenthread.call_after_global
