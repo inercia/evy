@@ -1,16 +1,9 @@
-import errno
-import sys
-import socket
-import string
-import linecache
-import inspect
 import warnings
 
 from evy.support import greenlets as greenlet, BaseException
 from evy import hubs
 from evy import greenthread
 from evy import debug
-from evy import Timeout
 
 __all__ = [
     'call_after', 'exc_after', 'getcurrent', 'get_default_hub', 'get_hub',
