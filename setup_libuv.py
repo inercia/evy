@@ -36,16 +36,22 @@ def make(done=[]):
             if "PYTHON" not in os.environ:
                 os.environ["PYTHON"] = sys.executable
 
-            new_flags = ""
-            prev_flags = os.environ.get("CFLAGS", "")
-            
+            new_cflags = ""
+            prev_cflags = os.environ.get("CFLAGS", "")
+
+            new_ldflags = ""
+            prev_ldflags = os.environ.get("LDFLAGS", "")
+
             if sys.platform == "darwin":
-                new_flags = new_flags + " -U__llvm__ -arch x86_64 -arch i386"
+                new_cflags = new_cflags + " -U__llvm__ -arch x86_64 -arch i386"
+                new_ldflags = new_cflags + " -framework CoreServices"
+
             if sys.platform in ["linux", "linux2"]:
-                new_flags = new_flags + " -fPIC"
+                new_cflags = new_cflags + " -fPIC"
             
-            os.environ["CFLAGS"] = ("%s %s" % (prev_flags, new_flags)).lstrip()
-            
+            os.environ["CFLAGS"] = ("%s %s" % (prev_cflags, new_cflags)).lstrip()
+            os.environ["LDFLAGS"] = ("%s %s" % (prev_ldflags, new_ldflags)).lstrip()
+
             if os.system('make -C %s' % LIBUV_DIR):
                 sys.exit(1)
         else:
@@ -82,8 +88,8 @@ class libuv_build_ext(build_ext):
             else:
                 raise
 
-        import evy.hubs.libuv
-        libuv_modules = [evy.hubs.libuv.ffi.verifier.get_extension()]
+        import evy.uv
+        libuv_modules = [evy.uv.ffi.verifier.get_extension()]
 
         return libuv_modules
 
