@@ -35,9 +35,17 @@ def make(done=[]):
         if os.path.exists(os.path.join(LIBUV_DIR, 'Makefile')):
             if "PYTHON" not in os.environ:
                 os.environ["PYTHON"] = sys.executable
+
+            new_flags = ""
+            prev_flags = os.environ.get("CFLAGS", "")
+            
             if sys.platform == "darwin":
-                prev_flags = os.environ.get("CFLAGS", "")
-                os.environ["CFLAGS"] = ("%s %s" % (prev_flags, "-U__llvm__ -arch x86_64 -arch i386")).lstrip()
+                new_flags = new_flags + " -U__llvm__ -arch x86_64 -arch i386"
+            if sys.platform in ["linux", "linux2"]:
+                new_flags = new_flags + " -fPIC"
+            
+            os.environ["CFLAGS"] = ("%s %s" % (prev_flags, new_flags)).lstrip()
+            
             if os.system('make -C %s' % LIBUV_DIR):
                 sys.exit(1)
         else:

@@ -624,7 +624,8 @@ libuv = C = ffi.verify("""
     include_dirs = [LIBUV_INC_DIR],
     libraries = ["uv"],
     library_dirs = [LIBUV_LIB_DIR],
-    ext_package = 'libuv')
+    ext_package = 'libuv',
+    extra_link_args = ['-lrt'])
 
 
 
