@@ -3,7 +3,6 @@ import math
 import traceback
 import signal
 import sys
-import warnings
 
 arm_alarm = None
 if hasattr(signal, 'setitimer'):

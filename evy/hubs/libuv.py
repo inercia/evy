@@ -9,6 +9,14 @@ __all__ = ['get_version',
            'time',
            'loop']
 
+__here__ = os.path.dirname(__file__)
+
+
+LIBUV_DIR = os.path.join(__here__, '..', '..', 'libuv')
+LIBUV_INC_DIR = os.path.join(LIBUV_DIR, 'include')
+LIBUV_LIB_DIR = LIBUV_DIR
+
+
 
 from cffi import FFI
 
@@ -18,9 +26,9 @@ ffi.cdef("""
 #define UV_VERSION_MAJOR ...
 #define UV_VERSION_MINOR ...
 
-typedef enum {
-  UV_UNKNOWN,
-  UV_OK,
+enum uv_err_code_e {
+  UV_UNKNOWN = -1,
+  UV_OK = 0,
   UV_EOF,
   UV_EADDRINFO,
   UV_EACCES,
@@ -79,39 +87,12 @@ typedef enum {
   UV_ESPIPE,
   UV_ECANCELED,
   ...
-} uv_err_code;
+};
 
-typedef enum {
-  UV_ASYNC,
-  UV_CHECK,
-  UV_FS_EVENT,
-  UV_FS_POLL,
-  UV_HANDLE,
-  UV_IDLE,
-  UV_NAMED_PIPE,
-  UV_POLL,
-  UV_PREPARE,
-  UV_PROCESS,
-  UV_STREAM,
-  UV_TCP,
-  UV_TIMER,
-  UV_TTY,
-  UV_UDP,
-  UV_SIGNAL,
-  ...
-} uv_handle_type;
+typedef enum uv_err_code_e uv_err_code;
 
-typedef enum {
-  UV_REQ,
-  UV_CONNECT,
-  UV_WRITE,
-  UV_SHUTDOWN,
-  UV_UDP_SEND,
-  UV_FS,
-  UV_WORK,
-  UV_GETADDRINFO,
-  ...
-} uv_req_type;
+typedef ... uv_handle_type;
+typedef ... uv_req_type;
 
 typedef ... uv_buf_t;
 typedef ... uv_os_sock_t;
@@ -123,6 +104,9 @@ typedef ... uv_cond_t;
 typedef ... uv_barrier_t;
 typedef ... uv_thread_t;
 typedef ... uv_once_t;
+typedef ... uv_statbuf_t;
+
+typedef ... uv_membership;
 
 struct uv_err_s {
   ...;
@@ -201,13 +185,13 @@ struct uv_getaddrinfo_s {
 };
 
 
-typedef struct uv_stdio_container_s {
+struct uv_stdio_container_s {
   ...;
-} uv_stdio_container_t;
+};
 
-typedef struct uv_process_options_s {
+struct uv_process_options_s {
   ...;
-} uv_process_options_t;
+};
 
 struct uv_process_s {
   ...;
@@ -285,9 +269,13 @@ typedef struct uv_udp_send_s uv_udp_send_t;
 typedef struct uv_fs_s uv_fs_t;
 typedef struct uv_work_s uv_work_t;
 
-/* None of the above. */
+typedef struct uv_stdio_container_s uv_stdio_container_t;
+typedef struct uv_process_options_s uv_process_options_t;
+
 typedef struct uv_cpu_info_s uv_cpu_info_t;
 typedef struct uv_interface_address_s uv_interface_address_t;
+
+/*******************/
 
 uv_loop_t* uv_loop_new(void);
 void uv_loop_delete(uv_loop_t*);
@@ -300,13 +288,9 @@ void uv_unref(uv_handle_t*);
 void uv_update_time(uv_loop_t*);
 int64_t uv_now(uv_loop_t*);
 
-//typedef uv_buf_t (*uv_alloc_cb)(uv_handle_t* handle, size_t suggested_size);
-//typedef void (*uv_read_cb)(uv_stream_t* stream, ssize_t nread, uv_buf_t buf);
-//typedef void (*uv_read2_cb)(uv_pipe_t* pipe, ssize_t nread, uv_buf_t buf, uv_handle_type pending);
-
-typedef void *uv_alloc_cb;
-typedef void *uv_read_cb;
-typedef void *uv_read2_cb;
+typedef uv_buf_t (*uv_alloc_cb)(uv_handle_t* handle, size_t suggested_size);
+typedef void (*uv_read_cb)(uv_stream_t* stream, ssize_t nread, uv_buf_t buf);
+typedef void (*uv_read2_cb)(uv_pipe_t* pipe, ssize_t nread, uv_buf_t buf, uv_handle_type pending);
 
 typedef void (*uv_write_cb)(uv_write_t* req, int status);
 typedef void (*uv_connect_cb)(uv_connect_t* req, int status);
@@ -325,19 +309,10 @@ typedef void (*uv_fs_cb)(uv_fs_t* req);
 typedef void (*uv_work_cb)(uv_work_t* req);
 typedef void (*uv_after_work_cb)(uv_work_t* req);
 typedef void (*uv_getaddrinfo_cb)(uv_getaddrinfo_t* req, int status, struct addrinfo* res);
-
-//typedef void (*uv_fs_event_cb)(uv_fs_event_t* handle, const char* filename, int events, int status);
-typedef void *uv_fs_event_cb;
-
-//typedef void (*uv_fs_poll_cb)(uv_fs_poll_t* handle, int status, const uv_statbuf_t* prev, const uv_statbuf_t* curr);
-typedef void *uv_fs_poll_cb;
+typedef void (*uv_fs_event_cb)(uv_fs_event_t* handle, const char* filename, int events, int status);
+typedef void (*uv_fs_poll_cb)(uv_fs_poll_t* handle, int status, const uv_statbuf_t* prev, const uv_statbuf_t* curr);
 
 typedef void (*uv_signal_cb)(uv_signal_t* handle, int signum);
-
-typedef enum {
-  UV_LEAVE_GROUP,
-  UV_JOIN_GROUP,
-} uv_membership;
 
 uv_err_t uv_last_error(uv_loop_t*);
 const char* uv_strerror(uv_err_t err);
@@ -643,9 +618,13 @@ int uv_thread_join(uv_thread_t *tid);
 
 
 
-libuv = C = ffi.verify("""   // passed to the real C compiler
+libuv = C = ffi.verify("""
 #include <uv.h>
-""", libraries=["uv"])
+""",
+    include_dirs = [LIBUV_INC_DIR],
+    libraries = ["uv"],
+    library_dirs = [LIBUV_LIB_DIR],
+    ext_package = 'libuv')
 
 
 
@@ -677,15 +656,12 @@ class Loop(object):
             assert ffi.typeof(ptr) is ffi.typeof("uv_loop_t *")
             self._ptr = ptr
         else:
-            c_flags = _flags_to_int(flags)
-            _check_flags(c_flags)
-            c_flags |= libuv.EVFLAG_NOENV
             if _default_loop_destroyed:
                 default = False
             if default:
-                self._ptr = libuv.uv_default_loop(c_flags)  # XXX
+                self._ptr = libuv.uv_default_loop()
                 if not self._ptr:
-                    raise SystemError("uv_default_loop(%s) failed" % (c_flags, ))
+                    raise SystemError("uv_default_loop() failed")
                 libuv.uv_prepare_start(self._ptr, self._signal_checker)
                 libuv.uv_unref(self._ptr)
 
@@ -694,12 +670,12 @@ class Loop(object):
                 #     libuv.uv_unref(self._ptr)
 
             else:
-                self._ptr = libuv.uv_loop_new(c_flags)
+                self._ptr = libuv.uv_loop_new()
                 if not self._ptr:
-                    raise SystemError("uv_loop_new(%s) failed" % (c_flags, ))
+                    raise SystemError("uv_loop_new() failed")
                 
-            if default or __SYSERR_CALLBACK is None:
-                set_syserr_cb(self._handle_syserr)
+            #if default or __SYSERR_CALLBACK is None:
+            #    set_syserr_cb(self._handle_syserr)
 
     def _stop_signal_checker(self):
         if libuv.uv_is_active(self._signal_checker):
@@ -715,8 +691,8 @@ class Loop(object):
         global _default_loop_destroyed
         if self._ptr:
             self._stop_signal_checker()
-            if __SYSERR_CALLBACK == self._handle_syserr:
-                set_syserr_cb(None)
+            #if __SYSERR_CALLBACK == self._handle_syserr:
+            #    set_syserr_cb(None)
             if libuv.uv_is_default_loop(self._ptr):
                 _default_loop_destroyed = True
             libuv.uv_loop_destroy(self._ptr)
@@ -728,7 +704,7 @@ class Loop(object):
 
     @property
     def WatcherType(self):
-        return watcher
+        return Watcher
 
     def _handle_syserr(self, message, errno):
         self.handle_error(None, SystemError, SystemError(message + ': ' + os.strerror(errno)), None)
@@ -788,7 +764,7 @@ class Loop(object):
         return Prepare(self, ref)
 
     def async(self, ref=True):
-        return Ssync(self, ref)
+        return Async(self, ref)
 
     def callback(self):
         return Callback(self)
@@ -826,7 +802,7 @@ class Watcher(object):
     _flags = 0
 
     def __init__(self, _loop, ref=True):
-        assert isinstance(_loop, loop)
+        assert isinstance(_loop, Loop)
         assert self.libuv_stop_this_watcher is not None
         self.loop = _loop
         if ref:
@@ -991,10 +967,6 @@ class Poll(Watcher):
 
     events = property(_get_events, _set_events)
 
-    @property
-    def events_str(self):
-        return _events_to_str(self._watcher.events)
-
     def _format(self):
         return ' fd=%s events=%s' % (self.fd, self.events_str)
 
@@ -1151,7 +1123,7 @@ class Async(Watcher):
         self._watcher = ffi.new("uv_async_t *")
         self._cb = ffi.callback("void(*)(uv_loop_t *, uv_async_t *, int)", self._run_callback)
         libuv.uv_async_init(self._watcher, self._cb)
-        watcher.__init__(self, loop, ref=ref)
+        Watcher.__init__(self, loop, ref=ref)
 
     def send(self):
         libuv.uv_async_send(self.loop._ptr, self._watcher)
