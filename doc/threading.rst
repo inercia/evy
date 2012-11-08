@@ -1,7 +1,7 @@
 Threads
 ========
 
-Eventlet is thread-safe and can be used in conjunction with normal Python threads.  The way this works is that coroutines are confined to their 'parent' Python thread.  It's like each thread contains its own little world of coroutines that can switch between themselves but not between coroutines in other threads.  
+Evy is thread-safe and can be used in conjunction with normal Python threads.  The way this works is that coroutines are confined to their 'parent' Python thread.  It's like each thread contains its own little world of coroutines that can switch between themselves but not between coroutines in other threads.  
 
 .. image:: /images/threading_illustration.png
 
@@ -24,7 +24,7 @@ The simplest thing to do with :mod:`~evy.tpool` is to :func:`~evy.tpool.execute`
  >>> tpool.execute(my_func, thread.get_ident())
  running in new thread: True
 
-By default there are 20 threads in the pool, but you can configure this by setting the environment variable ``EVENTLET_THREADPOOL_SIZE`` to the desired pool size before importing tpool.
+By default there are 20 threads in the pool, but you can configure this by setting the environment variable ``EVY_THREADPOOL_SIZE`` to the desired pool size before importing tpool.
 
 .. automodule:: evy.tpool
 	:members:

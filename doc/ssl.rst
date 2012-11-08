@@ -1,7 +1,7 @@
-Using SSL With Eventlet
+Using SSL With Evy
 ========================
 
-Eventlet makes it easy to use non-blocking SSL sockets.  If you're using Python 2.6 or later, you're all set, evy wraps the built-in ssl module.  If on Python 2.5 or 2.4, you have to install pyOpenSSL_ to use evy.
+Evy makes it easy to use non-blocking SSL sockets.  If you're using Python 2.6 or later, you're all set, evy wraps the built-in ssl module.  If on Python 2.5 or 2.4, you have to install pyOpenSSL_ to use evy.
 
 In either case, the the ``green`` modules handle SSL sockets transparently, just like their standard counterparts.  As an example, :mod:`evy.green.urllib2` can be used to fetch https urls in as non-blocking a fashion as you please::
 
@@ -21,7 +21,7 @@ To use ssl sockets directly in Python 2.6, use :mod:`evy.green.ssl`, which is a 
 With Python 2.5 or Earlier
 ---------------------------
 
-Prior to Python 2.6, there is no :mod:`ssl`, so SSL support is much weaker.  Eventlet relies on pyOpenSSL to implement its SSL support on these older versions, so be sure to install pyOpenSSL, or you'll get an ImportError whenever your system tries to make an SSL connection.
+Prior to Python 2.6, there is no :mod:`ssl`, so SSL support is much weaker.  Evy relies on pyOpenSSL to implement its SSL support on these older versions, so be sure to install pyOpenSSL, or you'll get an ImportError whenever your system tries to make an SSL connection.
 
 Once pyOpenSSL is installed, you can then use the ``evy.green`` modules, like :mod:`evy.green.httplib` to fetch https urls.  You can also use :func:`evy.green.socket.ssl`, which is a nonblocking wrapper for :func:`socket.ssl`.
 

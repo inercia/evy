@@ -1,7 +1,7 @@
 History
 -------
 
-Eventlet began life as Donovan Preston was talking to Bob Ippolito about coroutine-based non-blocking networking frameworks in Python. Most non-blocking frameworks require you to run the "main loop" in order to perform all network operations, but Donovan wondered if a library written using a trampolining style could get away with transparently running the main loop any time i/o was required, stopping the main loop once no more i/o was scheduled. Bob spent a few days during PyCon 2006 writing a proof-of-concept. He named it evy, after the coroutine implementation it used, `greenlet <http://cheeseshop.python.org/pypi/greenlet greenlet>`_. Donovan began using evy as a light-weight network library for his spare-time project `Pavel <http://soundfarmer.com/Pavel/trunk/ Pavel>`_, and also began writing some unittests.
+Evy began life as Donovan Preston was talking to Bob Ippolito about coroutine-based non-blocking networking frameworks in Python. Most non-blocking frameworks require you to run the "main loop" in order to perform all network operations, but Donovan wondered if a library written using a trampolining style could get away with transparently running the main loop any time i/o was required, stopping the main loop once no more i/o was scheduled. Bob spent a few days during PyCon 2006 writing a proof-of-concept. He named it evy, after the coroutine implementation it used, `greenlet <http://cheeseshop.python.org/pypi/greenlet greenlet>`_. Donovan began using evy as a light-weight network library for his spare-time project `Pavel <http://soundfarmer.com/Pavel/trunk/ Pavel>`_, and also began writing some unittests.
 
 * http://svn.red-bean.com/bob/evy/trunk/
 

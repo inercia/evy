@@ -3,7 +3,7 @@
 Design Patterns
 =================
 
-There are a bunch of basic patterns that Eventlet usage falls into.  Here are a few examples that show their basic structure.
+There are a bunch of basic patterns that Evy usage falls into.  Here are a few examples that show their basic structure.
 
 Client Pattern
 --------------------

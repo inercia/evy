@@ -1,4 +1,4 @@
-Eventlet Documentation
+Evy Documentation
 ====================================
 
 Code talks!  This is a simple web crawler that fetches a bunch of urls concurrently::
@@ -41,7 +41,7 @@ Contents
 
 License
 ---------
-Eventlet is made available under the terms of the open source `MIT license <http://www.opensource.org/licenses/mit-license.php>`_
+Evy is made available under the terms of the open source `MIT license <http://www.opensource.org/licenses/mit-license.php>`_
 
 Indices and tables
 ==================
