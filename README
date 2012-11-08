@@ -1,14 +1,4 @@
-Eventlet is a concurrent networking library for Python that allows you to change how you run your code, not how you write it.
-
-It uses epoll or libevent for highly scalable non-blocking I/O.  Coroutines ensure that the developer uses a blocking style of programming that is similar to threading, but provide the benefits of non-blocking I/O.  The event dispatch is implicit, which means you can easily use Eventlet from the Python interpreter, or as a small part of a larger application.
-
-It's easy to get started using Eventlet, and easy to convert existing 
-applications to use it.  Start off by looking at the `examples`_, 
-`common design patterns`_, and the list of `basic API primitives`_.
-
-.. _examples: http://evy.net/doc/examples.html
-.. _common design patterns: http://evy.net/doc/design_patterns.html
-.. _basic API primitives: http://evy.net/doc/basic_usage.html
+Evy is a port of eventlet for running in Pypy with libuv.
 
 Quick Example
 ===============
@@ -18,26 +8,11 @@ Here's something you can try right on the command line::
     % python
     >>> import evy 
     >>> from evy.green import urllib2
-    >>> gt = evy.spawn(urllib2.urlopen, 'http://evy.net')
+    >>> gt = evy.spawn(urllib2.urlopen, 'http://facebook.com')
     >>> gt2 = evy.spawn(urllib2.urlopen, 'http://secondlife.com')
     >>> gt2.wait()
     >>> gt.wait()
 
-
-Getting Eventlet
-==================
-
-The easiest way to get Eventlet is to use easy_install or pip::
-
-  easy_install evy
-  pip install evy
-
-The development `tip`_ is available via easy_install as well::
-
-  easy_install 'evy==dev'
-  pip install 'evy==dev'
-
-.. _tip: http://bitbucket.org/which_linden/evy/get/tip.zip#egg=evy-dev
 
 Building the Docs Locally
 =========================
