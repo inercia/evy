@@ -23,3 +23,10 @@ To build a complete set of HTML documentation, you must have Sphinx, which can b
   make html
   
 The built html files can be found in doc/_build/html afterward.
+
+
+Status
+======
+
+It doesn't work yet...
+
