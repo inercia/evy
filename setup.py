@@ -33,7 +33,7 @@ setup(
     cmdclass            = {'build_ext': libuv_build_ext,
                            'sdist'    : libuv_sdist},
 
-    ext_package         = 'evy',              # must match the package defined in the CFFI verify()
+    ext_package         = 'evy.uv',              # must match the package defined in the CFFI verify()
     ext_modules         = [libuv_extension],
 
     test_suite          = 'nose.collector',

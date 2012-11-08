@@ -14,19 +14,21 @@ except ImportError:
 from distutils.command.build_ext import build_ext
 from distutils.command.sdist import sdist as _sdist
 from distutils.errors import CCompilerError, DistutilsExecError, DistutilsPlatformError
-ext_errors = (CCompilerError, DistutilsExecError, DistutilsPlatformError, IOError)
 
+ext_errors = (CCompilerError, DistutilsExecError, DistutilsPlatformError, IOError)
 
 __here__ = os.path.dirname(__file__)
 
+
+
 LIBUV_DIR = os.path.join(__here__, 'libuv')
+
+
 
 def _system(cmd):
     cmd = ' '.join(cmd)
     sys.stdout.write('Running %r in %s\n' % (cmd, os.getcwd()))
     return os.system(cmd)
-
-
 
 def make(done=[]):
     print 'making libuv'
@@ -80,22 +82,13 @@ class libuv_build_ext(build_ext):
         print 'building libuv extension'
         make()
 
-        try:
-            result = build_ext.build_extension(self, ext)
-        except ext_errors:
-            if getattr(ext, 'optional', False):
-                raise BuildFailed
-            else:
-                raise
+        import evy.uv.interface
+        libuv_modules = [evy.uv.interface.ffi.verifier.get_extension()]
 
-        import evy.uv
-        libuv_modules = [evy.uv.ffi.verifier.get_extension()]
-
+        print 'using libuv version: %s' % evy.uv.get_version()
         return libuv_modules
 
-
-libuv_extension = Extension(name='libuv',
-                            sources=[])
+libuv_extension = Extension(name='libuv', sources=[])
 
 
 
