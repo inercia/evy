@@ -1,13 +1,13 @@
 import sys
 
-from evy import greenio
 from evy import greenthread
 from evy import greenpool
 from evy.green import socket
 from evy.support import greenlets as greenlet
 
 def connect (addr, family = socket.AF_INET, bind = None):
-    """Convenience function for opening client sockets.
+    """
+    Convenience function for opening client sockets.
 
     :param addr: Address of the server to connect to.  For TCP sockets, this is a (host, port) tuple.
     :param family: Socket family, optional.  See :mod:`socket` documentation for available families.
@@ -22,7 +22,8 @@ def connect (addr, family = socket.AF_INET, bind = None):
 
 
 def listen (addr, family = socket.AF_INET, backlog = 50):
-    """Convenience function for opening server sockets.  This
+    """
+    Convenience function for opening server sockets.  This
     socket can be used in :func:`~evy.serve` or a custom ``accept()`` loop.
 
     Sets SO_REUSEADDR on the socket to save on annoyance. 
@@ -41,7 +42,8 @@ def listen (addr, family = socket.AF_INET, backlog = 50):
 
 
 class StopServe(Exception):
-    """Exception class used for quitting :func:`~evy.serve` gracefully."""
+    """
+    Exception class used for quitting :func:`~evy.serve` gracefully."""
     pass
 
 
@@ -58,7 +60,8 @@ def _stop_checker (t, server_gt, conn):
 
 
 def serve (sock, handle, concurrency = 1000):
-    """Runs a server on the supplied socket.  Calls the function *handle* in a 
+    """
+    Runs a server on the supplied socket.  Calls the function *handle* in a
     separate greenthread for every incoming client connection.  *handle* takes
     two arguments: the client socket object, and the client address::
         
@@ -101,7 +104,8 @@ def serve (sock, handle, concurrency = 1000):
 
 
 def wrap_ssl (sock, *a, **kw):
-    """Convenience function for converting a regular socket into an
+    """
+    Convenience function for converting a regular socket into an
     SSL socket.  Has the same interface as :func:`ssl.wrap_socket`,
     but works on 2.5 or earlier, using PyOpenSSL (though note that it
     ignores the *cert_reqs*, *ssl_version*, *ca_certs*,
