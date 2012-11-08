@@ -11,54 +11,34 @@ _threadlocal = threading.local()
 
 
 def get_default_hub ():
-    """Select the default hub implementation based on what multiplexing
+    """
+    Select the default hub implementation based on what multiplexing
     libraries are installed.  The order that the hubs are tried is:
     
-    * epoll
-    * poll
-    * select
+    * uv
 
     .. include:: ../../doc/common.txt
     .. note :: |internal|
     """
-
-    select = patcher.original('select')
-    try:
-        import evy.hubs.libuv
-        return evy.hubs.libuv
-    except ImportError:
-        try:
-            import evy.hubs.epolls
-            return evy.hubs.epolls
-        except ImportError:
-            if hasattr(select, 'poll'):
-                import evy.hubs.poll
-                return evy.hubs.poll
-            else:
-                import evy.hubs.selects
-                return evy.hubs.selects
+    import evy.hubs.uv
+    return evy.hubs.uv
 
 
 def use_hub (mod = None):
-    """Use the module *mod*, containing a class called Hub, as the
+    """
+    Use the module *mod*, containing a class called Hub, as the
     event hub. Usually not required; the default hub is usually fine.  
     
-    Mod can be an actual module, a string, or None.  If *mod* is a module,
-    it uses it directly.   If *mod* is a string, use_hub tries to import 
-    `evy.hubs.mod` and use that as the hub module.  If *mod* is None, 
-    use_hub uses the default hub.  Only call use_hub during application 
-    initialization,  because it resets the hub's state and any existing 
-    timers or listeners will never be resumed.
+    Calling this function has no effect, as we always use the uv hub.
     """
-    if mod is None:
-        mod = os.environ.get('EVY_HUB', None)
-    if mod is None:
-        mod = get_default_hub()
+    mod = get_default_hub()
+
     if hasattr(_threadlocal, 'hub'):
         del _threadlocal.hub
     if isinstance(mod, str):
         assert mod.strip(), "Need to specify a hub"
         mod = __import__('evy.hubs.' + mod, globals(), locals(), ['Hub'])
+
     if hasattr(mod, 'Hub'):
         _threadlocal.Hub = mod.Hub
     else:
