@@ -1,9 +1,9 @@
 Basic Usage
 =============
 
-If it's your first time to Eventlet, you may find the illuminated examples in the :ref:`design-patterns` document to be a good starting point.
+If it's your first time to Evy, you may find the illuminated examples in the :ref:`design-patterns` document to be a good starting point.
 
-Eventlet is built around the concept of green threads (i.e. coroutines, we use the terms interchangeably) that are launched to do network-related work.  Green threads differ from normal threads in two main ways:
+Evy is built around the concept of green threads (i.e. coroutines, we use the terms interchangeably) that are launched to do network-related work.  Green threads differ from normal threads in two main ways:
 
 * Green threads are so cheap they are nearly free.  You do not have to conserve green threads like you would normal threads.  In general, there will be at least one green thread per network connection.
 * Green threads cooperatively yield to each other instead of preemptively being scheduled.  The major advantage from this behavior is that shared data structures don't need locks, because only if a yield is explicitly called can another green thread have access to the data structure.  It is also possible to inspect primitives such as queues to see if they have any pending data.
@@ -11,9 +11,9 @@ Eventlet is built around the concept of green threads (i.e. coroutines, we use t
 Primary API
 ===========
 
-The design goal for Eventlet's API is simplicity and readability.  You should be able to read its code and understand what it's doing.  Fewer lines of code are preferred over excessively clever implementations.  `Like Python itself <http://www.python.org/dev/peps/pep-0020/>`_, there should be one, and only one obvious way to do it in Eventlet!
+The design goal for Evy's API is simplicity and readability.  You should be able to read its code and understand what it's doing.  Fewer lines of code are preferred over excessively clever implementations.  `Like Python itself <http://www.python.org/dev/peps/pep-0020/>`_, there should be one, and only one obvious way to do it in Evy!
 
-Though Eventlet has many modules, much of the most-used stuff is accessible simply by doing ``import evy``.  Here's a quick summary of the functionality available in the ``evy`` module, with links to more verbose documentation on each.
+Though Evy has many modules, much of the most-used stuff is accessible simply by doing ``import evy``.  Here's a quick summary of the functionality available in the ``evy`` module, with links to more verbose documentation on each.
 
 Greenthread Spawn
 -----------------------
@@ -47,7 +47,7 @@ Greenthread Control
     
 .. class:: evy.Queue
 
-    Queues are a fundamental construct for communicating data between execution units.  Eventlet's Queue class is used to communicate between greenthreads, and provides a bunch of useful features for doing that.  See :class:`Queue <evy.queue.Queue>` for more details.
+    Queues are a fundamental construct for communicating data between execution units.  Evy's Queue class is used to communicate between greenthreads, and provides a bunch of useful features for doing that.  See :class:`Queue <evy.queue.Queue>` for more details.
     
 .. class:: evy.Timeout
 
@@ -80,4 +80,4 @@ Network Convenience Functions
 
 .. autoclass:: evy.StopServe
     
-These are the basic primitives of Eventlet; there are a lot more out there in the other Eventlet modules; check out the :doc:`modules`.
+These are the basic primitives of Evy; there are a lot more out there in the other Evy modules; check out the :doc:`modules`.

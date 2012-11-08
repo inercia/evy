@@ -1,9 +1,9 @@
 Greening The World
 ==================
 
-One of the challenges of writing a library like Eventlet is that the built-in networking libraries don't natively support the sort of cooperative yielding that we need.  What we must do instead is patch standard library modules in certain key places so that they do cooperatively yield.  We've in the past considered doing this automatically upon importing Eventlet, but have decided against that course of action because it is un-Pythonic to change the behavior of module A simply by importing module B.
+One of the challenges of writing a library like Evy is that the built-in networking libraries don't natively support the sort of cooperative yielding that we need.  What we must do instead is patch standard library modules in certain key places so that they do cooperatively yield.  We've in the past considered doing this automatically upon importing Evy, but have decided against that course of action because it is un-Pythonic to change the behavior of module A simply by importing module B.
 
-Therefore, the application using Eventlet must explicitly green the world for itself, using one or both of the convenient methods provided.
+Therefore, the application using Evy must explicitly green the world for itself, using one or both of the convenient methods provided.
 
 .. _import-green:
 
@@ -20,7 +20,7 @@ This works best if every library can be imported green in this manner.  If ``evy
 
 .. function:: evy.patcher.import_patched(module_name, *additional_modules, **kw_additional_modules)
 
-    Imports a module in a greened manner, so that the module's use of networking libraries like socket will use Eventlet's green versions instead.  The only required argument is the name of the module to be imported::
+    Imports a module in a greened manner, so that the module's use of networking libraries like socket will use Evy's green versions instead.  The only required argument is the name of the module to be imported::
     
         import evy
         httplib2 = evy.import_patched('httplib2')

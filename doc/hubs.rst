@@ -1,26 +1,26 @@
 .. _understanding_hubs:
 
-Understanding Eventlet Hubs
+Understanding Evy Hubs
 ===========================
 
-A hub forms the basis of Eventlet's event loop, which dispatches I/O events and schedules greenthreads.  It is the existence of the hub that promotes coroutines (which can be tricky to program with) into greenthreads (which are easy).
+A hub forms the basis of Evy's event loop, which dispatches I/O events and schedules greenthreads.  It is the existence of the hub that promotes coroutines (which can be tricky to program with) into greenthreads (which are easy).
 
-Eventlet has multiple hub implementations, and when you start using it, it tries to select the best hub implementation for your system.  The hubs that it supports are (in order of preference):
+Evy has multiple hub implementations, and when you start using it, it tries to select the best hub implementation for your system.  The hubs that it supports are (in order of preference):
 
+**libuv**
+    The default Hub
 **epolls**
     Requires Python 2.6 or the `python-epoll <http://pypi.python.org/pypi/python-epoll/1.0>`_ package, and Linux.  This is the fastest pure-Python hub.
 **poll**
     On platforms that support it
 **selects**
     Lowest-common-denominator, available everywhere.
-**pyevent**
-    This is a libevent-based backend and is thus the fastest.  It's disabled by default, because it does not support native threads, but you can enable it yourself if your use case doesn't require them.  (You have to install pyevent, too.)
 
-If the selected hub is not ideal for the application, another can be selected.  You can make the selection either with the environment variable :ref:`EVENTLET_HUB <env_vars>`, or with use_hub.
+If the selected hub is not ideal for the application, another can be selected.  You can make the selection either with the environment variable :ref:`EVY_HUB <env_vars>`, or with use_hub.
 
 .. function:: evy.hubs.use_hub(hub=None)
 
-    Use this to control which hub Eventlet selects.  Call it with the name of the desired hub module.  Make sure to do this before the application starts doing any I/O!  Calling use_hub completely eliminates the old hub, and any file descriptors or timers that it had been managing will be forgotten.  Put the call as one of the first lines in the main module.::
+    Use this to control which hub Evy selects.  Call it with the name of the desired hub module.  Make sure to do this before the application starts doing any I/O!  Calling use_hub completely eliminates the old hub, and any file descriptors or timers that it had been managing will be forgotten.  Put the call as one of the first lines in the main module.::
     
         """ This is the main module """
         from evy import hubs
@@ -43,7 +43,7 @@ How the Hubs Work
 The hub has a main greenlet, MAINLOOP.  When one of the running coroutines needs
 to do some I/O, it registers a listener with the hub (so that the hub knows when to wake it up again), and then switches to MAINLOOP (via ``get_hub().switch()``).  If there are other coroutines that are ready to run, MAINLOOP switches to them, and when they complete or need to do more I/O, they switch back to the MAINLOOP.  In this manner, MAINLOOP ensures that every coroutine gets scheduled when it has some work to do.
 
-MAINLOOP is launched only when the first I/O operation happens, and it is not the same greenlet that __main__ is running in.  This lazy launching is why it's not necessary to explicitly call a dispatch() method like other frameworks, which in turn means that code can start using Eventlet without needing to be substantially restructured.
+MAINLOOP is launched only when the first I/O operation happens, and it is not the same greenlet that __main__ is running in.  This lazy launching is why it's not necessary to explicitly call a dispatch() method like other frameworks, which in turn means that code can start using Evy without needing to be substantially restructured.
 
 More Hub-Related Functions
 ---------------------------

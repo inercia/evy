@@ -45,7 +45,7 @@
 
     There are two Timeout caveats to be aware of:
     
-    * If the code block in the try/finally or with-block never cooperatively yields, the timeout cannot be raised.  In Eventlet, this should rarely be a problem, but be aware that you cannot time out CPU-only operations with this class.
+    * If the code block in the try/finally or with-block never cooperatively yields, the timeout cannot be raised.  In Evy, this should rarely be a problem, but be aware that you cannot time out CPU-only operations with this class.
     * If the code block catches and doesn't re-raise :class:`BaseException`  (for example, with ``except:``), then it will catch the Timeout exception, and might not abort as intended.
 
     When catching timeouts, keep in mind that the one you catch may not be the

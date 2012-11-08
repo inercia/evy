@@ -73,9 +73,9 @@ if "%1" == "qthelp" (
 	echo.
 	echo.Build finished; now you can run "qcollectiongenerator" with the ^
 .qhcp project file in _build/qthelp, like this:
-	echo.^> qcollectiongenerator _build\qthelp\Eventlet.qhcp
+	echo.^> qcollectiongenerator _build\qthelp\Evy.qhcp
 	echo.To view the help file:
-	echo.^> assistant -collectionFile _build\qthelp\Eventlet.ghc
+	echo.^> assistant -collectionFile _build\qthelp\Evy.ghc
 	goto end
 )
 

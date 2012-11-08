@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Eventlet documentation build configuration file, created by
+# Evy documentation build configuration file, created by
 # sphinx-quickstart on Sat Jul  4 19:48:27 2009.
 #
 # This file is execfile()d with the current directory set to its containing dir.
@@ -42,8 +42,8 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'Eventlet'
-copyright = u'2005-2010, Eventlet Contributors'
+project = u'Evy'
+copyright = u'2012, Alvaro Saurin'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -100,7 +100,7 @@ intersphinx_mapping = {'http://docs.python.org/': None}
 
 # The theme to use for HTML and HTML Help pages.  Major themes that come with
 # Sphinx are currently 'default' and 'sphinxdoc'.
-html_theme = 'default'
+html_theme = 'kr'
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
@@ -108,7 +108,7 @@ html_theme = 'default'
 #html_theme_options = {}
 
 # Add any paths that contain custom themes here, relative to this directory.
-#html_theme_path = []
+html_theme_path = ['themes']
 
 # The name for this set of Sphinx documents.  If None, it defaults to
 # "<project> v<release> documentation".
@@ -129,7 +129,7 @@ html_theme = 'default'
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ['_static']
+html_static_path = ['.static']
 
 # If not '', a 'Last updated on:' timestamp is inserted at every page bottom,
 # using the given strftime format.
@@ -167,7 +167,7 @@ html_static_path = ['_static']
 #html_file_suffix = ''
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'Eventletdoc'
+htmlhelp_basename = 'Evydoc'
 
 
 # -- Options for LaTeX output --------------------------------------------------
@@ -181,7 +181,7 @@ htmlhelp_basename = 'Eventletdoc'
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
-  ('index', 'Eventlet.tex', u'Eventlet Documentation',
+  ('index', 'Evy.tex', u'Evy Documentation',
    u'<evy contributors>', 'manual'),
 ]
 

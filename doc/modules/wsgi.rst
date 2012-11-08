@@ -42,7 +42,7 @@ Applications can detect whether they are inside a secure server by the value of 
 
 Non-Standard Extension to Support Post Hooks
 --------------------------------------------
-Eventlet's WSGI server supports a non-standard extension to the WSGI
+Evy's WSGI server supports a non-standard extension to the WSGI
 specification where :samp:`env['evy.posthooks']` contains an array of
 `post hooks` that will be called after fully sending a response. Each post hook
 is a tuple of :samp:`(func, args, kwargs)` and the `func` will be called with

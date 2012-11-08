@@ -1,7 +1,7 @@
-Testing Eventlet
+Testing Evy
 ================
 
-Eventlet is tested using `Nose <http://somethingaboutorange.com/mrl/projects/nose/>`_.  To run tests, simply install nose, and then, in the evy tree, do:
+Evy is tested using `Nose <http://somethingaboutorange.com/mrl/projects/nose/>`_.  To run tests, simply install nose, and then, in the evy tree, do:
 
 .. code-block:: sh
 
@@ -39,7 +39,7 @@ Currently there are 16 doctests.
 Standard Library Tests
 ----------------------
 
-Eventlet provides for the ability to test itself with the standard Python networking tests.  This verifies that the libraries it wraps work at least as well as the standard ones do.  The directory tests/stdlib contains a bunch of stubs that import the standard lib tests from your system and run them.  If you do not have any tests in your python distribution, they'll simply fail to import.
+Evy provides for the ability to test itself with the standard Python networking tests.  This verifies that the libraries it wraps work at least as well as the standard ones do.  The directory tests/stdlib contains a bunch of stubs that import the standard lib tests from your system and run them.  If you do not have any tests in your python distribution, they'll simply fail to import.
 
 There's a convenience module called all.py designed to handle the impedance mismatch between Nose and the standard tests:
 
@@ -52,14 +52,14 @@ That will run all the tests, though the output will be a little weird because it
 If you see "Ran 0 tests in 0.001s", it means that your Python installation lacks its own tests.  This is usually the case for Linux distributions.  One way to get the missing tests is to download a source tarball (of the same version you have installed on your system!) and copy its Lib/test directory into the correct place on your PYTHONPATH.
 
 
-Testing Eventlet Hubs
+Testing Evy Hubs
 ---------------------
 
-When you run the tests, Eventlet will use the most appropriate hub for the current platform to do its dispatch.  It's sometimes useful when making changes to Eventlet to test those changes on hubs other than the default.  You can do this with the ``EVENTLET_HUB`` environment variable.
+When you run the tests, Evy will use the most appropriate hub for the current platform to do its dispatch.  It's sometimes useful when making changes to Evy to test those changes on hubs other than the default.  You can do this with the ``EVY_HUB`` environment variable.
 
 .. code-block:: sh
 
- $ EVENTLET_HUB=epolls nosetests
+ $ EVY_HUB=epolls nosetests
 
 See :ref:`understanding_hubs` for the full list of hubs.
 

@@ -1,4 +1,4 @@
-:mod:`debug` -- Debugging tools for Eventlet
+:mod:`debug` -- Debugging tools for Evy
 ==================================================
 
 .. automodule:: evy.debug

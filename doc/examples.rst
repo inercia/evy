@@ -1,7 +1,7 @@
 Examples
 ========
 
-Here are a bunch of small example programs that use Eventlet.  All of these examples can be found in the ``examples`` directory of a source copy of Eventlet.
+Here are a bunch of small example programs that use Evy.  All of these examples can be found in the ``examples`` directory of a source copy of Evy.
 
 .. _web_crawler_example:
 
