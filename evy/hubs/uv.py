@@ -20,7 +20,7 @@ from evy.hubs import hub
 
 from evy.uv import libuv
 from evy.uv.loop import Loop
-from evy.uv.watchers import Signal, Poll, Timer
+from evy.uv.watchers import Poll, Timer
 
 
 class Hub(hub.BaseHub):
@@ -105,7 +105,9 @@ class Hub(hub.BaseHub):
             super(Hub, self).timer_finished(timer)
 
     def timer_canceled(self, timer):
-        """ Cancels the underlying libevent timer. """
+        """
+        Cancels the underlying libevent timer.
+        """
         try:
             timer.impltimer.stop()
             del timer.impltimer
