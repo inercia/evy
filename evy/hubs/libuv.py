@@ -105,7 +105,7 @@ typedef ... uv_barrier_t;
 typedef ... uv_thread_t;
 typedef ... uv_once_t;
 typedef ... uv_statbuf_t;
-
+typedef ... uv_fs_type;
 typedef ... uv_membership;
 
 struct uv_err_s {
@@ -241,6 +241,29 @@ struct uv_loop_s {
   ...;
 };
 
+enum uv_fs_event {
+  ...
+};
+
+enum uv_fs_event_flags {
+  ...
+};
+
+enum uv_poll_event {
+  ...
+};
+
+enum uv_udp_flags {
+  ...
+};
+
+typedef ... uv_stdio_flags;
+
+enum uv_process_flags {
+  ...
+};
+
+
 typedef struct uv_loop_s uv_loop_t;
 typedef struct uv_err_s uv_err_t;
 typedef struct uv_handle_s uv_handle_t;
@@ -355,12 +378,6 @@ int uv_tcp_getpeername(uv_tcp_t* handle, struct sockaddr* name, int* namelen);
 int uv_tcp_connect(uv_connect_t* req, uv_tcp_t* handle, struct sockaddr_in address, uv_connect_cb cb);
 int uv_tcp_connect6(uv_connect_t* req, uv_tcp_t* handle, struct sockaddr_in6 address, uv_connect_cb cb);
 
-enum uv_udp_flags {
-  UV_UDP_IPV6ONLY,
-  UV_UDP_PARTIAL,
-  ...
-};
-
 typedef void (*uv_udp_send_cb)(uv_udp_send_t* req, int status);
 typedef void (*uv_udp_recv_cb)(uv_udp_t* handle, ssize_t nread, uv_buf_t buf, struct sockaddr* addr, unsigned flags);
 
@@ -379,9 +396,7 @@ int uv_udp_send6(uv_udp_send_t* req, uv_udp_t* handle, uv_buf_t bufs[], int bufc
 int uv_udp_recv_start(uv_udp_t* handle, uv_alloc_cb alloc_cb, uv_udp_recv_cb recv_cb);
 int uv_udp_recv_stop(uv_udp_t* handle);
 
-
 int uv_tty_init(uv_loop_t*, uv_tty_t*, uv_file fd, int readable);
-
 int uv_tty_set_mode(uv_tty_t*, int mode);
 void uv_tty_reset_mode(void);
 int uv_tty_get_winsize(uv_tty_t*, int* width, int* height);
@@ -392,12 +407,6 @@ int uv_pipe_open(uv_pipe_t*, uv_file file);
 int uv_pipe_bind(uv_pipe_t* handle, const char* name);
 void uv_pipe_connect(uv_connect_t* req, uv_pipe_t* handle, const char* name, uv_connect_cb cb);
 void uv_pipe_pending_instances(uv_pipe_t* handle, int count);
-
-enum uv_poll_event {
-  UV_READABLE,
-  UV_WRITABLE,
-  ...
-};
 
 int uv_poll_init(uv_loop_t* loop, uv_poll_t* handle, int fd);
 int uv_poll_init_socket(uv_loop_t* loop, uv_poll_t* handle, uv_os_sock_t socket);
@@ -429,33 +438,10 @@ int64_t uv_timer_get_repeat(uv_timer_t* timer);
 int uv_getaddrinfo(uv_loop_t* loop, uv_getaddrinfo_t* req, uv_getaddrinfo_cb getaddrinfo_cb, const char* node, const char* service, const struct addrinfo* hints);
 void uv_freeaddrinfo(struct addrinfo* ai);
 
-/* uv_spawn() options */
-typedef enum {
-  UV_IGNORE,
-  UV_CREATE_PIPE,
-  UV_INHERIT_FD,
-  UV_INHERIT_STREAM,
-  UV_READABLE_PIPE,
-  UV_WRITABLE_PIPE,
-  ...
-} uv_stdio_flags;
-
-enum uv_process_flags {
-  UV_PROCESS_SETUID,
-  UV_PROCESS_SETGID,
-  UV_PROCESS_WINDOWS_VERBATIM_ARGUMENTS,
-  UV_PROCESS_DETACHED,
-  ...
-};
-
-
 int uv_spawn(uv_loop_t*, uv_process_t*, uv_process_options_t options);
 int uv_process_kill(uv_process_t*, int signum);
 uv_err_t uv_kill(int pid, int signum);
-
-
 int uv_queue_work(uv_loop_t* loop, uv_work_t* req, uv_work_cb work_cb, uv_after_work_cb after_work_cb);
-
 
 char** uv_setup_args(int argc, char** argv);
 uv_err_t uv_get_process_title(char* buffer, size_t size);
@@ -468,38 +454,6 @@ void uv_free_cpu_info(uv_cpu_info_t* cpu_infos, int count);
 
 uv_err_t uv_interface_addresses(uv_interface_address_t** addresses, int* count);
 void uv_free_interface_addresses(uv_interface_address_t* addresses, int count);
-
-typedef enum {
-  UV_FS_UNKNOWN,
-  UV_FS_CUSTOM,
-  UV_FS_OPEN,
-  UV_FS_CLOSE,
-  UV_FS_READ,
-  UV_FS_WRITE,
-  UV_FS_SENDFILE,
-  UV_FS_STAT,
-  UV_FS_LSTAT,
-  UV_FS_FSTAT,
-  UV_FS_FTRUNCATE,
-  UV_FS_UTIME,
-  UV_FS_FUTIME,
-  UV_FS_CHMOD,
-  UV_FS_FCHMOD,
-  UV_FS_FSYNC,
-  UV_FS_FDATASYNC,
-  UV_FS_UNLINK,
-  UV_FS_RMDIR,
-  UV_FS_MKDIR,
-  UV_FS_RENAME,
-  UV_FS_READDIR,
-  UV_FS_LINK,
-  UV_FS_SYMLINK,
-  UV_FS_READLINK,
-  UV_FS_CHOWN,
-  UV_FS_FCHOWN,
-  ...
-} uv_fs_type;
-
 
 void uv_fs_req_cleanup(uv_fs_t* req);
 int uv_fs_close(uv_loop_t* loop, uv_fs_t* req, uv_file file, uv_fs_cb cb);
@@ -525,14 +479,6 @@ int uv_fs_fchmod(uv_loop_t* loop, uv_fs_t* req, uv_file file, int mode, uv_fs_cb
 int uv_fs_chown(uv_loop_t* loop, uv_fs_t* req, const char* path, int uid, int gid, uv_fs_cb cb);
 int uv_fs_fchown(uv_loop_t* loop, uv_fs_t* req, uv_file file, int uid, int gid, uv_fs_cb cb);
 
-
-enum uv_fs_event {
-  UV_RENAME,
-  UV_CHANGE,
-  ...
-};
-
-
 int uv_fs_poll_init(uv_loop_t* loop, uv_fs_poll_t* handle);
 int uv_fs_poll_start(uv_fs_poll_t* handle, uv_fs_poll_cb poll_cb, const char* path, unsigned int interval);
 int uv_fs_poll_stop(uv_fs_poll_t* handle);
@@ -545,17 +491,7 @@ int uv_signal_stop(uv_signal_t* handle);
 
 void uv_loadavg(double avg[3]);
 
-enum uv_fs_event_flags {
-  UV_FS_EVENT_WATCH_ENTRY,
-  UV_FS_EVENT_STAT,
-  UV_FS_EVENT_RECURSIVE,
-  ...
-};
-
-
 int uv_fs_event_init(uv_loop_t* loop, uv_fs_event_t* handle, const char* filename, uv_fs_event_cb cb, int flags);
-
-/* Utility */
 
 struct sockaddr_in uv_ip4_addr(const char* ip, int port);
 struct sockaddr_in6 uv_ip6_addr(const char* ip, int port);
@@ -612,11 +548,13 @@ void uv_once(uv_once_t* guard, void *callback);
 int uv_thread_create(uv_thread_t *tid, void *entry, void *arg);
 unsigned long uv_thread_self(void);
 int uv_thread_join(uv_thread_t *tid);
-
-
 """)
 
 
+# check if we need any extra libraries...
+extra_link_args = []
+if sys.platform in ['linux', 'linux2']:
+    extra_link_args.append('-lrt')
 
 libuv = C = ffi.verify("""
 #include <uv.h>
@@ -625,7 +563,7 @@ libuv = C = ffi.verify("""
     libraries = ["uv"],
     library_dirs = [LIBUV_LIB_DIR],
     ext_package = 'libuv',
-    extra_link_args = ['-lrt'])
+    extra_link_args = extra_link_args)
 
 
 
