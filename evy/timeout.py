@@ -1,6 +1,12 @@
-# Copyright (c) 2009-2010 Denis Bilenko, denis.bilenko at gmail com
-# Copyright (c) 2010 Eventlet Contributors (see AUTHORS)
-# and licensed under the MIT license:
+#
+# Evy - a concurrent networking library for Python
+#
+# Unless otherwise noted, the files in Evy are under the following MIT license:
+#
+# Copyright (c) 2012, Alvaro Saurin
+# Copyright (c) 2008-2010, Eventlet Contributors (see AUTHORS)
+# Copyright (c) 2007-2010, Linden Research, Inc.
+# Copyright (c) 2005-2006, Bob Ippolito
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -18,7 +24,9 @@
 # AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-# THE SOFTWARE.from evy.support import greenlets as greenlet
+# THE SOFTWARE.
+#
+
 
 from evy.support import greenlets as greenlet, BaseException
 from evy.hubs import get_hub

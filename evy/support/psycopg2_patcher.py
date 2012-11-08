@@ -1,21 +1,21 @@
-"""A wait callback to allow psycopg2 cooperation with evy.
-
-Use `make_psycopg_green()` to enable evy support in Psycopg.
-"""
-
+#
+# Evy - a concurrent networking library for Python
+#
+# Unless otherwise noted, the files in Evy are under the following MIT license:
+#
+# Copyright (c) 2012, Alvaro Saurin
 # Copyright (C) 2010 Daniele Varrazzo <daniele.varrazzo@gmail.com>
-# and licensed under the MIT license:
-# 
+#
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
 # in the Software without restriction, including without limitation the rights
 # to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 # copies of the Software, and to permit persons to whom the Software is
 # furnished to do so, subject to the following conditions:
-# 
+#
 # The above copyright notice and this permission notice shall be included in
 # all copies or substantial portions of the Software.
-# 
+#
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 # FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -23,6 +23,16 @@ Use `make_psycopg_green()` to enable evy support in Psycopg.
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
+#
+
+
+
+"""
+A wait callback to allow psycopg2 cooperation with evy.
+
+Use `make_psycopg_green()` to enable evy support in Psycopg.
+"""
+
 
 import psycopg2
 from psycopg2 import extensions
