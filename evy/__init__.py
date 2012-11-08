@@ -35,10 +35,6 @@ try:
 
     getcurrent = greenlet.greenlet.getcurrent
 
-    # deprecated    
-    TimeoutError = timeout.Timeout
-    exc_after = greenthread.exc_after
-    call_after_global = greenthread.call_after_global
 except ImportError, e:
     # This is to make Debian packaging easier, it ignores import
     # errors of greenlet so that the packager can still at least
