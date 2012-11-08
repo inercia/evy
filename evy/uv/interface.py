@@ -1,18 +1,9 @@
 from __future__ import absolute_import
-import sys, os, traceback, signal as signalmodule
-
-__all__ = ['get_version',
-           'get_header_version',
-           'supported_backends',
-           'recommended_backends',
-           'embeddable_backends',
-           'time',
-           'loop']
+import sys, os
 
 __here__ = os.path.dirname(__file__)
 
-
-LIBUV_DIR = os.path.join(__here__, '..', 'libuv')
+LIBUV_DIR = os.path.join(__here__, '..', '..', 'libuv')
 LIBUV_INC_DIR = os.path.join(LIBUV_DIR, 'include')
 LIBUV_LIB_DIR = LIBUV_DIR
 
@@ -250,6 +241,8 @@ enum uv_fs_event_flags {
 };
 
 enum uv_poll_event {
+  UV_READABLE,
+  UV_WRITABLE,
   ...
 };
 
@@ -491,8 +484,6 @@ int uv_fs_poll_init(uv_loop_t* loop, uv_fs_poll_t* handle);
 int uv_fs_poll_start(uv_fs_poll_t* handle, uv_fs_poll_cb poll_cb, const char* path, unsigned int interval);
 int uv_fs_poll_stop(uv_fs_poll_t* handle);
 
-
-/* These functions are no-ops on Windows. */
 int uv_signal_init(uv_loop_t* loop, uv_signal_t* handle);
 int uv_signal_start(uv_signal_t* handle, uv_signal_cb signal_cb, int signum);
 int uv_signal_stop(uv_signal_t* handle);
@@ -573,6 +564,9 @@ libuv = C = ffi.verify("""
     include_dirs = [LIBUV_INC_DIR],
     libraries = ["uv"],
     library_dirs = [LIBUV_LIB_DIR],
-    ext_package = 'evy',                   # must match the package defined in setup.py
+    ext_package = 'evy.uv',                   # must match the package defined in setup.py
     extra_link_args = extra_link_args)
 
+
+def get_version():
+    return 'libuv-%d.%02d' % (libuv.UV_VERSION_MAJOR, libuv.UV_VERSION_MINOR)
