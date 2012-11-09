@@ -17,11 +17,16 @@ build: setup.py setup_libuv.py $(LIBUV_DIR)/Makefile
 	@echo ">>> Building up..."
 	$(PYTHON) setup.py build
 
-$(LIBUV_DIR)/Makefile: update-submodule
+$(LIBUV_DIR)/Makefile: checkout-submodule
 
-update-submodule:
+checkout-submodule:
+	@echo ">>> Checking out submodules..."
 	git submodule init
 	git submodule update
+
+update-submodule:
+	@echo ">>> Getting latests changes from submodules..."
+    git submodule foreach git pull origin master
 
 ##############################
 # cleaning
