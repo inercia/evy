@@ -63,14 +63,14 @@ def sleep (seconds = 0):
 
 
 def spawn (func, *args, **kwargs):
-    """Create a greenthread to run ``func(*args, **kwargs)``.  Returns a 
+    """
+    Create a greenthread to run ``func(*args, **kwargs)``.  Returns a
     :class:`GreenThread` object which you can use to get the results of the 
     call.
     
-    Execution control returns immediately to the caller; the created greenthread
-    is merely scheduled to be run at the next available opportunity.  
-    Use :func:`spawn_after` to  arrange for greenthreads to be spawned 
-    after a finite delay.
+    Execution control returns immediately to the caller; the created greenthread is merely scheduled
+    to be run at the next available opportunity. Use :func:`spawn_after` to  arrange for greenthreads
+    to be spawned after a finite delay.
     """
     hub = hubs.get_hub()
     g = GreenThread(hub.greenlet)
@@ -79,20 +79,20 @@ def spawn (func, *args, **kwargs):
 
 
 def spawn_n (func, *args, **kwargs):
-    """Same as :func:`spawn`, but returns a ``greenlet`` object from
-    which it is not possible to retrieve either a return value or
-    whether it raised any exceptions.  This is faster than
+    """
+    Same as :func:`spawn`, but returns a ``greenlet`` object from which it is not possible to
+    retrieve either a return value or whether it raised any exceptions.  This is faster than
     :func:`spawn`; it is fastest if there are no keyword arguments.
     
-    If an exception is raised in the function, spawn_n prints a stack
-    trace; the print can be disabled by calling
-    :func:`evy.debug.hub_exceptions` with False.
+    If an exception is raised in the function, spawn_n prints a stack trace; the print can be
+    disabled by calling :func:`evy.debug.hub_exceptions` with False.
     """
     return _spawn_n(0, func, args, kwargs)[1]
 
 
 def spawn_after (seconds, func, *args, **kwargs):
-    """Spawns *func* after *seconds* have elapsed.  It runs as scheduled even if 
+    """
+    Spawns *func* after *seconds* have elapsed.  It runs as scheduled even if
     the current greenthread has completed.
 
     *seconds* may be specified as an integer, or a float if fractional seconds

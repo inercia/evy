@@ -97,23 +97,26 @@ def trampoline (fd, read = None, write = None, timeout = None,
     Suspend the current coroutine until the given socket object or file descriptor is ready to *read*,
     ready to *write*, or the specified *timeout* elapses, depending on arguments specified.
 
-    To wait for *fd* to be ready to read, pass *read* ``=True``; ready to write, pass *write* ``=True``. To specify a timeout, pass the *timeout*
-    argument in seconds.
+    To wait for *fd* to be ready to read, pass *read* ``=True``; ready to write, pass *write* ``=True``.
+    To specify a timeout, pass the *timeout* argument in seconds.
 
-    If the specified *timeout* elapses before the socket is ready to read or write, *timeout_exc* will be raised instead of ``trampoline()``
-    returning normally.
+    If the specified *timeout* elapses before the socket is ready to read or write, *timeout_exc*
+    will be raised instead of ``trampoline()`` returning normally.
     
     .. note :: |internal|
     """
     t = None
     hub = get_hub()
     current = greenlet.getcurrent()
+
     assert hub.greenlet is not current, 'do not call blocking functions from the mainloop'
     assert not (read and write), 'not allowed to trampoline for reading and writing'
+
     try:
         fileno = fd.fileno()
     except AttributeError:
         fileno = fd
+
     if timeout is not None:
         t = hub.schedule_call_global(timeout, current.throw, timeout_exc)
     try:
@@ -121,6 +124,7 @@ def trampoline (fd, read = None, write = None, timeout = None,
             listener = hub.add(hub.READ, fileno, current.switch)
         elif write:
             listener = hub.add(hub.WRITE, fileno, current.switch)
+
         try:
             return hub.switch()
         finally:

@@ -103,6 +103,8 @@ def alarm_handler (signum, frame):
     raise RuntimeError("Blocking detector ALARMED at" + str(inspect.getframeinfo(frame)))
 
 
+
+
 class BaseHub(object):
     """
     Base hub class for easing the implementation of subclasses that are
@@ -174,6 +176,11 @@ class BaseHub(object):
         return listener
 
     def remove (self, listener):
+        """
+        Remove a listener
+
+        :param listener: the listener to remove
+        """
         fileno = listener.fileno
         evtype = listener.evtype
         self.listeners[evtype].pop(fileno, None)
@@ -188,8 +195,7 @@ class BaseHub(object):
 
     def remove_descriptor (self, fileno):
         """
-        Completely remove all listeners for this fileno.  For internal use
-        only.
+        Completely remove all listeners for this *fileno*.  For internal use only.
         """
         listeners = []
         listeners.append(self.listeners[READ].pop(fileno, noop))
@@ -255,7 +261,7 @@ class BaseHub(object):
 
     def run (self, *a, **kw):
         """
-        Run the runloop until abort is called.
+        Run the loop until abort is called.
         """
 
         # accept and discard variable arguments because they will be
@@ -293,13 +299,11 @@ class BaseHub(object):
 
     def abort (self, wait = False):
         """
-        Stop the runloop. If run is executing, it will exit after
-        completing the next runloop iteration.
+        Stop the loop. If run is executing, it will exit after completing the next loop iteration.
 
-        Set *wait* to True to cause abort to switch to the hub immediately and
-        wait until it's finished processing.  Waiting for the hub will only
-        work from the main greenthread; all other greenthreads will become
-        unreachable.
+        Set *wait* to True to cause abort to switch to the hub immediately and wait until it's
+        finished processing.  Waiting for the hub will only work from the main greenthread; all
+        other greenthreads will become unreachable.
         """
         if self.running:
             self.stopping = True
@@ -367,7 +371,7 @@ class BaseHub(object):
         elapsed. The timer will NOT be canceled if the current greenlet has
         exited before the timer fires.
 
-        seconds: The number of seconds to wait.
+        :param seconds: the number of seconds to wait.
         :param cb: the callable to call after the given time.
         :param args: arguments to pass to the callable when called.
         :param kw: keyword arguments to pass to the callable when called.

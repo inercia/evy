@@ -163,6 +163,7 @@ class Hub(hub.BaseHub):
     def wait(self, seconds = None):
         # this timeout will cause us to return from the dispatch() call
         # when we want to
+
         timer = Timer(self, seconds)
         timer.start(lambda x: None)
 
@@ -177,6 +178,7 @@ class Hub(hub.BaseHub):
         # harmless and there's nothing meaningful we could do with it anyway
 
         timer.stop()
+
 
         # raise any signals that deserve raising
         if self.interrupted:
@@ -201,14 +203,16 @@ class Hub(hub.BaseHub):
         # store the pyevent timer object so that we can cancel later
         eventtimer = Timer(self, timer.seconds)
         timer.impltimer = eventtimer
-        eventtimer.start(self.timer_finished, self)
+        eventtimer.start(self.timer_finished, timer)
 
     def timer_finished(self, timer):
-        try:
-            timer.impltimer.stop()
-            del timer.impltimer
-        except (AttributeError, TypeError):     # TODO: might this raise other errors?
-            pass
+        timer.impltimer.stop()
+        del timer.impltimer
+        #try:
+        #    timer.impltimer.stop()
+        #    del timer.impltimer
+        #except (AttributeError, TypeError):     # TODO: might this raise other errors?
+        #    pass
         #finally:
         #    super(Hub, self).timer_finished(timer)
 
@@ -216,13 +220,15 @@ class Hub(hub.BaseHub):
         """
         Cancels the underlying libevent timer.
         """
-        try:
-            timer.impltimer.stop()
-            del timer.impltimer
-        except (AttributeError, TypeError):
-            pass
-        finally:
-            super(Hub, self).timer_canceled(timer)
+        timer.impltimer.stop()
+        del timer.impltimer
+        #try:
+        #    timer.impltimer.stop()
+        #    del timer.impltimer
+        #except (AttributeError, TypeError):
+        #    pass
+        #finally:
+        #    super(Hub, self).timer_canceled(timer)
 
 
     ##

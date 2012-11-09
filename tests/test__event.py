@@ -38,6 +38,7 @@ from tests import LimitedTestCase
 DELAY = 0.01
 
 class TestEvent(LimitedTestCase):
+
     def test_send_exc (self):
         log = []
         e = Event()
