@@ -1,7 +1,8 @@
 Examples
 ========
 
-Here are a bunch of small example programs that use Evy.  All of these examples can be found in the ``examples`` directory of a source copy of Evy.
+Here are a bunch of small example programs that use Evy.  All of these examples can be found in the
+``examples`` directory of a source copy of Evy.
 
 .. _web_crawler_example:
 
@@ -80,7 +81,8 @@ Producer Consumer Web Crawler
 -----------------------------------------
 ``examples/producer_consumer.py``
 
-This is an example implementation of the producer/consumer pattern as well as being identical in functionality to the recursive web crawler.
+This is an example implementation of the producer/consumer pattern as well as being identical in
+functionality to the recursive web crawler.
 
 .. literalinclude:: ../examples/producer_consumer.py
 
@@ -101,6 +103,7 @@ Websocket Multi-User Chat Example
 -----------------------------------
 ``examples/websocket_chat.py``
 
-This is a mashup of the websocket example and the multi-user chat example, showing how you can do the same sorts of things with websockets that you can do with regular sockets.
+This is a mashup of the websocket example and the multi-user chat example, showing how you can do
+the same sorts of things with websockets that you can do with regular sockets.
 
 .. literalinclude:: ../examples/websocket_chat.py
