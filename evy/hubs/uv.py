@@ -101,6 +101,15 @@ class Hub(hub.BaseHub):
                     #    set_syserr_cb(self._handle_syserr)
 
     def add (self, evtype, fileno, cb):
+        """
+        Watch a new file descriptor, invoking the *cb* when it is available for reading or writting,
+        depending on the events we are interested in.
+
+        :param evtype: the events we are interested in
+        :param fileno: the file descriptor
+        :param cb: the callback
+        :return: the listener
+        """
         listener = super(Hub, self).add(evtype, fileno, cb)
 
         events = 0

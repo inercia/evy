@@ -352,10 +352,10 @@ class BaseHub(object):
         Schedule a callable to be called after 'seconds' seconds have
         elapsed. Cancel the timer if greenlet has exited.
 
-        seconds: The number of seconds to wait.
-        cb: The callable to call after the given time.
-        *args: Arguments to pass to the callable when called.
-        **kw: Keyword arguments to pass to the callable when called.
+        :param seconds: the number of seconds to wait.
+        :param cb: the callable to call after the given time.
+        :param args: arguments to pass to the callable when called.
+        :param kw: keyword arguments to pass to the callable when called.
         """
         t = timer.LocalTimer(seconds, cb, *args, **kw)
         self.add_timer(t)
@@ -368,9 +368,9 @@ class BaseHub(object):
         exited before the timer fires.
 
         seconds: The number of seconds to wait.
-        cb: The callable to call after the given time.
-        *args: Arguments to pass to the callable when called.
-        **kw: Keyword arguments to pass to the callable when called.
+        :param cb: the callable to call after the given time.
+        :param args: arguments to pass to the callable when called.
+        :param kw: keyword arguments to pass to the callable when called.
 
         """
         t = timer.Timer(seconds, cb, *args, **kw)

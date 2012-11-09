@@ -178,11 +178,11 @@ class Poll(Watcher):
 
     The purpose is to enable integrating external libraries that rely on the event loop to signal
     it about the socket status changes, like c-ares or libssh2. Using Poll for any other other
-    purpose is not recommended; uv_tcp_t, uv_udp_t, etc. provide an implementation that is much
+    purpose is not recommended; `uv_tcp_t`, `uv_udp_t`, etc. provide an implementation that is much
     faster and more scalable than what can be achieved with uv_poll_t, especially on Windows.
 
     It is possible that Poll occasionally signals that a file descriptor is readable or writable
-    even when it isn't. The user should therefore always be prepared to handle EAGAIN or equivalent
+    even when it isn't. The user should therefore always be prepared to handle `EAGAIN` or equivalent
     when it attempts to read from or write to the fd.
 
     It is not okay to have multiple active Poll watchers for the same socket. This can cause
@@ -192,8 +192,8 @@ class Poll(Watcher):
     This can cause the poll watcher to report an error, but it might also start polling another socket.
     However the fd can be safely closed immediately after a call to uv_poll_stop() or uv_close().
 
-    On windows only sockets can be polled with uv_poll. On unix any file
-    descriptor that would be accepted by poll(2) can be used with uv_poll.
+    On windows only sockets can be polled with Poll. On unix any file descriptor that would be
+    accepted by poll(2) can be used with Poll.
     """
 
     libuv_start_this_watcher = None
@@ -332,25 +332,25 @@ class Signal(Watcher):
 
     Some signal support is available on Windows:
 
-      SIGINT is normally delivered when the user presses CTRL+C. However, like
-      on Unix, it is not generated when terminal raw mode is enabled.
+      * `SIGINT` is normally delivered when the user presses `CTRL+C`. However, like
+        on Unix, it is not generated when terminal raw mode is enabled.
 
-      SIGBREAK is delivered when the user pressed CTRL+BREAK.
+      * `SIGBREAK` is delivered when the user pressed `CTRL+BREAK`.
 
-      SIGHUP is generated when the user closes the console window. On SIGHUP the
-      program is given approximately 10 seconds to perform cleanup. After that
-      Windows will unconditionally terminate it.
+      * `SIGHUP` is generated when the user closes the console window. On `SIGHUP` the
+        program is given approximately 10 seconds to perform cleanup. After that
+        Windows will unconditionally terminate it.
 
-      SIGWINCH is raised whenever libuv detects that the console has been
-      resized. SIGWINCH is emulated by libuv when the program uses an uv_tty_t
-      handle to write to the console. SIGWINCH may not always be delivered in a
-      timely manner; libuv will only detect size changes when the cursor is
-      being moved. When a readable uv_tty_handle is used in raw mode, resizing
-      the console buffer will also trigger a SIGWINCH signal.
+      * `SIGWINCH` is raised whenever libuv detects that the console has been
+        resized. `SIGWINCH` is emulated by libuv when the program uses an uv_tty_t
+        handle to write to the console. `SIGWINCH` may not always be delivered in a
+        timely manner; libuv will only detect size changes when the cursor is
+        being moved. When a readable uv_tty_handle is used in raw mode, resizing
+        the console buffer will also trigger a `SIGWINCH` signal.
 
     Watchers for other signals can be successfully created, but these signals
-    are never generated. These signals are: SIGILL, SIGABRT, SIGFPE, SIGSEGV,
-    SIGTERM and SIGKILL.
+    are never generated. These signals are: `SIGILL`, `SIGABRT`, `SIGFPE`, `SIGSEGV`,
+    `SIGTERM` and `SIGKILL`.
 
     Note that calls to raise() or abort() to programmatically raise a signal are
     not detected by libuv; these will not trigger a signal watcher.
