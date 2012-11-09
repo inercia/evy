@@ -580,6 +580,7 @@ int uv_thread_join(uv_thread_t *tid);
 
 
 # check if we need any extra libraries...
+extra_compile_args = []
 extra_link_args = []
 if sys.platform in ['linux', 'linux2']:
     extra_link_args.append('-lrt')
@@ -591,6 +592,7 @@ libuv = C = ffi.verify("""
 #include <uv.h>
 """,
     include_dirs = [LIBUV_INC_DIR],
+    extra_compile_args = extra_compile_args,
     libraries = ["uv"],
     library_dirs = [LIBUV_LIB_DIR],
     ext_package = 'evy.uv',                   # must match the package defined in setup.py
