@@ -1,6 +1,7 @@
 
 # the python interpreter
 PYTHON=python
+#PYTHON=pypy
 
 # the libuv directory
 LIBUV_DIR=libuv
@@ -26,7 +27,7 @@ checkout-submodule:
 
 update-submodule:
 	@echo ">>> Getting latests changes from submodules..."
-    git submodule foreach git pull origin master
+	git submodule foreach git pull origin master
 
 ##############################
 # cleaning
@@ -68,4 +69,5 @@ dist:
 	@echo ">>> Making redistributable package..."
 	$(PYTHON) setup.py bdist
 	@echo ">>> redistributable package left in dist/"
+
 
