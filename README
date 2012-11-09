@@ -17,13 +17,12 @@ Here's something you can try right on the command line::
 Building the Docs Locally
 =========================
 
-To build a complete set of HTML documentation, you must have Sphinx, which can be found at http://sphinx.pocoo.org/ (or installed with `easy_install sphinx`)
+To build a complete set of HTML documentation, you must have Sphinx, which can be found at
+http://sphinx.pocoo.org/ (or installed with `easy_install sphinx`)
 
-  cd doc
-  make html
+  make docs
   
 The built html files can be found in doc/_build/html afterward.
-
 
 Status
 ======
