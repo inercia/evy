@@ -6,14 +6,6 @@ Environment Variables
 Evy's behavior can be controlled by a few environment variables.
 These are only for the advanced user.
 
-EVY_HUB 
-
-   Used to force Evy to use the specified hub instead of the
-   optimal one.  See :ref:`understanding_hubs` for the list of
-   acceptable hubs and what they mean (note that picking a hub not on
-   the list will silently fail).  Equivalent to calling
-   :meth:`evy.hubs.use_hub` at the beginning of the program.
-
 EVY_THREADPOOL_SIZE
 
    The size of the threadpool in :mod:`~evy.tpool`.  This is an

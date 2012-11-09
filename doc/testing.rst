@@ -51,19 +51,6 @@ That will run all the tests, though the output will be a little weird because it
 
 If you see "Ran 0 tests in 0.001s", it means that your Python installation lacks its own tests.  This is usually the case for Linux distributions.  One way to get the missing tests is to download a source tarball (of the same version you have installed on your system!) and copy its Lib/test directory into the correct place on your PYTHONPATH.
 
-
-Testing Evy Hubs
----------------------
-
-When you run the tests, Evy will use the most appropriate hub for the current platform to do its dispatch.  It's sometimes useful when making changes to Evy to test those changes on hubs other than the default.  You can do this with the ``EVY_HUB`` environment variable.
-
-.. code-block:: sh
-
- $ EVY_HUB=epolls nosetests
-
-See :ref:`understanding_hubs` for the full list of hubs.
-
-
 Writing Tests
 -------------
 

@@ -11,6 +11,7 @@ Module Reference
    modules/event
    modules/greenpool
    modules/greenthread
+   modules/hubs
    modules/pools
    modules/queue
    modules/semaphore
