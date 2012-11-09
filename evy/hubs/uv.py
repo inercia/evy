@@ -206,7 +206,7 @@ class Hub(hub.BaseHub):
         eventtimer.start(self.timer_finished, timer)
 
     def timer_finished(self, timer):
-        timer.impltimer.stop()
+        #timer.impltimer.stop()
         del timer.impltimer
         #try:
         #    timer.impltimer.stop()
@@ -220,7 +220,7 @@ class Hub(hub.BaseHub):
         """
         Cancels the underlying libevent timer.
         """
-        timer.impltimer.stop()
+        #timer.impltimer.stop()
         del timer.impltimer
         #try:
         #    timer.impltimer.stop()

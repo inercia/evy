@@ -60,6 +60,8 @@ class Watcher(object):
 
         It will call the callback provided on the start() method
         """
+        assert self.callback is not None
+        print self.callback
         try:
             self.callback(*self.args)
         except:
