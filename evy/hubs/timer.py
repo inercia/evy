@@ -35,15 +35,20 @@ from evy.hubs import get_hub
 ## useful for debugging leaking timers, to find out where the timer was set up.
 _g_debug = False
 
+
 class Timer(object):
+    """
+    A global timer
+    """
+
     def __init__(self, seconds, cb, *args, **kw):
         """
         Create a timer.
 
-        :param seconds: The minimum number of seconds to wait before calling
+        :param seconds: the minimum number of seconds to wait before calling
         :param cb: The callback to call when the timer has expired
-        :param *args: The arguments to pass to cb
-        :param **kw: The keyword arguments to pass to cb
+        :param *args: the arguments to pass to cb
+        :param **kw: the keyword arguments to pass to cb
 
         This timer will not be run unless it is scheduled in a runloop by
         calling timer.schedule() or runloop.add_timer(timer).

@@ -100,7 +100,6 @@ class DebugListener(FdListener):
 
 def alarm_handler (signum, frame):
     import inspect
-
     raise RuntimeError("Blocking detector ALARMED at" + str(inspect.getframeinfo(frame)))
 
 

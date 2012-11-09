@@ -30,7 +30,8 @@
 import sys
 import signal
 
-from interface import libuv, ffi
+
+from evy.uv.interface import libuv, ffi
 
 
 
@@ -42,46 +43,51 @@ class Watcher(object):
     libuv_stop_this_watcher = None
 
     _callback = None
-    loop = None
+    hub = None
     args = None
     _flags = 0
 
-    def __init__(self, _loop, ref=True):
-        from loop import Loop
-        assert isinstance(_loop, Loop)
-        self.loop = _loop
+    def __init__(self, _hub, ref=True):
+        self.hub = _hub
         if ref:
             self._flags = 0
         else:
             self._flags = 4
 
-    def _run_callback(self, loop, c_watcher, revents):
+    def _run_callback(self, uv_handle, *args):
         """
         This is invoked as a callback when the watcher completes (for example, when a timer is expired)
 
         It will call the callback provided on the start() method
         """
+        print 'callback: %s (%s)' % (str(self.callback), str(*self.args))
         try:
             self.callback(*self.args)
         except:
             try:
-                self.loop.handle_error(self, *sys.exc_info())
+                self.hub.handle_error(self, *sys.exc_info())
             finally:
-                if revents & (libuv.UV_READABLE | libuv.UV_WRITABLE):
-                    # /* poll watcher: not stopping it may cause the failing callback to be called repeatedly */
-                    try:
-                        self.stop()
-                    except:
-                        self.loop.handle_error(self, *sys.exc_info())
-                    return
+                #if revents & (libuv.UV_READABLE | libuv.UV_WRITABLE):
+                #    # /* poll watcher: not stopping it may cause the failing callback to be called repeatedly */
+                #    try:
+                #        self.stop()
+                #    except:
+                #        self.hub.handle_error(self, *sys.exc_info())
+                #    return
+                pass
 
         # callbacks' self.active differs from uv_is_active(...) at this point. don't use it!
-        if not libuv.uv_is_active(c_watcher):
+        if not libuv.uv_is_active(uv_handle):
             self.stop()
+
+
+    ##
+    ## references
+    ##
 
     def _libuv_unref(self):
         if self._flags & 6 == 4:
-            libuv.uv_unref(self.loop._ptr)
+            libuv.uv_unref(self.hub._uv_ptr)
             self._flags |= 2
 
     def _python_incref(self):
@@ -97,17 +103,22 @@ class Watcher(object):
             if not self._flags & 4:
                 return  # ref is already True
             if self._flags & 2:  # uv_unref was called, undo
-                libuv.uv_ref(self.loop._ptr)
+                libuv.uv_ref(self.hub._uv_ptr)
             self._flags &= ~6  # do not want unref, no outstanding unref
         else:
             if self._flags & 4:
                 return  # ref is already False
             self._flags |= 4
             if not self._flags & 2 and libuv.uv_is_active(self._uv_handle):
-                libuv.uv_unref(self.loop._ptr)
+                libuv.uv_unref(self.hub._uv_ptr)
                 self._flags |= 2
 
     ref = property(_get_ref, _set_ref)
+
+
+    ##
+    ## callbacks
+    ##
 
     def _get_callback(self):
         return self._callback
@@ -118,7 +129,14 @@ class Watcher(object):
 
     callback = property(_get_callback, _set_callback)
 
+    ##
+    ## start/stop
+    ##
+
     def start(self, callback, *args):
+        """
+        Start the watcher
+        """
         self.callback = callback
         self.args = args
         self._libuv_unref()
@@ -129,8 +147,11 @@ class Watcher(object):
         self._python_incref()
 
     def stop(self):
+        """
+        Stop the watcher
+        """
         if self._flags & 2:
-            libuv.uv_ref(self.loop._ptr)
+            libuv.uv_ref(self.hub._uv_ptr)
             self._flags &= ~2
 
         if self.libuv_stop_this_watcher:
@@ -142,25 +163,11 @@ class Watcher(object):
             # Py_DECREF(<PyObjectPtr>self)
             self._flags &= ~1
 
-    def feed(self, revents, callback, *args):
-        self.callback = callback
-        self.args = args
-        if self._flags & 6 == 4:
-            libuv.uv_unref(self.loop._ptr)
-            self._flags |= 2
-
-        libuv.uv_feed_event(self.loop._ptr, self._uv_handle, revents)
-        if not self._flags & 1:
-            # Py_INCREF(<PyObjectPtr>self)
-            self._flags |= 1
 
     @property
     def active(self):
         return True if libuv.uv_is_active(self._uv_handle) else False
 
-    @property
-    def pending(self):
-        return True if libuv.uv_is_pending(self._uv_handle) else False
 
 
 
@@ -192,7 +199,7 @@ class Poll(Watcher):
     libuv_start_this_watcher = None
     libuv_stop_this_watcher = libuv.uv_poll_stop
 
-    def __init__(self, loop, fd, events, ref=True):
+    def __init__(self, hub, fd, events, ref=True):
         if fd < 0:
             raise ValueError('fd must be non-negative: %r' % fd)
 
@@ -200,12 +207,12 @@ class Poll(Watcher):
             raise ValueError('illegal event mask: %r' % events)
 
         self._uv_handle = ffi.new("uv_poll_t *")
-        self._cb = ffi.callback("void(*)(uv_loop_t *, uv_poll_t *, int)", self._run_callback)
+        self._cb = ffi.callback("void(*)(uv_poll_t *, int, int)", self._run_callback)
         self._events = events
         self._fd = fd
 
-        libuv.uv_poll_init(loop._ptr, self._uv_handle, fd)
-        Watcher.__init__(self, loop, ref=ref)
+        libuv.uv_poll_init(hub._uv_ptr, self._uv_handle, fd)
+        Watcher.__init__(self, hub, ref = ref)
 
     def start(self, callback, *args, **kw):
         self.callback = callback
@@ -217,6 +224,10 @@ class Poll(Watcher):
 
         self._python_incref()
 
+    ##
+    ## file descriptor
+    ##
+
     def _get_fd(self):
         return self._fd
 
@@ -224,9 +235,13 @@ class Poll(Watcher):
         if libuv.uv_is_active(self._uv_handle):
             raise AttributeError("'poll' watcher attribute 'fd' is read-only while watcher is active")
         self._fd = fd
-        libuv.uv_poll_init(self.loop._ptr, self._uv_handle, self._fd)
+        libuv.uv_poll_init(self.hub._uv_ptr, self._uv_handle, self._fd)
 
     fd = property(_get_fd, _set_fd)
+
+    ##
+    ## events
+    ##
 
     def _get_events(self):
         return self._events
@@ -258,17 +273,20 @@ class Timer(Watcher):
     libuv_start_this_watcher = libuv.uv_timer_start
     libuv_stop_this_watcher = libuv.uv_timer_stop
 
-    def __init__(self, loop, after=0.0, repeat=0.0, ref=True):
+    def __init__(self, hub, after=0.0, repeat=0.0, ref=True):
+        """
+        Initialize a timer
+        """
         if repeat < 0.0:
             raise ValueError("repeat must be positive or zero: %r" % repeat)
 
         self._uv_handle = ffi.new("uv_timer_t *")
-        self._cb = ffi.callback("void(*)(uv_loop_t *, uv_timer_t *, int)", self._run_callback)
+        self._cb = ffi.callback("void(*)(uv_timer_t *, int)", self._run_callback)
         self._after = after
         self._repeat = repeat
 
-        libuv.uv_timer_init(loop._ptr, self._uv_handle)
-        Watcher.__init__(self, loop, ref = ref)
+        libuv.uv_timer_init(hub._uv_ptr, self._uv_handle)
+        Watcher.__init__(self, hub, ref = ref)
 
     def start(self, callback, *args, **kw):
         update = kw.get("update", True)
@@ -278,7 +296,7 @@ class Timer(Watcher):
         self._libuv_unref()
 
         if update:
-            libuv.uv_update_time(self.loop._ptr)
+            libuv.uv_update_time(self.hub._uv_ptr)
 
         libuv.uv_timer_start(self._uv_handle, self._cb, self._after, self._repeat)
 
@@ -286,16 +304,23 @@ class Timer(Watcher):
 
     @property
     def at(self):
-        return self._uv_handle.at
+        """
+        Return the time for the timer
+        """
+        return self._after
 
     def again(self, callback, *args, **kw):
+        """
+        Stop the timer, and if it is repeating restart it using the repeat value as the timeout.
+        """
         update = kw.get("update", True)
         self.callback = callback
         self.args = args
         self._libuv_unref()
         if update:
-            libuv.uv_now_update(self.loop._ptr)
-        libuv.uv_timer_again(self.loop._ptr, self._uv_handle)
+            libuv.uv_now_update(self.hub._uv_ptr)
+        ret = libuv.uv_timer_again(self.hub._uv_ptr, self._uv_handle)
+        ## TODO: if the timer has never been started before it returns -1 and sets the error to UV_EINVAL.
         self._python_incref()
 
 
@@ -334,14 +359,13 @@ class Signal(Watcher):
     libuv_start_this_watcher = libuv.uv_signal_start
     libuv_stop_this_watcher = libuv.uv_signal_stop
 
-    def __init__(self, loop, signalnum, ref = True):
+    def __init__(self, hub, signalnum, ref = True):
         """
         Initialize the watcher
 
-        :param loop: a Loop() instance
+        :param hub: a Loop() instance
         :param signalnum: a signal number
         """
-
         if signalnum < 1 or signalnum >= signal.NSIG:
             raise ValueError('illegal signal number: %r' % signalnum)
             # still possible to crash on one of libuv's asserts:
@@ -351,11 +375,11 @@ class Signal(Watcher):
         #    we probably could check that in LIBEV_EMBED mode, but not in general
 
         self._uv_handle = ffi.new("uv_signal_t *")
-        self._cb = ffi.callback("void(*)(uv_loop_t *, uv_signal_t *, int)", self._run_callback)
+        self._cb = ffi.callback("void(*)(uv_signal_t *, int)", self._run_callback)
         self._signum = signalnum
 
-        libuv.uv_signal_init(loop._ptr, self._uv_handle)
-        Watcher.__init__(self, loop, ref=ref)
+        libuv.uv_signal_init(hub._uv_ptr, self._uv_handle)
+        Watcher.__init__(self, hub, ref = ref)
 
     def start(self, callback, *args, **kw):
         self.callback = callback
@@ -378,16 +402,16 @@ class Idle(Watcher):
     libuv_start_this_watcher = libuv.uv_idle_start
     libuv_stop_this_watcher = libuv.uv_idle_stop
 
-    def __init__(self, loop, ref=True):
+    def __init__(self, hub, ref=True):
         """
         Initialize the watcher
 
-        :param loop: a Loop() instance
+        :param hub: a Loop() instance
         """
         self._uv_handle = ffi.new("uv_idle_t *")
-        self._cb = ffi.callback("void(*)(uv_loop_t *, uv_idle_t *, int)", self._run_callback)
-        libuv.uv_idle_init(loop._ptr, self._uv_handle)
-        Watcher.__init__(self, loop, ref=ref)
+        self._cb = ffi.callback("void(*)(uv_idle_t *, int)", self._run_callback)
+        libuv.uv_idle_init(hub._uv_ptr, self._uv_handle)
+        Watcher.__init__(self, hub, ref = ref)
 
 
 class Prepare(Watcher):
@@ -398,16 +422,16 @@ class Prepare(Watcher):
     libuv_start_this_watcher = libuv.uv_prepare_start
     libuv_stop_this_watcher = libuv.uv_prepare_stop
 
-    def __init__(self, loop, ref=True):
+    def __init__(self, hub, ref=True):
         """
         Initialize the watcher
 
-        :param loop: a Loop() instance
+        :param hub: a Loop() instance
         """
         self._uv_handle = ffi.new("uv_prepare_t *")
         self._cb = ffi.callback("void(*)(uv_prepare_t *, int)", self._run_callback)
-        libuv.uv_prepare_init(loop._ptr, self._uv_handle)
-        Watcher.__init__(self, loop, ref=ref)
+        libuv.uv_prepare_init(hub._uv_ptr, self._uv_handle)
+        Watcher.__init__(self, hub, ref = ref)
 
 
 class Async(Watcher):
@@ -421,16 +445,16 @@ class Async(Watcher):
     libuv_start_this_watcher = libuv.uv_async_send
     libuv_stop_this_watcher = None
 
-    def __init__(self, loop, ref=True):
+    def __init__(self, hub, ref=True):
         """
         Initialize the watcher
 
-        :param loop: a Loop() instance
+        :param hub: a Loop() instance
         """
         self._uv_handle = ffi.new("uv_async_t *")
         self._cb = ffi.callback("void(*)(uv_async_t *, int)", self._run_callback)
-        libuv.uv_async_init(loop._ptr, self._uv_handle, self._cb)
-        Watcher.__init__(self, loop, ref = ref)
+        libuv.uv_async_init(hub._uv_ptr, self._uv_handle, self._cb)
+        Watcher.__init__(self, hub, ref = ref)
 
 
 class Callback(Watcher):
@@ -444,16 +468,16 @@ class Callback(Watcher):
     libuv_start_this_watcher = libuv.uv_prepare_start
     libuv_stop_this_watcher = libuv.uv_prepare_stop
 
-    def __init__(self, loop, ref=True):
+    def __init__(self, hub, ref=True):
         """
         Initialize the watcher
 
-        :param loop: a Loop() instance
+        :param hub: a Loop() instance
         """
         self._uv_handle = ffi.new("uv_prepare_t *")
         self._cb = ffi.callback("void(*)(uv_prepare_t *, int)", self._run_callback)
-        libuv.uv_prepare_init(loop._ptr, self._uv_handle)
-        Watcher.__init__(self, loop, ref=ref)
+        libuv.uv_prepare_init(hub._uv_ptr, self._uv_handle)
+        Watcher.__init__(self, hub, ref = ref)
 
     @property
     def active(self):

@@ -29,5 +29,4 @@
 
 
 from interface import libuv, ffi, get_version
-from loop import Loop
-from watchers import *
+from watchers import Watcher, Poll, Timer, Async, Callback, Idle, Prepare, Signal
