@@ -32,7 +32,8 @@ import sys, os
 
 __here__ = os.path.dirname(__file__)
 
-LIBUV_DIR = os.path.join(__here__, '..', '..', 'libuv')
+# where we have libuv installed
+LIBUV_DIR     = os.path.join(__here__, '..', '..', 'libuv')
 LIBUV_INC_DIR = os.path.join(LIBUV_DIR, 'include')
 LIBUV_LIB_DIR = LIBUV_DIR
 
@@ -582,10 +583,12 @@ int uv_thread_join(uv_thread_t *tid);
 # check if we need any extra libraries...
 extra_compile_args = []
 extra_link_args = []
+
 if sys.platform in ['linux', 'linux2']:
-    extra_link_args.append('-lrt')
+    extra_link_args += ['-lrt']
 if sys.platform in ['darwin']:
-    extra_link_args.append('-framework CoreServices')
+    extra_compile_args += ["-U__llvm__", "-arch x86_64", "-arch i386"]
+    extra_link_args += ['-framework CoreServices']
 
 
 libuv = C = ffi.verify("""
@@ -601,3 +604,21 @@ libuv = C = ffi.verify("""
 
 def get_version():
     return 'libuv-%d.%02d' % (libuv.UV_VERSION_MAJOR, libuv.UV_VERSION_MINOR)
+
+
+def cast_to_handle(handle):
+    """
+    Cast to handle
+    """
+    return ffi.cast('uv_handle_t *', handle)
+
+def handle_unref(handle):
+    return libuv.uv_unref(cast_to_handle(handle))
+
+def handle_is_active(handle):
+    """
+    Return TRUE if the handle is active
+    """
+    return libuv.uv_is_active(cast_to_handle(handle))
+
+

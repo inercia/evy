@@ -37,6 +37,7 @@ _threadlocal = threading.local()
 
 
 
+
 def get_default_hub ():
     """
     Select the default hub implementation based on what multiplexing
@@ -47,8 +48,8 @@ def get_default_hub ():
     .. include:: ../../doc/common.txt
     .. note :: |internal|
     """
-    import evy.hubs.uv
-    return evy.hubs.uv
+    import evy.hubs.hub
+    return evy.hubs.hub
 
 
 def use_hub (mod = None):
@@ -58,22 +59,15 @@ def use_hub (mod = None):
     
     Calling this function has no effect, as we always use the uv hub.
     """
-    mod = get_default_hub()
-
     if hasattr(_threadlocal, 'hub'):
         del _threadlocal.hub
-    if isinstance(mod, str):
-        assert mod.strip(), "Need to specify a hub"
-        mod = __import__('evy.hubs.' + mod, globals(), locals(), ['Hub'])
 
-    if hasattr(mod, 'Hub'):
-        _threadlocal.Hub = mod.Hub
-    else:
-        _threadlocal.Hub = mod
+    _threadlocal.Hub = get_default_hub().BaseHub
 
 
 def get_hub ():
-    """Get the current event hub singleton object.
+    """
+    Get the current event hub singleton object.
     
     .. note :: |internal|
     """
@@ -84,7 +78,9 @@ def get_hub ():
             _threadlocal.Hub
         except AttributeError:
             use_hub()
+
         hub = _threadlocal.hub = _threadlocal.Hub()
+
     return hub
 
 
