@@ -30,6 +30,7 @@
 import sys
 import signal
 
+from functools import partial
 
 from evy.uv.interface import libuv, ffi, handle_is_active
 
@@ -45,7 +46,6 @@ class Watcher(object):
 
     _callback = None
     hub = None
-    args = None
     _flags = 0
 
     def __init__(self, _hub, ref = True):
@@ -65,7 +65,7 @@ class Watcher(object):
 
         if self.callback:
             try:
-                self.callback(*self.args)
+                self.callback()
             except:
                 try:
                     self.hub.handle_error(self, *sys.exc_info())
@@ -122,33 +122,18 @@ class Watcher(object):
 
     ref = property(_get_ref, _set_ref)
 
-
-    ##
-    ## callbacks
-    ##
-
-    def _get_callback(self):
-        return self._callback
-
-    def _set_callback(self, callback):
-        assert callable(callback)
-        self._callback = callback
-
-    callback = property(_get_callback, _set_callback)
-
     ##
     ## start/stop
     ##
 
-    def start(self, callback, *args):
+    def start(self, callback, *args, **kwargs):
         """
         Start the watcher
 
         :param callback: callback to invoke when the watcher is done
         :param args: arguments for calling the callback
         """
-        self.callback = callback
-        self.args = args
+        self.callback = partial(callback, *args, **kwargs)
         self._libuv_unref()
 
         if self.libuv_start_this_watcher:
@@ -167,8 +152,8 @@ class Watcher(object):
         if self.libuv_stop_this_watcher:
             self.libuv_stop_this_watcher(self._uv_handle)
 
-        self._callback = None
-        self.args = None
+        self.callback = None
+
         if self._flags & 1:
             # Py_DECREF(<PyObjectPtr>self)
             self._flags &= ~1
@@ -245,7 +230,7 @@ class Poll(Watcher):
         libuv.uv_poll_init(hub._uv_ptr, self._uv_handle, fd)
         Watcher.__init__(self, hub, ref = ref)
 
-    def start(self, callback, *args, **kw):
+    def start(self, callback, *args, **kwargs):
         """
         Start the file descriptor poller
 
@@ -254,8 +239,7 @@ class Poll(Watcher):
         :param kw: keywords arguments for calling the callback
         :return: None
         """
-        self.callback = callback
-        self.args = args
+        self.callback = partial(callback, *args, **kwargs)
 
         self._libuv_unref()
 
@@ -331,7 +315,7 @@ class Timer(Watcher):
         libuv.uv_timer_init(hub._uv_ptr, self._uv_handle)
         Watcher.__init__(self, hub, ref = ref)
 
-    def start(self, callback, *args, **kw):
+    def start(self, callback, *args, **kwargs):
         """
         Start the timer
 
@@ -340,9 +324,8 @@ class Timer(Watcher):
         :param kw: keywords arguments for calling the callback
         :return: None
         """
-        update = kw.get("update", True)
-        self.callback = callback
-        self.args = args
+        update = kwargs.get("update", True)
+        self.callback = partial(callback, *args, **kwargs)
 
         self._libuv_unref()
 
@@ -361,13 +344,13 @@ class Timer(Watcher):
         """
         return self._after
 
-    def again(self, callback, *args, **kw):
+    def again(self, callback, *args, **kwargs):
         """
         Stop the timer, and if it is repeating restart it using the repeat value as the timeout.
         """
-        update = kw.get("update", True)
-        self.callback = callback
-        self.args = args
+        update = kwargs.get("update", True)
+        self.callback = partial(callback, *args, **kwargs)
+
         self._libuv_unref()
         if update:
             libuv.uv_now_update(self.hub._uv_ptr)
@@ -431,7 +414,7 @@ class Signal(Watcher):
         libuv.uv_signal_init(hub._uv_ptr, self._uv_handle)
         Watcher.__init__(self, hub, ref = ref)
 
-    def start(self, callback, *args, **kw):
+    def start(self, callback, *args, **kwargs):
         """
         Start the signal watcher
 
@@ -440,8 +423,7 @@ class Signal(Watcher):
         :param kw: keywords arguments for calling the callback
         :return: None
         """
-        self.callback = callback
-        self.args = args
+        self.callback = partial(callback, *args, **kwargs)
 
         self._libuv_unref()
 
