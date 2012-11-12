@@ -130,6 +130,7 @@ typedef ... uv_fs_type;
 typedef ... uv_membership;
 
 struct uv_err_s {
+  uv_err_code code;
   ...;
 };
 
@@ -259,6 +260,7 @@ struct uv_signal_s {
 
 struct uv_loop_s {
   unsigned int active_handles;
+  struct uv_err_s last_err;
   ...;
 };
 
