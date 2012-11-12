@@ -39,7 +39,7 @@ class TestTimer(TestCase):
         t = timer.Timer(0, lambda: None)
         t2 = t.copy()
         assert t.seconds == t2.seconds
-        assert t.tpl == t2.tpl
+        assert t.callback == t2.callback
         assert t.called == t2.called
 
     def test_schedule (self):
@@ -50,6 +50,7 @@ class TestTimer(TestCase):
             hub.abort()
             evy.sleep(0)
         called = []
+
         #t = timer.Timer(0, lambda: (called.append(True), hub.abort()))
         #t.schedule()
         # let's have a timer somewhere in the future; make sure abort() still works
