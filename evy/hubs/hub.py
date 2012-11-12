@@ -269,6 +269,25 @@ class BaseHub(object):
             except Exception, e:
                 self.squelch_generic_exception(sys.exc_info())
 
+    def get_readers (self):
+        return self.listeners[READ].values()
+
+    def get_writers (self):
+        return self.listeners[WRITE].values()
+
+    def get_timers_count (hub):
+        return len(hub.timers) + len(hub.next_timers)
+
+    def set_debug_listeners (self, value):
+        if value:
+            self.lclass = DebugListener
+        else:
+            self.lclass = FdListener
+
+    def set_timer_exceptions (self, value):
+        self.debug_exceptions = value
+
+
     def ensure_greenlet (self):
         if self.greenlet.dead:
             # create new greenlet sharing same parent as original
@@ -321,7 +340,7 @@ class BaseHub(object):
         :type seconds: integer
         """
         timer = Timer(self, seconds * 1000)
-        timer.start(lambda x: None)
+        timer.start(None)
 
         try:
             status = self.loop(once = True)
@@ -395,10 +414,8 @@ class BaseHub(object):
         :param once: if True, runs only once
         :return: None
         """
-        if once:
-            libuv.uv_run_once(self._uv_ptr)
-        else:
-            libuv.uv_run(self._uv_ptr)
+        if once:    libuv.uv_run_once(self._uv_ptr)
+        else:       libuv.uv_run(self._uv_ptr)
 
     def abort (self, wait = False):
         """
@@ -445,6 +462,14 @@ class BaseHub(object):
             traceback.print_exception(*exc_info)
             sys.stderr.flush()
             clear_sys_exc_info()
+
+    @property
+    def num_active(self):
+        return self._uv_ptr.active_handles
+
+    @property
+    def last_error(self):
+        return self._uv_ptr.last_err
 
     ##
     ## timers
@@ -531,25 +556,7 @@ class BaseHub(object):
                 self.squelch_timer_exception(timer, sys.exc_info())
                 clear_sys_exc_info()
 
-    # for debugging:
 
-    def get_readers (self):
-        return self.listeners[READ].values()
-
-    def get_writers (self):
-        return self.listeners[WRITE].values()
-
-    def get_timers_count (hub):
-        return len(hub.timers) + len(hub.next_timers)
-
-    def set_debug_listeners (self, value):
-        if value:
-            self.lclass = DebugListener
-        else:
-            self.lclass = FdListener
-
-    def set_timer_exceptions (self, value):
-        self.debug_exceptions = value
 
     ##
     ## global and local calls
@@ -655,6 +662,7 @@ class BaseHub(object):
 
         :return: None
         """
+        assert ffi.typeof(handle) is ffi.typeof("uv_handle_t *")
         libuv.uv_ref(handle)
 
     def unref(self, handle):
@@ -668,6 +676,7 @@ class BaseHub(object):
 
         :return: None
         """
+        assert ffi.typeof(handle) is ffi.typeof("uv_handle_t *")
         libuv.uv_unref(handle)
 
 
