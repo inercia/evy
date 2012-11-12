@@ -46,8 +46,8 @@ class Watcher(object):
     libuv_handle_type = 'uv_handle_t *'
 
     hub = None
+    callback = None
 
-    _callback = None
     _flags = 0
     _start_func = None
     _stop_func = None
@@ -76,7 +76,7 @@ class Watcher(object):
 
         It will call the callback provided on the start() method
         """
-        uv_handle = self._cast_libuv_handle(handle)
+        #uv_handle = self._cast_libuv_handle(handle)
 
         if self.callback:
             try:
@@ -148,7 +148,8 @@ class Watcher(object):
         :param callback: callback to invoke when the watcher is done
         :param args: arguments for calling the callback
         """
-        self.callback = partial(callback, *args, **kwargs)
+        if callback: self.callback = partial(callback, *args, **kwargs)
+
         self._libuv_unref()
 
         if self._start_func: self._start_func()
@@ -259,7 +260,7 @@ class Poll(Watcher):
         :param kw: keywords arguments for calling the callback
         :return: None
         """
-        self.callback = partial(callback, *args, **kwargs)
+        if callback: self.callback = partial(callback, *args, **kwargs)
 
         self._libuv_unref()
 
@@ -345,7 +346,7 @@ class Timer(Watcher):
         :return: None
         """
         update = kwargs.get("update", True)
-        self.callback = partial(callback, *args, **kwargs)
+        if callback: self.callback = partial(callback, *args, **kwargs)
 
         self._libuv_unref()
 
@@ -368,7 +369,7 @@ class Timer(Watcher):
         Stop the timer, and if it is repeating restart it using the repeat value as the timeout.
         """
         update = kwargs.get("update", True)
-        self.callback = partial(callback, *args, **kwargs)
+        if callback: self.callback = partial(callback, *args, **kwargs)
 
         self._libuv_unref()
         if update:
@@ -442,7 +443,7 @@ class Signal(Watcher):
         :param kw: keywords arguments for calling the callback
         :return: None
         """
-        self.callback = partial(callback, *args, **kwargs)
+        if callback: self.callback = partial(callback, *args, **kwargs)
 
         self._libuv_unref()
 
