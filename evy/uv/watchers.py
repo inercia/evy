@@ -38,22 +38,38 @@ from evy.uv.interface import libuv, ffi, handle_is_active
 
 class Watcher(object):
     """
-    An general watcher
+    An abstract watcher
     """
+
     libuv_start_this_watcher = None
     libuv_stop_this_watcher = None
     libuv_handle_type = 'uv_handle_t *'
 
-    _callback = None
     hub = None
+
+    _callback = None
     _flags = 0
+    _start_func = None
+    _stop_func = None
+
 
     def __init__(self, _hub, ref = True):
+        assert self._uv_handle and self._cb
+
         self.hub = _hub
         if ref:
             self._flags = 0
         else:
             self._flags = 4
+
+        ## prepare a function for starting the watcher
+        if self.libuv_start_this_watcher:
+            self._start_func = partial(self.libuv_start_this_watcher, self._uv_handle, self._cb)
+
+        ## .. and another one for stopping it
+        if self.libuv_stop_this_watcher:
+            assert self._uv_handle
+            self._stop_func = partial(self.libuv_stop_this_watcher, self._uv_handle)
 
     def _run_callback(self, handle, *args):
         """
@@ -136,8 +152,7 @@ class Watcher(object):
         self.callback = partial(callback, *args, **kwargs)
         self._libuv_unref()
 
-        if self.libuv_start_this_watcher:
-            self.libuv_start_this_watcher(self._uv_handle, self._cb)
+        if self._start_func: self._start_func()
 
         self._python_incref()
 
@@ -149,8 +164,7 @@ class Watcher(object):
             libuv.uv_ref(self.hub._uv_ptr)
             self._flags &= ~2
 
-        if self.libuv_stop_this_watcher:
-            self.libuv_stop_this_watcher(self._uv_handle)
+        if self._stop_func: self._stop_func()
 
         self.callback = None
 
