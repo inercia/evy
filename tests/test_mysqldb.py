@@ -247,9 +247,9 @@ class MySQLdbTester(LimitedTestCase):
             curs.execute("delete from gargleblatz where a=314159")
             conn.commit()
 
-from tests import patcher_test
+from tests import test_patcher
 
-class MonkeyPatchTester(patcher_test.ProcessBase):
+class MonkeyPatchTester(test_patcher.ProcessBase):
     @skip_unless(mysql_requirement)
     def test_monkey_patching (self):
         output, lines = self.run_script("""

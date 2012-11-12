@@ -262,7 +262,7 @@ class TestBadFilenos(LimitedTestCase):
         self.assertRaises(ValueError, select.select, [-1], [], [])
 
 
-from tests.patcher_test import ProcessBase
+from tests.test_patcher import ProcessBase
 
 class TestFork(ProcessBase):
     @skip_with_pyevent

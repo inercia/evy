@@ -29,8 +29,7 @@
 
 
 import os
-from tests.patcher_test import ProcessBase
-from tests import skip_with_pyevent
+from tests.test_patcher import ProcessBase
 
 class Socket(ProcessBase):
     def test_patched_thread (self):
@@ -48,7 +47,6 @@ socket.getaddrinfo('localhost', 80)
 
 
 class Tpool(ProcessBase):
-    @skip_with_pyevent
     def test_tpool_size (self):
         expected = "40"
         normal = "20"
