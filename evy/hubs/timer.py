@@ -56,8 +56,8 @@ class Timer(object):
         calling timer.schedule() or runloop.add_timer(timer).
         """
         self.seconds = seconds
-
-        self.callback = kw.pop('callback', partial(cb, *args, **kw))
+        if '_callback' in kw:       self.callback = kw.pop('_callback')
+        else:                       self.callback = partial(cb, *args, **kw)
 
         self.called = False
 
@@ -79,7 +79,7 @@ class Timer(object):
         return retval
 
     def copy(self):
-        return self.__class__(self.seconds, callback = self.callback)
+        return self.__class__(self.seconds, None, _callback = self.callback)
 
     def schedule(self):
         """
@@ -149,9 +149,6 @@ class LocalTimer(Timer):
     def cancel(self):
         """
         Cancel the timer
-
-        :return:
-        :rtype:
         """
         self.greenlet = None
         Timer.cancel(self)
