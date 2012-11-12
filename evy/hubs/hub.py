@@ -204,6 +204,9 @@ class BaseHub(object):
         The *cb* argument is the callback which will be called when the file
         is ready for reading/writing.
         """
+        if fileno < 0:
+            raise ValueError('invalid file descriptor: %d' % (fileno))
+
         listener = self.lclass(evtype, fileno, cb)
         bucket = self.listeners[evtype]
         if fileno in bucket:
@@ -317,7 +320,7 @@ class BaseHub(object):
         :param seconds: the amount of seconds to wait
         :type seconds: integer
         """
-        timer = Timer(self, seconds)
+        timer = Timer(self, seconds * 1000)
         timer.start(lambda x: None)
 
         try:
@@ -448,11 +451,18 @@ class BaseHub(object):
     ##
 
     def add_timer (self, timer):
+        """
+        Add a timer in the hub
+
+        :param timer:
+        :param unreferenced: if True, we unreference the timer, so the loop does not wait until it is triggered
+        :return:
+        """
 #        scheduled_time = self.clock() + timer.seconds
 #        self.next_timers.append((scheduled_time, timer))
 #        return scheduled_time
         # store the pyevent timer object so that we can cancel later
-        eventtimer = Timer(self, timer.seconds)
+        eventtimer = Timer(self, timer.seconds * 1000)
         timer.impltimer = eventtimer
         eventtimer.start(self.timer_finished, timer)
 
@@ -465,18 +475,25 @@ class BaseHub(object):
 #            self.next_timers = [t for t in self.next_timers if not t[1].called]
 #            heapq.heapify(self.timers)
 
-        #timer.impltimer.stop()
-        del timer.impltimer
-        #try:
-        #    timer.impltimer.stop()
-        #    del timer.impltimer
-        #except (AttributeError, TypeError):
-        #    pass
-        #finally:
-        #    super(Hub, self).timer_canceled(timer)
+        try:
+            #timer.impltimer.stop()
+            del timer.impltimer
+        except (AttributeError, TypeError):
+            pass
 
     def timer_finished (self, timer):
         pass
+
+    def forget_timer(self, timer):
+        """
+        Let the hub forget about a timer, so we do not keep the loop running forever until
+        this timer triggers...
+        """
+        try:
+            self.unref(timer.impltimer.handle)
+        except (AttributeError, TypeError):
+            pass
+
 
     def prepare_timers (self):
         heappush = heapq.heappush
@@ -629,7 +646,7 @@ class BaseHub(object):
     ## references
     ##
 
-    def ref(self):
+    def ref(self, handle):
         """
         The event loop only runs as long as there are active watchers. This system works by having
         every watcher increase the reference count of the event loop when it is started and decreasing
@@ -638,9 +655,9 @@ class BaseHub(object):
 
         :return: None
         """
-        libuv.uv_ref(self._uv_ptr)
+        libuv.uv_ref(handle)
 
-    def unref(self):
+    def unref(self, handle):
         """
         This method can be used with interval timers. You might have a garbage collector which runs
         every X seconds, or your network service might send a heartbeat to others periodically, but
@@ -651,7 +668,7 @@ class BaseHub(object):
 
         :return: None
         """
-        libuv.uv_unref(self._uv_ptr)
+        libuv.uv_unref(handle)
 
 
     def now(self):

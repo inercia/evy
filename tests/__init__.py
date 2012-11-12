@@ -83,20 +83,6 @@ def skip_unless (condition):
     return skipped_wrapper
 
 
-def requires_twisted (func):
-    """ Decorator that skips a test if Twisted is not present."""
-
-    def requirement (_f):
-        from evy.hubs import get_hub
-
-        try:
-            return 'Twisted' in type(get_hub()).__name__
-        except Exception:
-            return False
-
-    return skip_unless(requirement)(func)
-
-
 def using_pyevent (_f):
     from evy.hubs import get_hub
 

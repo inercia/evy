@@ -34,7 +34,6 @@ from tests import LimitedTestCase, main, skip_with_pyevent, skip_if_no_itimer
 import time
 import evy
 from evy import hubs
-from evy.green import socket
 
 DELAY = 0.001
 
@@ -53,8 +52,8 @@ class TestTimerCleanup(LimitedTestCase):
         for i in xrange(2000):
             t = hubs.get_hub().schedule_call_global(60, noop)
             t.cancel()
-            self.assert_less_than_equal(hub.timers_canceled,
-                                        hub.get_timers_count() + 1)
+            self.assert_less_than_equal(hub.timers_canceled, hub.get_timers_count() + 1)
+
             # there should be fewer than 1000 new timers and canceled
         self.assert_less_than_equal(hub.get_timers_count(), 1000 + stimers)
         self.assert_less_than_equal(hub.timers_canceled, 1000)
@@ -68,12 +67,11 @@ class TestTimerCleanup(LimitedTestCase):
         for i in xrange(2000):
             t = hubs.get_hub().schedule_call_global(60, noop)
             evy.sleep()
-            self.assert_less_than_equal(hub.timers_canceled,
-                                        hub.get_timers_count() + 1)
+            self.assert_less_than_equal(hub.timers_canceled, hub.get_timers_count() + 1)
             t.cancel()
-            self.assert_less_than_equal(hub.timers_canceled,
-                                        hub.get_timers_count() + 1, hub.timers)
+            self.assert_less_than_equal(hub.timers_canceled, hub.get_timers_count() + 1, hub.timers)
             # there should be fewer than 1000 new timers and canceled
+
         self.assert_less_than_equal(hub.get_timers_count(), 1000 + stimers)
         self.assert_less_than_equal(hub.timers_canceled, 1000)
 
@@ -91,16 +89,15 @@ class TestTimerCleanup(LimitedTestCase):
             t2 = hubs.get_hub().schedule_call_global(60, noop)
             t3 = hubs.get_hub().schedule_call_global(60, noop)
             evy.sleep()
-            self.assert_less_than_equal(hub.timers_canceled,
-                                        hub.get_timers_count() + 1)
+            self.assert_less_than_equal(hub.timers_canceled, hub.get_timers_count() + 1)
             t.cancel()
-            self.assert_less_than_equal(hub.timers_canceled,
-                                        hub.get_timers_count() + 1)
+            self.assert_less_than_equal(hub.timers_canceled, hub.get_timers_count() + 1)
+
             uncanceled_timers.append(t2)
             uncanceled_timers.append(t3)
             # 3000 new timers, plus a few extras
-        self.assert_less_than_equal(stimers + 3000,
-                                    stimers + hub.get_timers_count())
+        self.assert_less_than_equal(stimers + 3000, stimers + hub.get_timers_count())
+
         self.assertEqual(hub.timers_canceled, 1000)
         for t in uncanceled_timers:
             t.cancel()
@@ -253,8 +250,10 @@ except evy.Timeout:
         shutil.rmtree(self.tempdir)
 
 
+
+
 class TestBadFilenos(LimitedTestCase):
-    @skip_with_pyevent
+
     def test_repeated_selects (self):
         from evy.green import select
 
@@ -263,6 +262,8 @@ class TestBadFilenos(LimitedTestCase):
 
 
 from tests.test_patcher import ProcessBase
+
+
 
 class TestFork(ProcessBase):
     @skip_with_pyevent
@@ -305,9 +306,11 @@ class TestDeadRunLoop(LimitedTestCase):
         pass
 
     def test_kill (self):
-        """ Checks that killing a process after the hub runloop dies does
+        """
+        Checks that killing a process after the hub runloop dies does
         not immediately return to hub greenlet's parent and schedule a
-        redundant timer. """
+        redundant timer.
+        """
         hub = hubs.get_hub()
 
         def dummyproc ():
@@ -331,9 +334,11 @@ class TestDeadRunLoop(LimitedTestCase):
             self.assertRaises(self.CustomException, hub.switch)
 
     def test_parent (self):
-        """ Checks that a terminating greenthread whose parent
+        """
+        Checks that a terminating greenthread whose parent
         was a previous, now-defunct hub greenlet returns execution to
-        the hub runloop and not the hub greenlet's parent. """
+        the hub runloop and not the hub greenlet's parent.
+        """
         hub = hubs.get_hub()
 
         def dummyproc ():

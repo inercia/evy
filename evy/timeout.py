@@ -58,19 +58,24 @@ class Timeout(BaseException):
         self.start()
 
     def start (self):
-        """Schedule the timeout.  This is called on construction, so
+        """
+        Schedule the timeout.  This is called on construction, so
         it should not be called explicitly, unless the timer has been
-        canceled."""
-        assert not self.pending,\
-        '%r is already started; to restart it, cancel it first' % self
-        if self.seconds is None: # "fake" timeout (never expires)
+        canceled.
+        """
+        assert not self.pending, '%r is already started; to restart it, cancel it first' % self
+
+        if self.seconds is None:
+            # "fake" timeout (never expires)
             self.timer = None
-        elif self.exception is None or isinstance(self.exception, bool): # timeout that raises self
-            self.timer = get_hub().schedule_call_global(
-                self.seconds, greenlet.getcurrent().throw, self)
-        else: # regular timeout with user-provided exception
-            self.timer = get_hub().schedule_call_global(
-                self.seconds, greenlet.getcurrent().throw, self.exception)
+        else:
+            hub = get_hub()
+            if self.exception is None or isinstance(self.exception, bool): # timeout that raises self
+                self.timer = hub.schedule_call_global(self.seconds, greenlet.getcurrent().throw, self)
+            else: # regular timeout with user-provided exception
+                self.timer = hub.schedule_call_global(self.seconds, greenlet.getcurrent().throw, self.exception)
+            self.timer.forget()
+
         return self
 
     @property

@@ -27,6 +27,8 @@
 # THE SOFTWARE.
 #
 
+from functools import partial
+
 from evy.support import greenlets as greenlet
 from evy.hubs import get_hub
 
@@ -54,8 +56,11 @@ class Timer(object):
         calling timer.schedule() or runloop.add_timer(timer).
         """
         self.seconds = seconds
-        self.tpl = cb, args, kw
+
+        self.callback = kw.pop('callback', partial(cb, *args, **kw))
+
         self.called = False
+
         if _g_debug:
             import traceback, cStringIO
             self.traceback = cStringIO.StringIO()
@@ -67,33 +72,38 @@ class Timer(object):
 
     def __repr__(self):
         secs = getattr(self, 'seconds', None)
-        cb, args, kw = getattr(self, 'tpl', (None, None, None))
-        retval =  "Timer(%s, %s, *%s, **%s)" % (secs, cb, args, kw)
+        cb = getattr(self, 'callback', None)
+        retval =  "Timer(%s, %s)" % (secs, cb)
         if _g_debug and hasattr(self, 'traceback'):
             retval += '\n' + self.traceback.getvalue()
         return retval
 
     def copy(self):
-        cb, args, kw = self.tpl
-        return self.__class__(self.seconds, cb, *args, **kw)
+        return self.__class__(self.seconds, callback = self.callback)
 
     def schedule(self):
         """
-        Schedule this timer to run in the current runloop.
+        Schedule this timer to run in the current loop.
         """
         self.called = False
         self.scheduled_time = get_hub().add_timer(self)
         return self
 
+    def forget(self):
+        """
+        Let the hub forget about this timer, so we do not keep the loop running forever until
+        the timer triggers.
+        """
+        get_hub().forget_timer(self)
+
     def __call__(self, *args):
         if not self.called:
             self.called = True
-            cb, args, kw = self.tpl
             try:
-                cb(*args, **kw)
+                self.callback()
             finally:
                 try:
-                    del self.tpl
+                    del self.callback
                 except AttributeError:
                     pass
 
@@ -106,7 +116,7 @@ class Timer(object):
             self.called = True
             get_hub().timer_canceled(self)
             try:
-                del self.tpl
+                del self.callback
             except AttributeError:
                 pass
 
@@ -134,8 +144,7 @@ class LocalTimer(Timer):
             self.called = True
             if self.greenlet is not None and self.greenlet.dead:
                 return
-            cb, args, kw = self.tpl
-            cb(*args, **kw)
+            self.callback()
 
     def cancel(self):
         """

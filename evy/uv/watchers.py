@@ -32,7 +32,7 @@ import signal
 
 from functools import partial
 
-from evy.uv.interface import libuv, ffi, handle_is_active
+from evy.uv.interface import libuv, ffi, handle_is_active, cast_to_handle
 
 
 
@@ -68,7 +68,6 @@ class Watcher(object):
 
         ## .. and another one for stopping it
         if self.libuv_stop_this_watcher:
-            assert self._uv_handle
             self._stop_func = partial(self.libuv_stop_this_watcher, self._uv_handle)
 
     def _run_callback(self, handle, *args):
@@ -177,8 +176,15 @@ class Watcher(object):
         return handle_is_active(self._uv_handle)
 
     ##
-    ## handles (internal)
+    ## handles
     ##
+
+    @property
+    def handle(self):
+        """
+        Return the uv_handle for this watcher
+        """
+        return cast_to_handle(self._uv_handle)
 
     def _new_libuv_handle(self):
         """
@@ -343,8 +349,7 @@ class Timer(Watcher):
 
         self._libuv_unref()
 
-        if update:
-            libuv.uv_update_time(self.hub._uv_ptr)
+        if update: libuv.uv_update_time(self.hub._uv_ptr)
 
         libuv.uv_timer_start(self._uv_handle, self._cb, self._after, self._repeat)
 
