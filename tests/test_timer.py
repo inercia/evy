@@ -57,6 +57,7 @@ class TestTimer(TestCase):
         # (for pyevent, its dispatcher() does not exit if there is something scheduled)
         # XXX pyevent handles this, other hubs do not
         #hubs.get_hub().schedule_call_global(10000, lambda: (called.append(True), hub.abort()))
+
         hubs.get_hub().schedule_call_global(0, lambda: (called.append(True), hub.abort()))
         hub.default_sleep = lambda: 0.0
         hub.switch()

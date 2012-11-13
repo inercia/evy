@@ -36,7 +36,7 @@ import os
 
 from evy.uv.interface import libuv, handle_unref
 from evy.uv.interface import ffi
-from evy.uv.watchers import Poll, Timer, Async, Callback, Idle, Prepare, Signal
+from evy.uv import watchers
 from evy.support import greenlets as greenlet, clear_sys_exc_info
 from evy.hubs import timer
 from evy import patcher
@@ -68,51 +68,18 @@ WRITE = "write"
 
 
 
-class FdListener(object):
-    def __init__ (self, evtype, fileno, cb):
-        assert (evtype is READ or evtype is WRITE)
-        self.evtype = evtype
-        self.fileno = fileno
-        self.cb = cb
-
-    def __repr__ (self):
-        return "%s(%r, %r, %r)" % (type(self).__name__, self.evtype, self.fileno, self.cb)
-
-    __str__ = __repr__
-
-
-noop = FdListener(READ, 0, lambda x: None)
-
-
-# in debug mode, track the call site that created the listener
-class DebugListener(FdListener):
-    def __init__ (self, evtype, fileno, cb):
-        self.where_called = traceback.format_stack()
-        self.greenlet = greenlet.getcurrent()
-        super(DebugListener, self).__init__(evtype, fileno, cb)
-
-    def __repr__ (self):
-        return "DebugListener(%r, %r, %r, %r)\n%sEndDebugFdListener" % (
-            self.evtype,
-            self.fileno,
-            self.cb,
-            self.greenlet,
-            ''.join(self.where_called))
-
-    __str__ = __repr__
-
-
 def alarm_handler (signum, frame):
     import inspect
     raise RuntimeError("Blocking detector ALARMED at" + str(inspect.getframeinfo(frame)))
-
-_default_loop_destroyed = False
-
 
 def signal_checker(uv_prepare_handle, status):
     pass  # XXX: how do I check for signals from pure python??
 
 
+
+####################################################################################################
+
+_default_loop_destroyed = False
 
 
 class BaseHub(object):
@@ -139,17 +106,20 @@ class BaseHub(object):
         :param ptr: a pointer a an (optional) libuv loop
         :type ptr: a "uv_loop_t*"
         """
-        self.listeners = {READ: {}, WRITE: {}}
-        self.secondaries = {READ: {}, WRITE: {}}
+        self.fd_read_watchers = {}
+        self.fd_write_watchers = {}
+
+        self.fd_read_watchers_alt = {}
+        self.fd_write_watchers_alt = {}
 
         self.clock = clock
         self.greenlet = greenlet.greenlet(self.run)
+
         self.stopping = False
         self.running = False
-        self.timers = []
-        self.next_timers = []
-        self.lclass = FdListener
-        self.timers_canceled = 0
+
+        self.timers = set()
+
         self.debug_exceptions = True
         self.debug_blocking = False
         self.debug_blocking_resolution = 1
@@ -207,8 +177,16 @@ class BaseHub(object):
         if fileno < 0:
             raise ValueError('invalid file descriptor: %d' % (fileno))
 
-        listener = self.lclass(evtype, fileno, cb)
-        bucket = self.listeners[evtype]
+        events = 0
+        if evtype == READ:
+            events = libuv.UV_READABLE
+            bucket = self.fd_read_watchers
+        elif evtype == WRITE:
+            events = libuv.UV_WRITABLE
+            bucket = self.fd_write_watchers
+
+        listener = watchers.Poll(self, fileno, events)
+
         if fileno in bucket:
             if g_prevent_multiple_readers:
                 raise RuntimeError("Second simultaneous %s on fileno %s "\
@@ -221,18 +199,14 @@ class BaseHub(object):
                     evtype, fileno, evtype))
 
             # store off the second listener in another structure
-            self.secondaries[evtype].setdefault(fileno, []).append(listener)
+            if evtype == READ:      self.fd_read_watchers_alt.setdefault(fileno, []).append(listener)
+            elif evtype == WRITE:   self.fd_write_watchers_alt.setdefault(fileno, []).append(listener)
+
         else:
             bucket[fileno] = listener
 
         ## register the listener with libuv
-        events = 0
-        if evtype == READ:      events = libuv.UV_READABLE
-        elif evtype == WRITE:   events = libuv.UV_WRITABLE
-
-        if events != 0:
-            evt = Poll(self, fileno, events)
-            evt.start(self.remove, listener)
+        listener.start(cb, listener)
 
         return listener
 
@@ -243,46 +217,74 @@ class BaseHub(object):
         :param listener: the listener to remove
         """
         fileno = listener.fileno
-        evtype = listener.evtype
-        self.listeners[evtype].pop(fileno, None)
+        events = listener.events
+
+        if events == libuv.UV_READABLE:             self.fd_read_watchers.pop(fileno, None)
+        else:                                       self.fd_write_watchers.pop(fileno, None)
+
         # migrate a secondary listener to be the primary listener
-        if fileno in self.secondaries[evtype]:
-            sec = self.secondaries[evtype].get(fileno, None)
+        if (fileno in self.fd_read_watchers) or (fileno in self.fd_write_watchers):
+            if events == libuv.UV_READABLE:         sec = self.fd_read_watchers.get(fileno, None)
+            else:                                   sec = self.fd_write_watchers.get(fileno, None)
+
             if not sec:
                 return
-            self.listeners[evtype][fileno] = sec.pop(0)
+
+            if events == libuv.UV_READABLE:         self.fd_read_watchers[fileno] = sec.pop(0)
+            else:                                   self.fd_write_watchers[fileno] = sec.pop(0)
+
             if not sec:
-                del self.secondaries[evtype][fileno]
+                if events == libuv.UV_READABLE:     del self.fd_read_watchers[fileno]
+                else:                               del self.fd_write_watchers[fileno]
 
     def remove_descriptor (self, fileno):
         """
-        Completely remove all listeners for this *fileno*. For internal use only.
+        Completely remove all watchers for this *fileno*. For internal use only.
         """
-        listeners = []
-        listeners.append(self.listeners[READ].pop(fileno, noop))
-        listeners.append(self.listeners[WRITE].pop(fileno, noop))
-        listeners.extend(self.secondaries[READ].pop(fileno, ()))
-        listeners.extend(self.secondaries[WRITE].pop(fileno, ()))
-        for listener in listeners:
+        watchers = []
+
+        watchers.append(self.fd_read_watchers.pop(fileno, None))
+        watchers.append(self.fd_write_watchers.pop(fileno, None))
+
+        watchers.extend(self.fd_read_watchers_alt.pop(fileno, ()))
+        watchers.extend(self.fd_write_watchers_alt.pop(fileno, ()))
+        
+        for listener in watchers:
             try:
                 listener.cb(fileno)
             except Exception, e:
                 self.squelch_generic_exception(sys.exc_info())
 
+        ## remove the poller for this fileno
+        # TODO
+
     def get_readers (self):
-        return self.listeners[READ].values()
+        return self.fd_read_watchers.values()
 
     def get_writers (self):
-        return self.listeners[WRITE].values()
+        return self.fd_write_watchers.values()
 
-    def get_timers_count (hub):
-        return len(hub.timers) + len(hub.next_timers)
 
-    def set_debug_listeners (self, value):
-        if value:
-            self.lclass = DebugListener
-        else:
-            self.lclass = FdListener
+    def _get_reader_for(self, fileno):
+        """
+        Obtains the reader for the file descriptor *fileno*
+
+        :param fileno: the file descriptor
+        :return: a valid Poll instance, or None otherwise
+        """
+        readers = self.fd_watchers[READ]
+        return readers.get(fileno, None)
+
+    def _get_writer_for(self, fileno):
+        """
+        Obtains the writer for the file descriptor *fileno*
+
+        :param fileno: the file descriptor
+        :return: a valid Poll instance, or None otherwise
+        """
+        readers = self.fd_watchers[WRITE]
+        return readers.get(fileno, None)
+
 
     def set_timer_exceptions (self, value):
         self.debug_exceptions = value
@@ -322,24 +324,16 @@ class BaseHub(object):
         clear_sys_exc_info()
         return self.greenlet.switch()
 
-    def squelch_exception (self, fileno, exc_info):
-        traceback.print_exception(*exc_info)
-        sys.stderr.write("Removing descriptor: %r\n" % (fileno,))
-        sys.stderr.flush()
-        try:
-            self.remove_descriptor(fileno)
-        except Exception, e:
-            sys.stderr.write("Exception while removing descriptor! %r\n" % (e,))
-            sys.stderr.flush()
-
     def wait (self, seconds = None):
         """
-        this timeout will cause us to return from the dispatch() call when we want to
+        This timeout will cause us to return from the dispatch() call when we want to
 
         :param seconds: the amount of seconds to wait
         :type seconds: integer
         """
-        timer = Timer(self, seconds * 1000)
+
+        ## create a timer for avoiding exiting the loop for *seconds*
+        timer = watchers.Timer(self, seconds * 1000)
         timer.start(None)
 
         try:
@@ -359,8 +353,12 @@ class BaseHub(object):
             self.interrupted = False
             raise KeyboardInterrupt()
 
+        if self.debug_blocking:
+            self.block_detect_post()
+
+
     def default_sleep (self):
-        return 60.0
+        return 10.0
 
     def sleep_until (self):
         t = self.timers
@@ -382,26 +380,26 @@ class BaseHub(object):
             self.running = True
             self.stopping = False
             while not self.stopping:
-                self.prepare_timers()
+
                 if self.debug_blocking:
                     self.block_detect_pre()
-                self.fire_timers(self.clock())
+
                 if self.debug_blocking:
                     self.block_detect_post()
-                self.prepare_timers()
-                wakeup_when = self.sleep_until()
-                if wakeup_when is None:
-                    sleep_time = self.default_sleep()
-                else:
-                    sleep_time = wakeup_when - self.clock()
-                if sleep_time > 0:
-                    self.wait(sleep_time)
-                else:
-                    self.wait(0)
+
+                try:
+                    status = self.loop(once = True)
+                except self.SYSTEM_EXCEPTIONS:
+                    self.interrupted = True
+                except:
+                    self.squelch_exception(-1, sys.exc_info())
+
+                ## if there are no active events, just get out of here...
+                if self.num_active == 0:
+                    self.stopping = True
             else:
-                self.timers_canceled = 0
-                del self.timers[:]
-                del self.next_timers[:]
+                self.timers = set()
+
         finally:
             self.running = False
             self.stopping = False
@@ -451,18 +449,6 @@ class BaseHub(object):
             libuv.uv_loop_destroy(self._uv_ptr)
             self._uv_ptr = ffi.NULL
 
-    def squelch_generic_exception (self, exc_info):
-        if self.debug_exceptions:
-            traceback.print_exception(*exc_info)
-            sys.stderr.flush()
-            clear_sys_exc_info()
-
-    def squelch_timer_exception (self, timer, exc_info):
-        if self.debug_exceptions:
-            traceback.print_exception(*exc_info)
-            sys.stderr.flush()
-            clear_sys_exc_info()
-
     @property
     def num_active(self):
         return self._uv_ptr.active_handles
@@ -483,31 +469,47 @@ class BaseHub(object):
         :param unreferenced: if True, we unreference the timer, so the loop does not wait until it is triggered
         :return:
         """
-#        scheduled_time = self.clock() + timer.seconds
-#        self.next_timers.append((scheduled_time, timer))
-#        return scheduled_time
-        # store the pyevent timer object so that we can cancel later
-        eventtimer = Timer(self, timer.seconds * 1000)
+        eventtimer = watchers.Timer(self, timer.seconds * 1000)
         timer.impltimer = eventtimer
-        eventtimer.start(self.timer_finished, timer)
+        eventtimer.start(self.timer_triggered, timer)
+        self.timers.add(timer)
 
     def timer_canceled (self, timer):
-#        self.timers_canceled += 1
-#        len_timers = len(self.timers) + len(self.next_timers)
-#        if len_timers > 1000 and len_timers / 2 <= self.timers_canceled:
-#            self.timers_canceled = 0
-#            self.timers = [t for t in self.timers if not t[1].called]
-#            self.next_timers = [t for t in self.next_timers if not t[1].called]
-#            heapq.heapify(self.timers)
+        """
+        A timer has been canceled
 
+        :param timer: the timer that has been canceled
+        :return: nothing
+        """
         try:
-            #timer.impltimer.stop()
-            del timer.impltimer
+            timer.destroy()
         except (AttributeError, TypeError):
             pass
 
-    def timer_finished (self, timer):
-        pass
+        try:
+            self.timers.remove(timer)
+        except ValueError:
+            pass
+
+    def timer_triggered (self, timer):
+        """
+        Performs the timer trigger
+
+        :param timer: the timer that has been triggered
+        :return: nothing
+        """
+        try:
+            timer()
+        except self.SYSTEM_EXCEPTIONS:
+            self.interrupted = True
+        except:
+            self.squelch_exception(-1, sys.exc_info())
+
+        try:
+            timer.destroy()
+            self.timers.remove(timer)
+        except (AttributeError, TypeError):
+            pass
 
     def forget_timer(self, timer):
         """
@@ -519,44 +521,9 @@ class BaseHub(object):
         except (AttributeError, TypeError):
             pass
 
-
-    def prepare_timers (self):
-        heappush = heapq.heappush
-        t = self.timers
-        for item in self.next_timers:
-            if item[1].called:
-                self.timers_canceled -= 1
-            else:
-                heappush(t, item)
-        del self.next_timers[:]
-
-    def fire_timers (self, when):
-        t = self.timers
-        heappop = heapq.heappop
-
-        while t:
-            next = t[0]
-
-            exp = next[0]
-            timer = next[1]
-
-            if when < exp:
-                break
-
-            heappop(t)
-
-            try:
-                if timer.called:
-                    self.timers_canceled -= 1
-                else:
-                    timer()
-            except self.SYSTEM_EXCEPTIONS:
-                raise
-            except:
-                self.squelch_timer_exception(timer, sys.exc_info())
-                clear_sys_exc_info()
-
-
+    @property
+    def timers_count(self):
+        return len(self.timers)
 
     ##
     ## global and local calls
@@ -604,41 +571,6 @@ class BaseHub(object):
         :return: a pointer to the corresponding `uv_loop_t*`
         """
         return self._uv_ptr
-
-    def _stop_signal_checker(self):
-        if libuv.uv_is_active(self._signal_checker):
-            libuv.uv_ref(self._uv_ptr)
-            libuv.uv_prepare_stop(self._signal_checker)
-
-    def signal_received(self, signal):
-        # can't do more than set this flag here because the pyevent callback
-        # mechanism swallows exceptions raised here, so we have to raise in
-        # the 'main' greenlet (in wait()) to kill the program
-        self.interrupted = True
-        print "signal_received(): TODO"
-
-
-    ##
-    ## errors
-    ##
-
-    def _handle_syserr(self, message, errno):
-        self.handle_error(None, SystemError, SystemError(message + ': ' + os.strerror(errno)), None)
-
-    def handle_error(self, context, type, value, tb):
-        handle_error = None
-        error_handler = self.error_handler
-        if error_handler is not None:
-            # we do want to do getattr every time so that setting Hub.handle_error property just works
-            handle_error = getattr(error_handler, 'handle_error', error_handler)
-            handle_error(context, type, value, tb)
-        else:
-            self._default_handle_error(context, type, value, tb)
-
-    def _default_handle_error(self, context, type, value, tb):
-        traceback.print_exception(type, value, tb)
-        sys.abort()
-        raise NotImplementedError()
 
     @property
     def default_loop(self):
@@ -696,28 +628,28 @@ class BaseHub(object):
         return Watcher
 
     def io(self, fd, events, ref=True):
-        return Poll(self, fd, events, ref)
+        return watchers.Poll(self, fd, events, ref)
 
     def timer(self, after, repeat=0.0, ref=True):
-        return Timer(self, after, repeat, ref)
+        return watchers.Timer(self, after, repeat, ref)
 
     def signal(self, signum, ref=True):
-        return Signal(self, signum, ref)
+        return watchers.Signal(self, signum, ref)
 
     def idle(self, ref=True):
-        return Idle(self, ref)
+        return watchers.Idle(self, ref)
 
     def prepare(self, ref=True):
-        return Prepare(self, ref)
+        return watchers.Prepare(self, ref)
 
     def async(self, ref=True):
-        return Async(self, ref)
+        return watchers.Async(self, ref)
 
     def callback(self):
-        return Callback(self)
+        return watchers.Callback(self)
 
     def run_callback(self, func, *args, **kw):
-        result = Callback(self)
+        result = watchers.Callback(self)
         result.start(func, *args)
         return result
 
@@ -731,4 +663,69 @@ class BaseHub(object):
         fd = self._uv_ptr.backend_fd
         if fd >= 0:
             return fd
+
+
+    ##
+    ## errors
+    ##
+
+    def _handle_syserr(self, message, errno):
+        self.handle_error(None, SystemError, SystemError(message + ': ' + os.strerror(errno)), None)
+
+    def handle_error(self, context, type, value, tb):
+        handle_error = None
+        error_handler = self.error_handler
+        if error_handler is not None:
+            # we do want to do getattr every time so that setting Hub.handle_error property just works
+            handle_error = getattr(error_handler, 'handle_error', error_handler)
+            handle_error(context, type, value, tb)
+        else:
+            self._default_handle_error(context, type, value, tb)
+
+    def _default_handle_error(self, context, type, value, tb):
+        traceback.print_exception(type, value, tb)
+        sys.abort()
+        raise NotImplementedError()
+
+    ##
+    ## exceptions
+    ##
+
+    def squelch_exception (self, fileno, exc_info):
+        traceback.print_exception(*exc_info)
+        sys.stderr.write("Removing descriptor: %r\n" % (fileno,))
+        sys.stderr.flush()
+        try:
+            self.remove_descriptor(fileno)
+        except Exception, e:
+            sys.stderr.write("Exception while removing descriptor! %r\n" % (e,))
+            sys.stderr.flush()
+
+    def squelch_generic_exception (self, exc_info):
+        if self.debug_exceptions:
+            traceback.print_exception(*exc_info)
+            sys.stderr.flush()
+            clear_sys_exc_info()
+
+    def squelch_timer_exception (self, timer, exc_info):
+        if self.debug_exceptions:
+            traceback.print_exception(*exc_info)
+            sys.stderr.flush()
+            clear_sys_exc_info()
+
+    ##
+    ## signals
+    ##
+
+    def _stop_signal_checker(self):
+        if libuv.uv_is_active(self._signal_checker):
+            libuv.uv_ref(self._uv_ptr)
+            libuv.uv_prepare_stop(self._signal_checker)
+
+    def signal_received(self, signal):
+        # can't do more than set this flag here because the pyevent callback
+        # mechanism swallows exceptions raised here, so we have to raise in
+        # the 'main' greenlet (in wait()) to kill the program
+        self.interrupted = True
+        print "signal_received(): TODO"
 

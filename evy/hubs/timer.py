@@ -89,6 +89,15 @@ class Timer(object):
         self.scheduled_time = get_hub().add_timer(self)
         return self
 
+    def destroy(self):
+        """
+        Stop and destroy the timer
+
+        Invoke this method when this timer is no longer used
+        """
+        self.impltimer.stop()
+        del self.impltimer
+
     def forget(self):
         """
         Let the hub forget about this timer, so we do not keep the loop running forever until
@@ -124,7 +133,6 @@ class Timer(object):
     # FIXME should full set be added?
     def __lt__(self, other):
         return id(self)<id(other)
-
 
 
 class LocalTimer(Timer):

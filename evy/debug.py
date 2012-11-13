@@ -31,7 +31,7 @@
 
 """
 The debug module contains utilities and functions for better
-debugging Eventlet-powered applications.
+debugging Evy-powered applications.
 """
 
 import os
@@ -183,7 +183,7 @@ def tpool_exceptions (state = False):
 
 
 def hub_blocking_detection (state = False, resolution = 1):
-    """Toggles whether Eventlet makes an effort to detect blocking
+    """Toggles whether Evy makes an effort to detect blocking
     behavior in an application.
 
     It does this by telling the kernel to raise a SIGALARM after a

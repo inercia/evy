@@ -282,6 +282,7 @@ class Poll(Watcher):
         libuv.uv_poll_init(self.hub._uv_ptr, self._uv_handle, self._fd)
 
     fd = property(_get_fd, _set_fd)
+    fileno = fd
 
     ##
     ## events
@@ -297,9 +298,11 @@ class Poll(Watcher):
 
     events = property(_get_events, _set_events)
 
-    def _format(self):
-        return ' fd=%s events=%s' % (self.fd, self.events_str)
 
+    def __repr__ (self):
+        return "%s(%r, %r, %r)" % (type(self).__name__, self.events, self.fileno, self.callback)
+
+    __str__ = __repr__
 
 
 class Timer(Watcher):

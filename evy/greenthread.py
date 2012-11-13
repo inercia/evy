@@ -42,7 +42,8 @@ __all__ = ['getcurrent', 'sleep', 'spawn', 'spawn_n', 'spawn_after', 'spawn_afte
 getcurrent = greenlet.getcurrent
 
 def sleep (seconds = 0):
-    """Yield control to another eligible coroutine until at least *seconds* have
+    """
+    Yield control to another eligible coroutine until at least *seconds* have
     elapsed.
 
     *seconds* may be specified as an integer, or a float if fractional seconds

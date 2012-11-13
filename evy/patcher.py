@@ -34,8 +34,11 @@ __all__ = ['inject', 'import_patched', 'monkey_patch', 'is_monkey_patched']
 
 __exclude = set(('__builtins__', '__file__', '__name__'))
 
+
+
 class SysModulesSaver(object):
-    """Class that captures some subset of the current state of
+    """
+    Class that captures some subset of the current state of
     sys.modules.  Pass in an iterator of module names to the
     constructor."""
 
@@ -67,7 +70,8 @@ class SysModulesSaver(object):
 
 
 def inject (module_name, new_globals, *additional_modules):
-    """Base method for "injecting" greened modules into an imported module.  It
+    """
+    Base method for "injecting" greened modules into an imported module.  It
     imports the module specified in *module_name*, arranging things so
     that the already-imported modules in *additional_modules* are used when
     *module_name* makes its imports.
@@ -128,7 +132,8 @@ def inject (module_name, new_globals, *additional_modules):
 
 
 def import_patched (module_name, *additional_modules, **kw_additional_modules):
-    """Imports a module in a way that ensures that the module uses "green"
+    """
+    Imports a module in a way that ensures that the module uses "green"
     versions of the standard library modules, so that everything works
     nonblockingly.
 
@@ -141,11 +146,13 @@ def import_patched (module_name, *additional_modules, **kw_additional_modules):
 
 
 def patch_function (func, *additional_modules):
-    """Decorator that returns a version of the function that patches
+    """
+    Decorator that returns a version of the function that patches
     some modules for the duration of the function call.  This is
     deeply gross and should only be used for functions that import
     network libraries within their function bodies that there is no
-    way of getting around."""
+    way of getting around.
+    """
     if not additional_modules:
         # supply some defaults
         additional_modules = (
@@ -169,12 +176,14 @@ def patch_function (func, *additional_modules):
 
 
 def _original_patch_function (func, *module_names):
-    """Kind of the contrapositive of patch_function: decorates a
+    """
+    Kind of the contrapositive of patch_function: decorates a
     function such that when it's called, sys.modules is populated only
     with the unpatched versions of the specified modules.  Unlike
     patch_function, only the names of the modules need be supplied,
     and there are no defaults.  This is a gross hack; tell your kids not
-    to import inside function bodies!"""
+    to import inside function bodies!
+    """
 
     def patched (*args, **kw):
         saver = SysModulesSaver(module_names)
@@ -189,8 +198,10 @@ def _original_patch_function (func, *module_names):
 
 
 def original (modname):
-    """ This returns an unpatched version of a module; this is useful for 
-    Eventlet itself (i.e. tpool)."""
+    """
+    This returns an unpatched version of a module; this is useful for Evy itself (i.e. tpool).
+    """
+
     # note that it's not necessary to temporarily install unpatched
     # versions of all patchable modules during the import of the
     # module; this is because none of them import each other, except
@@ -230,7 +241,8 @@ def original (modname):
 already_patched = {}
 
 def monkey_patch (**on):
-    """Globally patches certain system modules to be greenthread-friendly.
+    """
+    Globally patches certain system modules to be greenthread-friendly.
 
     The keyword arguments afford some control over which modules are patched.
     If no keyword arguments are supplied, all possible modules are patched.
@@ -305,13 +317,15 @@ def monkey_patch (**on):
 
 
 def is_monkey_patched (module):
-    """Returns True if the given module is monkeypatched currently, False if
+    """
+    Returns True if the given module is monkeypatched currently, False if
     not.  *module* can be either the module itself or its name.
 
     Based entirely off the name of the module, so if you import a
     module some other way than with the import keyword (including
     import_patched), this might not be correct about that particular
-    module."""
+    module.
+    """
     return module in already_patched or\
            getattr(module, '__name__', None) in already_patched
 
@@ -363,7 +377,8 @@ def _green_MySQLdb ():
 
 
 def slurp_properties (source, destination, ignore = [], srckeys = None):
-    """Copy properties from *source* (assumed to be a module) to
+    """
+    Copy properties from *source* (assumed to be a module) to
     *destination* (assumed to be a dict).
     
     *ignore* lists properties that should not be thusly copied.
