@@ -123,7 +123,7 @@ class Timer(object):
         """
         if not self.called:
             self.called = True
-            get_hub().timer_canceled(self)
+            get_hub()._timer_canceled(self)
             try:
                 del self.callback
             except AttributeError:

@@ -30,7 +30,10 @@
 from evy.support import greenlets as greenlet
 from evy import patcher
 
-__all__ = ["use_hub", "get_hub", "get_default_hub", "trampoline"]
+__all__ = ["use_hub",
+           "get_hub",
+           "get_default_hub",
+           "trampoline"]
 
 threading = patcher.original('threading')
 _threadlocal = threading.local()
@@ -62,7 +65,7 @@ def use_hub (mod = None):
     if hasattr(_threadlocal, 'hub'):
         del _threadlocal.hub
 
-    _threadlocal.Hub = get_default_hub().BaseHub
+    _threadlocal.Hub = get_default_hub().Hub
 
 
 def get_hub ():
