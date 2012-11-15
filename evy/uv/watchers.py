@@ -35,6 +35,17 @@ from functools import partial
 from evy.uv.interface import libuv, ffi, handle_is_active, cast_to_handle
 
 
+__all__ = [
+    'Watcher',
+    'Async',
+    'Callback',
+    'Idle',
+    'Poll',
+    'Prepare',
+    'Signal',
+    'Timer',
+    'Watcher',
+]
 
 class Watcher(object):
     """
@@ -229,44 +240,61 @@ class Poll(Watcher):
     libuv_stop_this_watcher = libuv.uv_poll_stop
     libuv_handle_type = 'uv_poll_t *'
 
-    def __init__(self, hub, fd, events, ref = True):
+    def __init__(self, hub, fd, ref = True):
         """
         Initialize the polling watcher
 
         :param hub: the Hub we arre currently using
         :param fd: the file descriptor
-        :param events: the events we are interested in (a combination of Hub.READ and Hub.WRITE)
         """
         if fd < 0:
             raise ValueError('fd must be non-negative: %r' % fd)
 
-        if events & ~(libuv.UV_READABLE | libuv.UV_WRITABLE):
-            raise ValueError('illegal event mask: %r' % events)
-
         self._uv_handle = self._new_libuv_handle()
         self._cb = ffi.callback("void(*)(uv_poll_t *, int, int)", self._run_callback)
-        self._events = events
         self._fd = fd
+
+        self.read_callback = None
+        self.write_callback = None
 
         libuv.uv_poll_init(hub._uv_ptr, self._uv_handle, fd)
         Watcher.__init__(self, hub, ref = ref)
 
-    def start(self, callback, *args, **kwargs):
+    def start(self, event, callback, *args, **kwargs):
         """
-        Start the file descriptor poller
+        Start the file descriptor poller for one event type
 
+        :param event: the event we are interested in
         :param callback: callback to invoke when the file descriptor is available for the events we wanted
         :param args: arguments for calling the callback
         :param kw: keywords arguments for calling the callback
         :return: None
         """
-        if callback: self.callback = partial(callback, *args, **kwargs)
+        if event not in [libuv.UV_READABLE, libuv.UV_WRITABLE]:
+            raise ValueError('illegal event mask: %r' % event)
 
-        self._libuv_unref()
+        if callback:
+            cb = partial(callback, *args, **kwargs)
+            if event & libuv.UV_READABLE:
+                self.read_callback = cb
+                libuv.uv_poll_start(self._uv_handle, libuv.UV_READABLE, self._cb)
+            else:
+                self.write_callback = cb
+                libuv.uv_poll_start(self._uv_handle, libuv.UV_WRITABLE, self._cb)
 
-        libuv.uv_poll_start(self._uv_handle, self._events, self._cb)
 
-        self._python_incref()
+    def _run_callback(self, handle, status, events):
+        """
+        This is invoked as a callback when the watcher detects we can read or write from a
+
+        It will call the callback provided on the start() method
+        """
+        try:
+            if events & libuv.UV_READABLE and self.read_callback:      self.read_callback()
+            elif events & libuv.UV_WRITABLE and self.write_callback:   self.write_callback()
+        except:
+            self.hub.handle_error(self, *sys.exc_info())
+
 
     ##
     ## file descriptor
