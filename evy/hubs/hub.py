@@ -164,7 +164,7 @@ class Hub(object):
             signal.signal(signal.SIGALRM, self._old_signal_handler)
         signal.alarm(0)
 
-    def add (self, evtype, fileno, cb):
+    def add (self, evtype, fileno, cb, persistent = False):
         """
         Signals an intent to or write a particular file descriptor.
 
@@ -183,7 +183,7 @@ class Hub(object):
 
             p.start(self, evtype, cb, fileno)
         else:
-            p = poller.Poller(fileno)
+            p = poller.Poller(fileno, persistent = persistent)
             p.start(self, evtype, cb, fileno)
 
             ## register the poller
@@ -213,6 +213,10 @@ class Hub(object):
             # invoke the callbacks in the poller and destroy it
             p(READ)
             p(WRITE)
+        except self.SYSTEM_EXCEPTIONS:
+            self.interrupted = True
+        except:
+            self.squelch_exception(fileno, sys.exc_info())
         finally:
             self._poller_canceled(p)
 
@@ -481,7 +485,7 @@ class Hub(object):
         except self.SYSTEM_EXCEPTIONS:
             self.interrupted = True
         except:
-            self.squelch_exception(-1, sys.exc_info())
+            self.squelch_exception(p.fileno, sys.exc_info())
 
         if not p.persistent:
             self._poller_canceled(p)
@@ -499,8 +503,8 @@ class Hub(object):
 
         p.destroy()
 
+        ## remove all references to the poller...
         try:
-            ## remove all references to the poller...
             del self.pollers[fileno]
         except KeyError:
             pass
@@ -688,6 +692,12 @@ class Hub(object):
     ## exceptions
     ##
 
+    def squelch_generic_exception (self, exc_info):
+        if self.debug_exceptions:
+            traceback.print_exception(*exc_info)
+            sys.stderr.flush()
+            clear_sys_exc_info()
+
     def squelch_exception (self, fileno, exc_info):
         traceback.print_exception(*exc_info)
         sys.stderr.write("Removing descriptor: %r\n" % (fileno,))
@@ -697,12 +707,6 @@ class Hub(object):
         except Exception, e:
             sys.stderr.write("Exception while removing descriptor! %r\n" % (e,))
             sys.stderr.flush()
-
-    def squelch_generic_exception (self, exc_info):
-        if self.debug_exceptions:
-            traceback.print_exception(*exc_info)
-            sys.stderr.flush()
-            clear_sys_exc_info()
 
     def squelch_timer_exception (self, timer, exc_info):
         if self.debug_exceptions:
