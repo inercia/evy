@@ -33,7 +33,6 @@ import warnings
 from tests import LimitedTestCase, main, skip_on_windows
 
 warnings.simplefilter('ignore', DeprecationWarning)
-from evy import processes, api
 
 warnings.simplefilter('default', DeprecationWarning)
 
