@@ -45,7 +45,7 @@ try:
     spawn_after = greenthread.spawn_after
     kill = greenthread.kill
 
-    Timeout = timeout.Timeout
+    Timeout = TimeoutError = timeout.Timeout
     with_timeout = timeout.with_timeout
 
     GreenPool = greenpool.GreenPool

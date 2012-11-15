@@ -42,7 +42,7 @@ import inspect
 
 __all__ = ['spew', 'unspew', 'format_hub_listeners', 'format_hub_timers',
            'hub_listener_stacks', 'hub_exceptions', 'tpool_exceptions',
-           'hub_prevent_multiple_readers', 'hub_timer_stacks',
+           'hub_timer_stacks',
            'hub_blocking_detection']
 
 _token_splitter = re.compile('\W+')
@@ -153,13 +153,6 @@ def hub_timer_stacks (state = False):
     from evy.hubs import timer
 
     timer._g_debug = state
-
-
-def hub_prevent_multiple_readers (state = True):
-    from evy.hubs import hub
-
-    hub.g_prevent_multiple_readers = state
-
 
 def hub_exceptions (state = True):
     """Toggles whether the hub prints exceptions that are raised from its

@@ -63,11 +63,11 @@ class Poller(object):
 
         self.fileno = fileno
         self.persistent = persistent
-        self.impl = None
         self.started = False
         self.read_callback = kw.pop('_read_callback', None)
         self.write_callback = kw.pop('_write_callback', None)
-        self.impl = watchers.Poll(get_hub(), fileno)
+        self.hub = kw.pop('_hub', get_hub())
+        self.impl = watchers.Poll(self.hub, fileno)
 
         if _g_debug:
             import traceback, cStringIO
@@ -128,7 +128,7 @@ class Poller(object):
         except AttributeError:
             pass
 
-        get_hub()._poller_canceled(self)
+        self.hub._poller_canceled(self)
 
     def destroy(self):
         """
@@ -138,9 +138,9 @@ class Poller(object):
         """
         self.read_callback = self.write_callback = None
 
-        assert self.impl
-        self.impl.stop()
-        del self.impl
+        if self.impl is not None:
+            self.impl.stop()
+            self.impl = None
 
     def forget(self):
         """
@@ -148,7 +148,6 @@ class Poller(object):
         the poller triggers.
         """
         get_hub().forget_poller(self)
-
 
     @property
     def notify_readable(self):

@@ -87,28 +87,11 @@ class Watcher(object):
 
         It will call the callback provided on the start() method
         """
-        #uv_handle = self._cast_libuv_handle(handle)
-
         if self.callback:
             try:
                 self.callback()
             except:
-                try:
-                    self.hub.handle_error(self, *sys.exc_info())
-                finally:
-                    #if revents & (libuv.UV_READABLE | libuv.UV_WRITABLE):
-                    #    # /* poll watcher: not stopping it may cause the failing callback to be called repeatedly */
-                    #    try:
-                    #        self.stop()
-                    #    except:
-                    #        self.hub.handle_error(self, *sys.exc_info())
-                    #    return
-                    pass
-
-        # callbacks' self.active differs from uv_is_active(...) at this point. don't use it!
-        #if not handle_is_active(uv_handle):
-        #    self.stop()
-
+                self.hub.handle_error(self, *sys.exc_info())
 
     ##
     ## references
@@ -159,7 +142,8 @@ class Watcher(object):
         :param callback: callback to invoke when the watcher is done
         :param args: arguments for calling the callback
         """
-        if callback: self.callback = partial(callback, *args, **kwargs)
+        if callback:
+            self.callback = partial(callback, *args, **kwargs)
 
         self._libuv_unref()
 
@@ -171,17 +155,10 @@ class Watcher(object):
         """
         Stop the watcher
         """
-        if self._flags & 2:
-            libuv.uv_ref(self.hub._uv_ptr)
-            self._flags &= ~2
-
-        if self._stop_func: self._stop_func()
+        if self._stop_func:
+            self._stop_func()
 
         self.callback = None
-
-        if self._flags & 1:
-            # Py_DECREF(<PyObjectPtr>self)
-            self._flags &= ~1
 
     @property
     def active(self):
@@ -210,6 +187,10 @@ class Watcher(object):
         """
         return ffi.cast(self.libuv_handle_type, handle)
 
+
+    def __repr__(self):
+        retval =  "%s (%d)" % (type(self).__name__, self.active)
+        return retval
 
 class Poll(Watcher):
     """
@@ -327,8 +308,13 @@ class Poll(Watcher):
     events = property(_get_events, _set_events)
 
 
-    def __repr__ (self):
-        return "%s(%r, %r, %r)" % (type(self).__name__, self.events, self.fileno, self.callback)
+    def __repr__(self):
+        events = ''
+        if self.read_callback: events += 'R'
+        if self.write_callback: events += 'W'
+
+        retval =  "Poller (%d, '%s')" % (self.fileno, events)
+        return retval
 
     __str__ = __repr__
 

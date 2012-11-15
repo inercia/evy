@@ -5,8 +5,6 @@ Many of these tests make connections to external servers, and all.py tries to sk
 
 from evy import debug
 
-debug.hub_prevent_multiple_readers(False)
-
 def restart_hub ():
     from evy import hubs
 

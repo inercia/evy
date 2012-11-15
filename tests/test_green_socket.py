@@ -499,9 +499,7 @@ class TestGreenSocket(LimitedTestCase):
         server.close()
         client.close()
 
-    @skip_with_pyevent
     def test_raised_multiple_readers (self):
-        debug.hub_prevent_multiple_readers(True)
 
         def handle (sock, addr):
             sock.recv(1)
@@ -509,9 +507,7 @@ class TestGreenSocket(LimitedTestCase):
             raise evy.StopServe()
 
         listener = evy.listen(('127.0.0.1', 0))
-        server = evy.spawn(evy.serve,
-                                listener,
-                                handle)
+        server = evy.spawn(evy.serve, listener, handle)
 
         def reader (s):
             s.recv(1)
@@ -523,8 +519,6 @@ class TestGreenSocket(LimitedTestCase):
         s.sendall('b')
         a.wait()
 
-    @skip_with_pyevent
-    @skip_if(using_epoll_hub)
     def test_closure (self):
         def spam_to_me (address):
             sock = evy.connect(address)
@@ -674,67 +668,6 @@ class TestGreenPipe(LimitedTestCase):
         f.write('1234567890')
         f.truncate(9)
         self.assertEquals(f.tell(), 9)
-
-
-class TestGreenIoLong(LimitedTestCase):
-    TEST_TIMEOUT = 10  # the test here might take a while depending on the OS
-
-    @skip_with_pyevent
-    def test_multiple_readers (self, clibufsize = False):
-        debug.hub_prevent_multiple_readers(False)
-        recvsize = 2 * min_buf_size()
-        sendsize = 10 * recvsize
-        # test that we can have multiple coroutines reading
-        # from the same fd.  We make no guarantees about which one gets which
-        # bytes, but they should both get at least some
-        def reader (sock, results):
-            while True:
-                data = sock.recv(recvsize)
-                if not data:
-                    break
-                results.append(data)
-
-        results1 = []
-        results2 = []
-        listener = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        listener.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        listener.bind(('127.0.0.1', 0))
-        listener.listen(50)
-
-        def server ():
-            (sock, addr) = listener.accept()
-            sock = bufsized(sock)
-            try:
-                c1 = evy.spawn(reader, sock, results1)
-                c2 = evy.spawn(reader, sock, results2)
-                try:
-                    c1.wait()
-                    c2.wait()
-                finally:
-                    c1.kill()
-                    c2.kill()
-            finally:
-                sock.close()
-
-        server_coro = evy.spawn(server)
-        client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        client.connect(('127.0.0.1', listener.getsockname()[1]))
-        if clibufsize:
-            bufsized(client, size = sendsize)
-        else:
-            bufsized(client)
-        client.sendall(s2b('*') * sendsize)
-        client.close()
-        server_coro.wait()
-        listener.close()
-        self.assert_(len(results1) > 0)
-        self.assert_(len(results2) > 0)
-        debug.hub_prevent_multiple_readers()
-
-    @skipped  # by rdw because it fails but it's not clear how to make it pass
-    @skip_with_pyevent
-    def test_multiple_readers2 (self):
-        self.test_multiple_readers(clibufsize = True)
 
 
 class TestGreenIoStarvation(LimitedTestCase):

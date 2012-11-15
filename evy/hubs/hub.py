@@ -33,10 +33,6 @@ import signal
 import sys
 import os
 
-from itertools import ifilter
-
-from weakref import WeakValueDictionary
-
 from evy.uv.interface import libuv, handle_unref
 from evy.uv.interface import ffi
 from evy.uv import watchers
@@ -100,7 +96,6 @@ class Hub(object):
     """
 
     SYSTEM_EXCEPTIONS = (KeyboardInterrupt, SystemExit)
-
     READ = READ
     WRITE = WRITE
 
@@ -124,8 +119,7 @@ class Hub(object):
         self.running = False
 
         self.timers = set()
-        self.pollers = set()
-        self.pollers_by_fd = WeakValueDictionary()
+        self.pollers = {}
 
         self.debug_exceptions = True
         self.debug_blocking = False
@@ -178,16 +172,22 @@ class Hub(object):
         :param fileno: the file number of the file of interest.
         :param cb: callback which will be called when the file is ready for reading/writing.
         """
-        if fileno in self.pollers_by_fd:
-            p = self.pollers_by_fd[fileno]
+        if fileno in self.pollers:
+            p = self.pollers[fileno]
+
+            ## check we do not have another callback on the same descriptor and event
+            if p.notify_readable and evtype is READ:
+                raise RuntimeError('there is already %s reading from descriptor %d' % (str(p), fileno))
+            if p.notify_writable and evtype is WRITE:
+                raise RuntimeError('there is already %s writing to descriptor %d' % (str(p), fileno))
+
             p.start(self, evtype, cb, fileno)
         else:
             p = poller.Poller(fileno)
             p.start(self, evtype, cb, fileno)
 
             ## register the poller
-            self.pollers.add(p)
-            self.pollers_by_fd[fileno] = p
+            self.pollers[fileno] = p
 
         return p
 
@@ -205,13 +205,17 @@ class Hub(object):
         Completely remove all watchers for this *fileno*. For internal use only.
         """
         try:
-            p = self.pollers_by_fd[fileno]
+            p = self.pollers[fileno]
         except KeyError:
             return
-        else:
-            # invoke the callback in the poller and destroy it
-            p(READ) and p(WRITE)
+
+        try:
+            # invoke the callbacks in the poller and destroy it
+            p(READ)
+            p(WRITE)
+        finally:
             self._poller_canceled(p)
+
 
     def set_timer_exceptions (self, value):
         """
@@ -492,14 +496,16 @@ class Hub(object):
         assert p and isinstance(p, poller.Poller)
 
         fileno = p.fileno
-        try:
-            poller.destroy()
 
+        p.destroy()
+
+        try:
             ## remove all references to the poller...
-            self.pollers.remove(timer)
-            del self.pollers_by_fd[fileno]
-        except (AttributeError, TypeError):
+            del self.pollers[fileno]
+        except KeyError:
             pass
+
+        assert fileno not in self.pollers
 
 
     def forget_poller(self, poller):
@@ -725,7 +731,11 @@ class Hub(object):
     ## readers and writers
     ##
     def get_readers(self):
-        return list(ifilter(lambda i: i.notify_readable, self.pollers))
+        return [x for x in self.pollers.values() if x.notify_readable]
 
     def get_writers(self):
-        return list(ifilter(lambda i: i.notify_writable, self.pollers))
+        return [x for x in self.pollers.values() if x.notify_writable]
+
+    def __repr__(self):
+        retval =  "Hub(%d pollers, %d timers, %d active)" % (self.poller_count, self.timers_count, self.num_active)
+        return retval
