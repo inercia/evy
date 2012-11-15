@@ -33,7 +33,9 @@ import signal
 import sys
 import os
 
-from weakref import WeakKeyDictionary
+from itertools import ifilter
+
+from weakref import WeakValueDictionary
 
 from evy.uv.interface import libuv, handle_unref
 from evy.uv.interface import ffi
@@ -72,8 +74,8 @@ time = patcher.original('time')
 
 
 
-READ = "read"
-WRITE = "write"
+READ = libuv.UV_READABLE
+WRITE = libuv.UV_WRITABLE
 
 
 
@@ -81,7 +83,7 @@ def alarm_handler (signum, frame):
     import inspect
     raise RuntimeError("Blocking detector ALARMED at" + str(inspect.getframeinfo(frame)))
 
-def signal_checker(uv_prepare_handle, status):
+def _signal_checker(uv_prepare_handle, status):
     pass  # XXX: how do I check for signals from pure python??
 
 
@@ -123,7 +125,7 @@ class Hub(object):
 
         self.timers = set()
         self.pollers = set()
-        self.pollers_by_fd = WeakKeyDictionary()
+        self.pollers_by_fd = WeakValueDictionary()
 
         self.debug_exceptions = True
         self.debug_blocking = False
@@ -143,7 +145,7 @@ class Hub(object):
                     raise SystemError("uv_default_loop() failed")
 
                 self._signal_checker = ffi.new("uv_prepare_t *")
-                self._signal_checker_cb = ffi.callback("void(*)(uv_prepare_t *, int)", signal_checker)
+                self._signal_checker_cb = ffi.callback("void(*)(uv_prepare_t *, int)", _signal_checker)
 
                 libuv.uv_prepare_init(self._uv_ptr, self._signal_checker)
                 libuv.uv_prepare_start(self._signal_checker, self._signal_checker_cb)
@@ -176,8 +178,18 @@ class Hub(object):
         :param fileno: the file number of the file of interest.
         :param cb: callback which will be called when the file is ready for reading/writing.
         """
-        p = poller.Poller(fileno, evtype, cb, fileno)
-        return self.add_poller(p)
+        if fileno in self.pollers_by_fd:
+            p = self.pollers_by_fd[fileno]
+            p.start(self, evtype, cb, fileno)
+        else:
+            p = poller.Poller(fileno)
+            p.start(self, evtype, cb, fileno)
+
+            ## register the poller
+            self.pollers.add(p)
+            self.pollers_by_fd[fileno] = p
+
+        return p
 
     def remove (self, p):
         """
@@ -192,11 +204,14 @@ class Hub(object):
         """
         Completely remove all watchers for this *fileno*. For internal use only.
         """
-        p = self.pollers_by_fd[fileno]
-
-        # invoke the callback in the poller and destroy it
-        p()
-        self._poller_canceled(p)
+        try:
+            p = self.pollers_by_fd[fileno]
+        except KeyError:
+            return
+        else:
+            # invoke the callback in the poller and destroy it
+            p(READ) and p(WRITE)
+            self._poller_canceled(p)
 
     def set_timer_exceptions (self, value):
         """
@@ -408,7 +423,7 @@ class Hub(object):
 
         try:
             self.timers.remove(timer)
-        except ValueError:
+        except KeyError:
             pass
 
     def _timer_triggered (self, timer):
@@ -449,25 +464,8 @@ class Hub(object):
     ## pollers
     ##
 
-    def add_poller (self, p):
-        """
-        Add a timer in the hub
 
-        :param timer:
-        :param unreferenced: if True, we unreference the timer, so the loop does not wait until it is triggered
-        :return:
-        """
-        assert isinstance(p, poller.Poller)
-
-        event_poller = watchers.Poller(self)
-        event_poller.impltimer = event_poller
-        event_poller.start(self._poller_triggered, p)
-
-        ## register the poller
-        self.pollers.add(event_poller)
-        self.pollers_by_fd[event_poller.fileno] = event_poller
-
-    def _poller_triggered (self, p):
+    def _poller_triggered (self, evtype, p):
         """
         Performs the poller trigger
 
@@ -475,7 +473,7 @@ class Hub(object):
         :return: nothing
         """
         try:
-            p()
+            p(evtype)
         except self.SYSTEM_EXCEPTIONS:
             self.interrupted = True
         except:
@@ -491,9 +489,13 @@ class Hub(object):
         :param poller: the poller that has been canceled
         :return: nothing
         """
+        assert p and isinstance(p, poller.Poller)
+
         fileno = p.fileno
         try:
             poller.destroy()
+
+            ## remove all references to the poller...
             self.pollers.remove(timer)
             del self.pollers_by_fd[fileno]
         except (AttributeError, TypeError):
@@ -616,8 +618,8 @@ class Hub(object):
         from evy.uv.watchers import Watcher
         return Watcher
 
-    def io(self, fd, events, ref=True):
-        return watchers.Poll(self, fd, events, ref)
+    def poller(self, fd, ref=True):
+        return watchers.Poll(self, fd, ref)
 
     def timer(self, after, repeat=0.0, ref=True):
         return watchers.Timer(self, after, repeat, ref)
@@ -718,3 +720,12 @@ class Hub(object):
         self.interrupted = True
         print "signal_received(): TODO"
 
+
+    ##
+    ## readers and writers
+    ##
+    def get_readers(self):
+        return list(ifilter(lambda i: i.notify_readable, self.pollers))
+
+    def get_writers(self):
+        return list(ifilter(lambda i: i.notify_writable, self.pollers))

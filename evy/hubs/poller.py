@@ -27,9 +27,15 @@
 from functools import partial
 
 from evy.hubs import get_hub
-from evy.hubs.hub import READ, WRITE
 from evy.uv import watchers
 from evy.uv.interface import libuv
+
+
+__all__ = [
+    'Poller',
+    ]
+
+
 
 ## If true, captures a stack trace for each poller when constructed.  This is
 ## useful for debugging leaking pollers, to find out where the poller was set up.
@@ -41,39 +47,27 @@ class Poller(object):
     A I/O poller
     """
 
-    def __init__(self, fileno, evtype, persistent = False, read_cb = None, write_cb = None, **kw):
+    def __init__(self, fileno, persistent = False, **kw):
         """
         Create a poller.
 
         :param fileno: the file descriptor we are going to poll
-        :param cb: The callback to call when we have detected we can use this file descriptor for reading or writting
+        :param cb: the callback to call when we have detected we can read/write from this file descriptor
         :param *args: the arguments to pass to cb
         :param **kw: the keyword arguments to pass to cb
 
         This poller will not be run unless it is scheduled in a hub by get_hub().add_poller(poller).
         """
-
         if fileno < 0:
             raise ValueError('invalid file descriptor: %d' % (fileno))
-        else:
-            self.fileno = fileno
 
+        self.fileno = fileno
         self.persistent = persistent
-
-        if '_read_callback' in kw:  self.read_callback = kw.pop('_read_callback')
-        else:                       self.read_callback = partial(read_cb, fileno)
-
-        if '_write_callback' in kw: self.write_callback = kw.pop('_write_callback')
-        else:                       self.write_callback = partial(write_cb, fileno)
-
-        if '_events' in kw:
-            self._events = kw.pop('_events')
-        else:
-            self._events = 0
-            if evtype == READ:
-                self._events = libuv.UV_READABLE
-            elif evtype == WRITE:
-                self._events = libuv.UV_WRITABLE
+        self.impl = None
+        self.started = False
+        self.read_callback = kw.pop('_read_callback', None)
+        self.write_callback = kw.pop('_write_callback', None)
+        self.impl = watchers.Poll(get_hub(), fileno)
 
         if _g_debug:
             import traceback, cStringIO
@@ -82,19 +76,46 @@ class Poller(object):
 
 
     def __repr__(self):
-        secs = getattr(self, 'seconds', None)
-        cb = getattr(self, 'callback', None)
-        retval =  "Poller(%s, %s)" % (secs, cb)
+
+        events = ''
+        if self.read_callback: events += 'R'
+        if self.write_callback: events += 'W'
+
+        retval =  "Poller(%d, '%s')" % (self.fileno, events)
+
         if _g_debug and hasattr(self, 'traceback'):
             retval += '\n' + self.traceback.getvalue()
         return retval
 
     def copy(self):
-        return self.__class__(self.fileno, None,
+        return self.__class__(self.fileno,
                               persistent = self.persistent,
-                              _events = self._events,
                               _read_callback = self.read_callback,
                               _write_callback = self.write_callback)
+
+    def start(self, hub, event, cb, *args):
+        """
+        Start the poller for an event on that file descriptor
+
+        :param hub: the hub where this watcher is registered
+        :param cb: the callback
+        :param args: the arguments for the callback
+        :return: the underlying watcher
+        """
+        assert self.impl is not None
+        assert event in [libuv.UV_READABLE, libuv.UV_WRITABLE]
+
+        try:
+            self.impl.start(event, hub._poller_triggered, event, self)
+        except:
+            pass
+        else:
+            cb = partial(cb, *args)
+            if event is libuv.UV_READABLE:  self.read_callback  = cb
+            else:                           self.write_callback = cb
+
+        return self.impl
+
 
     def cancel(self):
         """
@@ -102,8 +123,8 @@ class Poller(object):
         been called or canceled, has no effect.
         """
         try:
-            if self._events & libuv.UV_READABLE:    del self.read_callback
-            if self._events & libuv.UV_WRITEABLE:   del self.write_callback
+            if self.notify_readable:   self.read_callback = None
+            if self.notify_writable:   self.write_callback = None
         except AttributeError:
             pass
 
@@ -115,8 +136,11 @@ class Poller(object):
 
         Invoke this method when this poller is no longer used
         """
-        self.implpoller.stop()
-        del self.implpoller
+        self.read_callback = self.write_callback = None
+
+        assert self.impl
+        self.impl.stop()
+        del self.impl
 
     def forget(self):
         """
@@ -126,38 +150,21 @@ class Poller(object):
         get_hub().forget_poller(self)
 
 
-    ##
-    ## the events we are watching
-    ##
+    @property
+    def notify_readable(self):
+        return self.read_callback is not None
 
-    def _set_events(self, event):
-        new_events = self._events
-        if event == READ:       new_events |= libuv.UV_READABLE
-        elif event == WRITE:    new_events |= libuv.UV_WRITABLE
-
-        ## TODO: update the events we are polling here...
-
-    def _get_events(self):
-        return self._events
-
-    events = property(_get_events, _set_events)
-
+    @property
+    def notify_writable(self):
+        return self.write_callback is not None
 
     ##
     ## callbacks
     ##
 
-    def __call__(self, *args):
-        try:
-            if self._events & libuv.UV_READABLE:    self.read_callback()
-            if self._events & libuv.UV_WRITEABLE:   self.write_callback()
-        finally:
-            try:
-                if not self.persistent:
-                    if self._events & libuv.UV_READABLE:    del self.read_callback
-                    if self._events & libuv.UV_WRITEABLE:   del self.write_callback
-            except AttributeError:
-                pass
+    def __call__(self, evtype):
+        if self.notify_readable and evtype is libuv.UV_READABLE:   self.read_callback()
+        if self.notify_writable and evtype is libuv.UV_WRITABLE:   self.write_callback()
 
     # No default ordering in 3.x. heapq uses <
     # FIXME should full set be added?
