@@ -33,7 +33,6 @@ import unittest
 import warnings
 
 warnings.simplefilter('ignore', DeprecationWarning)
-from evy import proc
 
 warnings.simplefilter('default', DeprecationWarning)
 from evy import coros

@@ -292,7 +292,7 @@ class TestCoroutinePool(LimitedTestCase):
         self.assertEquals(tp.get(), 'wakeup')
 
 
-class PoolBasicTests(LimitedTestCase):
+class TestPoolBasicTests(LimitedTestCase):
     klass = pool.Pool
 
     def test_execute_async (self):

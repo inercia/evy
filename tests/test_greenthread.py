@@ -28,9 +28,24 @@
 #
 
 
+from unittest import TestCase, main
+import warnings
+
 from tests import LimitedTestCase
+from tests import skip_if_no_ssl
+
+import evy
 from evy import greenthread
 from evy.support import greenlets as greenlet
+from evy import greenio, util, hubs, greenthread, spawn
+
+
+
+
+warnings.simplefilter('ignore', DeprecationWarning)
+warnings.simplefilter('default', DeprecationWarning)
+
+
 
 _g_results = []
 
@@ -43,6 +58,21 @@ def waiter (a):
     greenthread.sleep(0.1)
     return a
 
+def check_hub ():
+    # Clear through the descriptor queue
+    greenthread.sleep(0)
+    greenthread.sleep(0)
+    hub = hubs.get_hub()
+    for nm in 'get_readers', 'get_writers':
+        dct = getattr(hub, nm)()
+        assert not dct, "hub.%s not empty: %s" % (nm, dct)
+        # Stop the runloop (unless it's twistedhub which does not support that)
+    if not getattr(hub, 'uses_twisted_reactor', None):
+        hub.abort(True)
+        assert not hub.running
+
+
+
 
 class Asserts(object):
     def assert_dead (self, gt):
@@ -52,10 +82,10 @@ class Asserts(object):
         self.assert_(not gt)
 
 
-class Spawn(LimitedTestCase, Asserts):
+class TestSpawn(LimitedTestCase, Asserts):
     def tearDown (self):
         global _g_results
-        super(Spawn, self).tearDown()
+        super(TestSpawn, self).tearDown()
         _g_results = []
 
     def test_simple (self):
@@ -124,7 +154,7 @@ class Spawn(LimitedTestCase, Asserts):
         self.assertEquals(results, [gt, (4,), {'b': 5}])
 
 
-class SpawnAfter(LimitedTestCase, Asserts):
+class TestSpawnAfter(LimitedTestCase, Asserts):
     def test_basic (self):
         gt = greenthread.spawn_after(0.1, passthru, 20)
         self.assertEquals(gt.wait(), ((20,), {}))
@@ -147,9 +177,9 @@ class SpawnAfter(LimitedTestCase, Asserts):
         self.assert_dead(gt)
 
 
-class SpawnAfterLocal(LimitedTestCase, Asserts):
+class TestSpawnAfterLocal(LimitedTestCase, Asserts):
     def setUp (self):
-        super(SpawnAfterLocal, self).setUp()
+        super(TestSpawnAfterLocal, self).setUp()
         self.lst = [1]
 
     def test_timer_fired (self):
@@ -179,3 +209,140 @@ class SpawnAfterLocal(LimitedTestCase, Asserts):
         greenthread.spawn(func)
         greenthread.sleep(0.1)
         assert self.lst == [], self.lst
+
+
+
+class TestGreenHub(TestCase):
+
+
+    def test_tcp_listener (self):
+        socket = evy.listen(('0.0.0.0', 0))
+        assert socket.getsockname()[0] == '0.0.0.0'
+        socket.close()
+
+        check_hub()
+
+    def test_connect_tcp (self):
+        def accept_once (listenfd):
+            try:
+                conn, addr = listenfd.accept()
+                fd = conn.makefile(mode = 'w')
+                conn.close()
+                fd.write('hello\n')
+                fd.close()
+            finally:
+                listenfd.close()
+
+        server = evy.listen(('0.0.0.0', 0))
+        greenthread.spawn(accept_once, server)
+
+        client = evy.connect(('127.0.0.1', server.getsockname()[1]))
+        fd = client.makefile()
+        client.close()
+        assert fd.readline() == 'hello\n'
+
+        assert fd.read() == ''
+        fd.close()
+
+        check_hub()
+
+    def test_001_trampoline_timeout (self):
+        from evy import coros
+
+        server_sock = evy.listen(('127.0.0.1', 0))
+        bound_port = server_sock.getsockname()[1]
+
+        def server (sock):
+            client, addr = sock.accept()
+            greenthread.sleep(0.1)
+
+        server_evt = spawn(server, server_sock)
+        greenthread.sleep(0)
+        try:
+            desc = evy.connect(('127.0.0.1', bound_port))
+            hubs.trampoline(desc, read = True, write = False, timeout = 0.001)
+        except greenthread.TimeoutError:
+            pass # test passed
+        else:
+            assert False, "Didn't timeout"
+
+        server_evt.wait()
+        check_hub()
+
+    def test_timeout_cancel (self):
+        server = evy.listen(('0.0.0.0', 0))
+        bound_port = server.getsockname()[1]
+
+        done = [False]
+
+        def client_closer (sock):
+            while True:
+                (conn, addr) = sock.accept()
+                conn.close()
+
+        def go ():
+            desc = evy.connect(('127.0.0.1', bound_port))
+            try:
+                hubs.trampoline(desc, read = True, timeout = 0.1)
+            except greenthread.TimeoutError:
+                assert False, "Timed out"
+
+            server.close()
+            desc.close()
+            done[0] = True
+
+        greenthread.spawn_after_local(0, go)
+
+        server_coro = greenthread.spawn(client_closer, server)
+        while not done[0]:
+            greenthread.sleep(0)
+        greenthread.kill(server_coro)
+
+        check_hub()
+
+    def test_named (self):
+        named_foo = greenthread.named('tests.api_test.Foo')
+        self.assertEquals(
+            named_foo.__name__,
+            "Foo")
+
+    def test_naming_missing_class (self):
+        self.assertRaises(
+            ImportError, greenthread.named, 'this_name_should_hopefully_not_exist.Foo')
+
+
+    def test_killing_dormant (self):
+        DELAY = 0.1
+        state = []
+
+        def test ():
+            try:
+                state.append('start')
+                greenthread.sleep(DELAY)
+            except:
+                state.append('except')
+                # catching GreenletExit
+                pass
+                # when switching to hub, hub makes itself the parent of this greenlet,
+            # thus after the function's done, the control will go to the parent
+            greenthread.sleep(0)
+            state.append('finished')
+
+        g = greenthread.spawn(test)
+        greenthread.sleep(DELAY / 2)
+        self.assertEquals(state, ['start'])
+        greenthread.kill(g)
+        # will not get there, unless switching is explicitly scheduled by kill
+        self.assertEquals(state, ['start', 'except'])
+        greenthread.sleep(DELAY)
+        self.assertEquals(state, ['start', 'except', 'finished'])
+
+    def test_nested_with_timeout (self):
+        def func ():
+            return greenthread.with_timeout(0.2, greenthread.sleep, 2, timeout_value = 1)
+
+        self.assertRaises(greenthread.TimeoutError, greenthread.with_timeout, 0.1, func)
+
+
+class Foo(object):
+    pass

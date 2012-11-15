@@ -64,7 +64,8 @@ def mysql_requirement (_f):
         return False
 
 
-class MySQLdbTester(LimitedTestCase):
+class TestMySQLdb(LimitedTestCase):
+
     def setUp (self):
         self._auth = get_database_auth()['MySQLdb']
         self.create_db()
@@ -247,9 +248,13 @@ class MySQLdbTester(LimitedTestCase):
             curs.execute("delete from gargleblatz where a=314159")
             conn.commit()
 
+
+
 from tests import test_patcher
 
-class MonkeyPatchTester(test_patcher.ProcessBase):
+
+class TestMySQLMonkeyPatch(test_patcher.ProcessBase):
+
     @skip_unless(mysql_requirement)
     def test_monkey_patching (self):
         output, lines = self.run_script("""

@@ -28,13 +28,20 @@
 #
 
 
+import socket
+import os
+
 from tests import LimitedTestCase, certificate_file, private_key_file
 from tests import skip_if_no_ssl
 from unittest import main
+
 import evy
 from evy import util, coros, greenio
-import socket
-import os
+from evy import greenthread
+
+
+
+
 
 def listen_ssl_socket (address = ('127.0.0.1', 0)):
     sock = util.wrap_ssl(socket.socket(), certificate_file,
@@ -46,6 +53,10 @@ def listen_ssl_socket (address = ('127.0.0.1', 0)):
 
 
 class SSLTest(LimitedTestCase):
+
+    certificate_file = os.path.join(os.path.dirname(__file__), 'test_server.crt')
+    private_key_file = os.path.join(os.path.dirname(__file__), 'test_server.key')
+
     @skip_if_no_ssl
     def test_duplex_response (self):
         def serve (listener):
@@ -101,6 +112,36 @@ class SSLTest(LimitedTestCase):
         server_coro.wait()
 
     @skip_if_no_ssl
+    def test_ssl_connect2 (self):
+        def accept_once (listenfd):
+            try:
+                conn, addr = listenfd.accept()
+                conn.write('hello\r\n')
+                greenio.shutdown_safe(conn)
+                conn.close()
+            finally:
+                greenio.shutdown_safe(listenfd)
+                listenfd.close()
+
+        server = api.ssl_listener(('0.0.0.0', 0),
+                                  self.certificate_file,
+                                  self.private_key_file)
+        greenthread.spawn(accept_once, server)
+
+        raw_client = evy.connect(('127.0.0.1', server.getsockname()[1]))
+        client = util.wrap_ssl(raw_client)
+        fd = socket._fileobject(client, 'rb', 8192)
+
+        assert fd.readline() == 'hello\r\n'
+        try:
+            self.assertEquals('', fd.read(10))
+        except greenio.SSL.ZeroReturnError:
+            # if it's a GreenSSL object it'll do this
+            pass
+        greenio.shutdown_safe(client)
+        client.close()
+
+    @skip_if_no_ssl
     def test_ssl_unwrap (self):
         def serve ():
             sock, addr = listener.accept()
@@ -126,6 +167,8 @@ class SSLTest(LimitedTestCase):
 
 
 class SocketSSLTest(LimitedTestCase):
+
+
     @skip_if_no_ssl
     def test_greensslobject (self):
         import warnings

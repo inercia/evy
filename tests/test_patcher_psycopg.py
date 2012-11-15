@@ -65,7 +65,8 @@ assert count[0] > 100, count[0]
 print "done"
 """
 
-class PatchingPsycopg(patcher_test.ProcessBase):
+class TestPatchingPsycopg(patcher_test.ProcessBase):
+
     @skip_unless(postgres_requirement)
     def test_psycopg_patched (self):
         if 'PSYCOPG_TEST_DSN' not in os.environ:

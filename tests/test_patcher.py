@@ -96,7 +96,7 @@ class ProcessBase(LimitedTestCase):
         return self.launch_subprocess(modname)
 
 
-class ImportPatched(ProcessBase):
+class TestImportPatched(ProcessBase):
     def test_patch_a_module (self):
         self.write_to_tempfile("base", base_module_contents)
         self.write_to_tempfile("patching", patching_module_contents)
@@ -126,7 +126,9 @@ print "newmod", base, base.socket, base.urllib.socket.socket
         self.assert_('GreenSocket' in lines[1], repr(output))
 
 
-class MonkeyPatch(ProcessBase):
+
+class TestMonkeyPatch(ProcessBase):
+
     def test_patched_modules (self):
         new_mod = """
 from evy import patcher
@@ -264,10 +266,9 @@ def test_monkey_patch_threading():
     tpool.killall()
 """
 
-class Tpool(ProcessBase):
+class TestTpool(ProcessBase):
     TEST_TIMEOUT = 3
 
-    @skip_with_pyevent
     def test_simple (self):
         new_mod = """
 import evy
@@ -285,7 +286,6 @@ tpool.killall()
         self.assert_('2' in lines[0], repr(output))
         self.assert_('3' in lines[1], repr(output))
 
-    @skip_with_pyevent
     def test_unpatched_thread (self):
         new_mod = """import evy
 evy.monkey_patch(time=False, thread=False)
@@ -298,7 +298,6 @@ import time
         output, lines = self.launch_subprocess('newmod.py')
         self.assertEqual(len(lines), 2, lines)
 
-    @skip_with_pyevent
     def test_patched_thread (self):
         new_mod = """import evy
 evy.monkey_patch(time=False, thread=True)
@@ -312,7 +311,7 @@ import time
         self.assertEqual(len(lines), 2, "\n".join(lines))
 
 
-class Subprocess(ProcessBase):
+class TestSubprocess(ProcessBase):
     def test_monkeypatched_subprocess (self):
         new_mod = """import evy
 evy.monkey_patch()
@@ -326,7 +325,10 @@ print "done"
         self.assertEqual(output, "done\n", output)
 
 
-class Threading(ProcessBase):
+
+
+class TestThreading(ProcessBase):
+
     def test_orig_thread (self):
         new_mod = """import evy
 evy.monkey_patch()
@@ -425,7 +427,8 @@ evy.monkey_patch()
         self.assertEqual(len(lines), 1, "\n".join(lines))
 
 
-class GreenThreadWrapper(ProcessBase):
+class TestGreenThreadWrapper(ProcessBase):
+
     prologue = """import evy
 evy.monkey_patch()
 import threading
