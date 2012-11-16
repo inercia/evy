@@ -327,15 +327,15 @@ class Hub(object):
                 if self.debug_blocking:
                     self.block_detect_pre()
 
-                if self.debug_blocking:
-                    self.block_detect_post()
-
                 try:
                     status = self.loop(once = True)
                 except self.SYSTEM_EXCEPTIONS:
                     self.interrupted = True
                 except:
                     self.squelch_exception(-1, sys.exc_info())
+
+                if self.debug_blocking:
+                    self.block_detect_post()
 
                 ## if there are no active events, just get out of here...
                 if self.num_active == 0:
