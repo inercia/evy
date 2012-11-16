@@ -240,3 +240,67 @@ class Event(object):
         """
         # the arguments and the same as for greenlet.throw
         return self.send(None, args)
+
+
+
+class metaphore(object):
+    """
+    This is sort of an inverse semaphore: a counter that starts at 0 and
+    waits only if nonzero. It's used to implement a "wait for all" scenario.
+
+    >>> from evy import event
+    >>> count = event.metaphore()
+    >>> count.wait()
+    >>> def decrementer(count, id):
+    ...     print "%s decrementing" % id
+    ...     count.dec()
+    ...
+    >>> _ = evy.spawn(decrementer, count, 'A')
+    >>> _ = evy.spawn(decrementer, count, 'B')
+    >>> count.inc(2)
+    >>> count.wait()
+    A decrementing
+    B decrementing
+    """
+
+    def __init__ (self):
+        self.counter = 0
+        self.event = Event()
+        # send() right away, else we'd wait on the default 0 count!
+        self.event.send()
+
+    def inc (self, by = 1):
+        """
+        Increment our counter. If this transitions the counter from zero to
+        nonzero, make any subsequent :meth:`wait` call wait.
+        """
+        assert by > 0
+        self.counter += by
+        if self.counter == by:
+            # If we just incremented self.counter by 'by', and the new count
+            # equals 'by', then the old value of self.counter was 0.
+            # Transitioning from 0 to a nonzero value means wait() must
+            # actually wait.
+            self.event.reset()
+
+    def dec (self, by = 1):
+        """
+        Decrement our counter. If this transitions the counter from nonzero
+        to zero, a current or subsequent wait() call need no longer wait.
+        """
+        assert by > 0
+        self.counter -= by
+        if self.counter <= 0:
+            # Don't leave self.counter < 0, that will screw things up in
+            # future calls.
+            self.counter = 0
+            # Transitioning from nonzero to 0 means wait() need no longer wait.
+            self.event.send()
+
+    def wait (self):
+        """
+        Suspend the caller only if our count is nonzero. In that case,
+        resume the caller once the count decrements to zero again.
+        """
+        self.event.wait()
+
