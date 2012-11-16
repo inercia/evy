@@ -1,7 +1,7 @@
 
 # the python interpreter
-PYTHON=python
-#PYTHON=pypy
+#PYTHON=python
+PYTHON=pypy
 
 # the libuv directory
 LIBUV_DIR=libuv
@@ -28,6 +28,16 @@ checkout-submodule:
 update-submodule:
 	@echo ">>> Getting latests changes from submodules..."
 	git submodule foreach git pull origin master
+
+##############################
+# testing
+##############################
+
+.PHONY: tests
+tests: test
+test:
+	@echo ">>> Running all tests..."
+	@PYTHONPATH=`pwd` nosetests -v
 
 ##############################
 # cleaning
