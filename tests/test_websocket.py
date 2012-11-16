@@ -40,7 +40,7 @@ from evy import greenio
 
 from tests import mock, LimitedTestCase, certificate_file, private_key_file
 from tests import skip_if_no_ssl
-from tests.wsgi_test import _TestBase
+from tests.test_wsgi import _TestBase
 
 
 # demo app

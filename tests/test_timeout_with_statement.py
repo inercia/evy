@@ -47,8 +47,11 @@ class Error(Exception):
 
 
 class Test(LimitedTestCase):
+
     def test_cancellation (self):
-        # Nothing happens if with-block finishes before the timeout expires
+        """
+        Testing that nothing happens if with-block finishes before the timeout expires
+        """
         t = Timeout(DELAY * 2)
         sleep(0)  # make it pending
         assert t.pending, repr(t)
@@ -60,7 +63,9 @@ class Test(LimitedTestCase):
         sleep(DELAY * 2)
 
     def test_raising_self (self):
-        # An exception will be raised if it's not
+        """
+        Testing that an exception will be raised if it's not
+        """
         try:
             with Timeout(DELAY) as t:
                 sleep(DELAY * 2)
@@ -70,7 +75,9 @@ class Test(LimitedTestCase):
             raise AssertionError('must raise Timeout')
 
     def test_raising_self_true (self):
-        # specifying True as the exception raises self as well
+        """
+        Testing that specifying True as the exception raises self as well
+        """
         try:
             with Timeout(DELAY, True) as t:
                 sleep(DELAY * 2)
@@ -80,7 +87,9 @@ class Test(LimitedTestCase):
             raise AssertionError('must raise Timeout')
 
     def test_raising_custom_exception (self):
-        # You can customize the exception raised:
+        """
+        Testing that ww can customize the exception raised
+        """
         try:
             with Timeout(DELAY, IOError("Operation takes way too long")):
                 sleep(DELAY * 2)
@@ -88,7 +97,9 @@ class Test(LimitedTestCase):
             assert str(ex) == "Operation takes way too long", repr(ex)
 
     def test_raising_exception_class (self):
-        # Providing classes instead of values should be possible too:
+        """
+        Testing that we can provide classes instead of values should be possible too
+        """
         try:
             with Timeout(DELAY, ValueError):
                 sleep(DELAY * 2)
@@ -110,15 +121,19 @@ class Test(LimitedTestCase):
             raise AssertionError('should not get there')
 
     def test_cancel_timer_inside_block (self):
-        # It's possible to cancel the timer inside the block:
+        """
+        Testing that it's possible to cancel the timer inside the block
+        """
         with Timeout(DELAY) as timer:
             timer.cancel()
             sleep(DELAY * 2)
 
 
     def test_silent_block (self):
-        # To silence the exception before exiting the block, pass
-        # False as second parameter.
+        """
+        Testing that, to silence the exception before exiting the block, we can pass
+        False as second parameter.
+        """
         XDELAY = 0.1
         start = time.time()
         with Timeout(XDELAY, False):
@@ -128,7 +143,9 @@ class Test(LimitedTestCase):
 
 
     def test_dummy_timer (self):
-        # passing None as seconds disables the timer
+        """
+        Testing that passing None as seconds disables the timer
+        """
         with Timeout(None):
             sleep(DELAY)
         sleep(DELAY)

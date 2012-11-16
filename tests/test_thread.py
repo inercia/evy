@@ -29,10 +29,12 @@
 
 
 import weakref
+
+import evy
+
 from evy.green import thread
 from evy import greenthread
 from evy import event
-import evy
 from evy import corolocal
 
 from tests import LimitedTestCase, skipped

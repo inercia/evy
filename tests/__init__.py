@@ -255,5 +255,5 @@ def get_database_auth ():
             pass
     return retval
 
-certificate_file = os.path.join(os.path.dirname(__file__), 'test_server.crt')
-private_key_file = os.path.join(os.path.dirname(__file__), 'test_server.key')
+certificate_file = os.path.join(os.path.dirname(__file__), 'server.crt')
+private_key_file = os.path.join(os.path.dirname(__file__), 'server.key')

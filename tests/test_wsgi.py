@@ -48,8 +48,8 @@ from tests import find_command
 
 httplib = evy.import_patched('httplib')
 
-certificate_file = os.path.join(os.path.dirname(__file__), 'test_server.crt')
-private_key_file = os.path.join(os.path.dirname(__file__), 'test_server.key')
+certificate_file = os.path.join(os.path.dirname(__file__), 'server.crt')
+private_key_file = os.path.join(os.path.dirname(__file__), 'server.key')
 
 try:
     from cStringIO import StringIO
@@ -412,8 +412,8 @@ class TestHttpd(_TestBase):
             start_response('200 OK', {})
             return [environ['wsgi.input'].read()]
 
-        certificate_file = os.path.join(os.path.dirname(__file__), 'test_server.crt')
-        private_key_file = os.path.join(os.path.dirname(__file__), 'test_server.key')
+        certificate_file = os.path.join(os.path.dirname(__file__), 'server.crt')
+        private_key_file = os.path.join(os.path.dirname(__file__), 'server.key')
 
         server_sock = evy.wrap_ssl(evy.listen(('localhost', 0)),
                                         certfile = certificate_file,
@@ -434,8 +434,8 @@ class TestHttpd(_TestBase):
             start_response("200 OK", [])
             return [""]
 
-        certificate_file = os.path.join(os.path.dirname(__file__), 'test_server.crt')
-        private_key_file = os.path.join(os.path.dirname(__file__), 'test_server.key')
+        certificate_file = os.path.join(os.path.dirname(__file__), 'server.crt')
+        private_key_file = os.path.join(os.path.dirname(__file__), 'server.key')
         server_sock = evy.wrap_ssl(evy.listen(('localhost', 0)),
                                         certfile = certificate_file,
                                         keyfile = private_key_file,
@@ -546,8 +546,8 @@ class TestHttpd(_TestBase):
             start_response('200 OK', [])
             return [environ['wsgi.input'].read()]
 
-        certificate_file = os.path.join(os.path.dirname(__file__), 'test_server.crt')
-        private_key_file = os.path.join(os.path.dirname(__file__), 'test_server.key')
+        certificate_file = os.path.join(os.path.dirname(__file__), 'server.crt')
+        private_key_file = os.path.join(os.path.dirname(__file__), 'server.key')
 
         sock = evy.wrap_ssl(evy.listen(('localhost', 0)),
                                  certfile = certificate_file,
@@ -1191,7 +1191,7 @@ class IterableAlreadyHandledTest(_TestBase):
 class ProxiedIterableAlreadyHandledTest(IterableAlreadyHandledTest):
     # same thing as the previous test but ensuring that it works with tpooled
     # results as well as regular ones
-    @skip_with_pyevent
+    
     def get_app (self):
         from evy import tpool
 

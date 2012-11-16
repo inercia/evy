@@ -678,7 +678,7 @@ class TestGreenIoStarvation(LimitedTestCase):
     TEST_TIMEOUT = 300  # the test here might take a while depending on the OS
 
     @skipped  # by rdw, because it fails but it's not clear how to make it pass
-    @skip_with_pyevent
+    
     def test_server_starvation (self, sendloops = 15):
         recvsize = 2 * min_buf_size()
         sendsize = 10000 * recvsize

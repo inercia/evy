@@ -501,7 +501,7 @@ class TpoolConnectionPool(DBConnectionPool):
                                              **self._auth)
 
 
-    @skip_with_pyevent
+    
     def setUp (self):
         super(TpoolConnectionPool, self).setUp()
 

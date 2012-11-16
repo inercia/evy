@@ -34,6 +34,7 @@ from evy import semaphore
 from tests import LimitedTestCase
 
 class TestSemaphore(LimitedTestCase):
+
     def test_bounded (self):
         sem = semaphore.CappedSemaphore(2, limit = 3)
         self.assertEqual(sem.acquire(), True)

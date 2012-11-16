@@ -44,7 +44,7 @@ def noop ():
 class TestTimerCleanup(LimitedTestCase):
     TEST_TIMEOUT = 2
 
-    @skip_with_pyevent
+    
     def test_cancel_immediate (self):
         hub = hubs.get_hub()
         stimers = hub.timers_count
@@ -56,7 +56,7 @@ class TestTimerCleanup(LimitedTestCase):
         self.assert_less_than_equal(hub.timers_count, 1000 + stimers)
 
 
-    @skip_with_pyevent
+    
     def test_cancel_accumulated (self):
         hub = hubs.get_hub()
         stimers = hub.timers_count
@@ -68,7 +68,7 @@ class TestTimerCleanup(LimitedTestCase):
 
         self.assert_less_than_equal(hub.timers_count, 1000 + stimers)
 
-    @skip_with_pyevent
+    
     def test_cancel_proportion (self):
         # if fewer than half the pending timers are canceled, it should
         # not clean them out
@@ -152,7 +152,7 @@ class TestExceptionInMainloop(LimitedTestCase):
 class TestHubBlockingDetector(LimitedTestCase):
     TEST_TIMEOUT = 10
 
-    @skip_with_pyevent
+    
     def test_block_detect (self):
         def look_im_blocking ():
             import time
@@ -166,12 +166,11 @@ class TestHubBlockingDetector(LimitedTestCase):
         self.assertRaises(RuntimeError, gt.wait)
         debug.hub_blocking_detection(False)
 
-    @skip_with_pyevent
+    
     @skip_if_no_itimer
     def test_block_detect_with_itimer (self):
         def look_im_blocking ():
             import time
-
             time.sleep(0.5)
 
         from evy import debug
@@ -238,7 +237,7 @@ from tests.test_patcher import ProcessBase
 
 
 class TestFork(ProcessBase):
-    @skip_with_pyevent
+    
     def test_fork (self):
         new_mod = """
 import os

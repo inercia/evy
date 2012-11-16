@@ -75,7 +75,6 @@ class TestTpool(LimitedTestCase):
         tpool.killall()
         super(TestTpool, self).tearDown()
 
-    @skip_with_pyevent
     def test_wrap_tuple (self):
         my_tuple = (1, 2)
         prox = tpool.Proxy(my_tuple)
@@ -83,7 +82,6 @@ class TestTpool(LimitedTestCase):
         self.assertEqual(prox[1], 2)
         self.assertEqual(len(my_tuple), 2)
 
-    @skip_with_pyevent
     def test_wrap_string (self):
         my_object = "whatever"
         prox = tpool.Proxy(my_object)
@@ -91,7 +89,6 @@ class TestTpool(LimitedTestCase):
         self.assertEqual(len(my_object), len(prox))
         self.assertEqual(my_object.join(['a', 'b']), prox.join(['a', 'b']))
 
-    @skip_with_pyevent
     def test_wrap_uniterable (self):
         prox = tpool.Proxy([])
 
@@ -104,7 +101,6 @@ class TestTpool(LimitedTestCase):
         self.assertRaises(IndexError, index)
         self.assertRaises(TypeError, key)
 
-    @skip_with_pyevent
     def test_wrap_dict (self):
         my_object = {'a': 1}
         prox = tpool.Proxy(my_object)
@@ -113,7 +109,6 @@ class TestTpool(LimitedTestCase):
         self.assertEqual(str(my_object), str(prox))
         self.assertEqual(repr(my_object), repr(prox))
 
-    @skip_with_pyevent
     def test_wrap_module_class (self):
         prox = tpool.Proxy(re)
         self.assertEqual(tpool.Proxy, type(prox))
@@ -121,7 +116,6 @@ class TestTpool(LimitedTestCase):
         self.assertEqual(exp.groups, 3)
         self.assert_(repr(prox.compile))
 
-    @skip_with_pyevent
     def test_wrap_eq (self):
         prox = tpool.Proxy(re)
         exp1 = prox.compile('.')
@@ -130,12 +124,10 @@ class TestTpool(LimitedTestCase):
         exp3 = prox.compile('/')
         self.assert_(exp1 != exp3)
 
-    @skip_with_pyevent
     def test_wrap_ints (self):
         p = tpool.Proxy(4)
         self.assert_(p == 4)
 
-    @skip_with_pyevent
     def test_wrap_hash (self):
         prox1 = tpool.Proxy('' + 'A')
         prox2 = tpool.Proxy('A' + '')
@@ -146,7 +138,6 @@ class TestTpool(LimitedTestCase):
         proxList = tpool.Proxy([])
         self.assertRaises(TypeError, hash, proxList)
 
-    @skip_with_pyevent
     def test_wrap_nonzero (self):
         prox = tpool.Proxy(re)
         exp1 = prox.compile('.')
@@ -154,7 +145,6 @@ class TestTpool(LimitedTestCase):
         prox2 = tpool.Proxy([1, 2, 3])
         self.assert_(bool(prox2))
 
-    @skip_with_pyevent
     def test_multiple_wraps (self):
         prox1 = tpool.Proxy(re)
         prox2 = tpool.Proxy(re)
@@ -163,18 +153,15 @@ class TestTpool(LimitedTestCase):
         del x2
         x3 = prox2.compile('.')
 
-    @skip_with_pyevent
     def test_wrap_getitem (self):
         prox = tpool.Proxy([0, 1, 2])
         self.assertEqual(prox[0], 0)
 
-    @skip_with_pyevent
     def test_wrap_setitem (self):
         prox = tpool.Proxy([0, 1, 2])
         prox[1] = 2
         self.assertEqual(prox[1], 2)
 
-    @skip_with_pyevent
     def test_wrap_iterator (self):
         self.reset_timeout(2)
         prox = tpool.Proxy(xrange(10))
@@ -183,7 +170,6 @@ class TestTpool(LimitedTestCase):
             result.append(i)
         self.assertEquals(range(10), result)
 
-    @skip_with_pyevent
     def test_wrap_iterator2 (self):
         self.reset_timeout(5)  # might take a while due to imprecise sleeping
 
@@ -213,7 +199,6 @@ class TestTpool(LimitedTestCase):
         self.assert_(counter[0] > 10, counter[0])
         gt.kill()
 
-    @skip_with_pyevent
     def test_raising_exceptions (self):
         prox = tpool.Proxy(re)
 
@@ -222,12 +207,11 @@ class TestTpool(LimitedTestCase):
 
         self.assertRaises(AttributeError, nofunc)
 
-        from tests import tpool_test
+        from tests import test_tpool
 
-        prox = tpool.Proxy(tpool_test)
+        prox = tpool.Proxy(test_tpool)
         self.assertRaises(RuntimeError, prox.raise_exception)
 
-    @skip_with_pyevent
     def test_variable_and_keyword_arguments_with_function_calls (self):
         import optparse
 
@@ -236,11 +220,10 @@ class TestTpool(LimitedTestCase):
         opts, args = parser.parse_args(["-nfoo"])
         self.assertEqual(opts.n, 'foo')
 
-    @skip_with_pyevent
     def test_contention (self):
-        from tests import tpool_test
+        from tests import test_tpool
 
-        prox = tpool.Proxy(tpool_test)
+        prox = tpool.Proxy(test_tpool)
 
         pile = evy.GreenPile(4)
         pile.spawn(lambda: self.assertEquals(prox.one, 1))
@@ -249,7 +232,6 @@ class TestTpool(LimitedTestCase):
         results = list(pile)
         self.assertEquals(len(results), 3)
 
-    @skip_with_pyevent
     def test_timeout (self):
         import time
 
@@ -257,44 +239,39 @@ class TestTpool(LimitedTestCase):
         self.assertRaises(evy.TimeoutError,
                           tpool.execute, time.sleep, 0.3)
 
-    @skip_with_pyevent
     def test_killall (self):
         tpool.killall()
         tpool.setup()
 
-    @skip_with_pyevent
     def test_autowrap (self):
         x = tpool.Proxy({'a': 1, 'b': 2}, autowrap = (int,))
         self.assert_(isinstance(x.get('a'), tpool.Proxy))
         self.assert_(not isinstance(x.items(), tpool.Proxy))
         # attributes as well as callables
-        from tests import tpool_test
+        from tests import test_tpool
 
-        x = tpool.Proxy(tpool_test, autowrap = (int,))
+        x = tpool.Proxy(test_tpool, autowrap = (int,))
         self.assert_(isinstance(x.one, tpool.Proxy))
         self.assert_(not isinstance(x.none, tpool.Proxy))
 
-    @skip_with_pyevent
     def test_autowrap_names (self):
         x = tpool.Proxy({'a': 1, 'b': 2}, autowrap_names = ('get',))
         self.assert_(isinstance(x.get('a'), tpool.Proxy))
         self.assert_(not isinstance(x.items(), tpool.Proxy))
-        from tests import tpool_test
+        from tests import test_tpool
 
-        x = tpool.Proxy(tpool_test, autowrap_names = ('one',))
+        x = tpool.Proxy(test_tpool, autowrap_names = ('one',))
         self.assert_(isinstance(x.one, tpool.Proxy))
         self.assert_(not isinstance(x.two, tpool.Proxy))
 
-    @skip_with_pyevent
     def test_autowrap_both (self):
-        from tests import tpool_test
+        from tests import test_tpool
 
-        x = tpool.Proxy(tpool_test, autowrap = (int,), autowrap_names = ('one',))
+        x = tpool.Proxy(test_tpool, autowrap = (int,), autowrap_names = ('one',))
         self.assert_(isinstance(x.one, tpool.Proxy))
         # violating the abstraction to check that we didn't double-wrap
         self.assert_(not isinstance(x._obj, tpool.Proxy))
 
-    @skip_with_pyevent
     def test_callable (self):
         def wrapped (arg):
             return arg
@@ -306,7 +283,6 @@ class TestTpool(LimitedTestCase):
         self.assert_(isinstance(x(4), tpool.Proxy))
         self.assertEquals("4", str(x(4)))
 
-    @skip_with_pyevent
     def test_callable_iterator (self):
         def wrapped (arg):
             yield arg
@@ -317,14 +293,12 @@ class TestTpool(LimitedTestCase):
         for r in x(3):
             self.assertEquals(3, r)
 
-    @skip_with_pyevent
     def test_evy_timeout (self):
         def raise_timeout ():
             raise evy.Timeout()
 
         self.assertRaises(evy.Timeout, tpool.execute, raise_timeout)
 
-    @skip_with_pyevent
     def test_tpool_set_num_threads (self):
         tpool.set_num_threads(5)
         self.assertEquals(5, tpool._nthreads)
@@ -333,7 +307,6 @@ class TestTpool(LimitedTestCase):
 class TpoolLongTests(LimitedTestCase):
     TEST_TIMEOUT = 60
 
-    @skip_with_pyevent
     def test_a_buncha_stuff (self):
         assert_ = self.assert_
 
@@ -385,7 +358,6 @@ from evy.tpool import execute
             iterations, tpool_overhead, best_normal, best_tpool)
         tpool.killall()
 
-    @skip_with_pyevent
     def test_leakage_from_tracebacks (self):
         tpool.execute(noop)  # get it started
         gc.collect()
@@ -403,8 +375,7 @@ from evy.tpool import execute
         gc.collect()
         second_created = len(gc.get_objects()) - middle_objs
         self.assert_(second_created - first_created < 10,
-                     "first loop: %s, second loop: %s" % (first_created,
-                                                          second_created))
+                     "first loop: %s, second loop: %s" % (first_created, second_created))
         tpool.killall()
 
 

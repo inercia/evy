@@ -35,8 +35,8 @@ from evy import event
 from evy.green import socket
 from tests import LimitedTestCase, s2b, skip_if_no_ssl
 
-certificate_file = os.path.join(os.path.dirname(__file__), 'test_server.crt')
-private_key_file = os.path.join(os.path.dirname(__file__), 'test_server.key')
+certificate_file = os.path.join(os.path.dirname(__file__), 'server.crt')
+private_key_file = os.path.join(os.path.dirname(__file__), 'server.key')
 
 class TestServe(LimitedTestCase):
     def setUp (self):

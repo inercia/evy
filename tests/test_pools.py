@@ -41,6 +41,7 @@ class IntPool(pools.Pool):
 
 
 class TestIntPool(TestCase):
+
     def setUp (self):
         self.pool = IntPool(min_size = 0, max_size = 4)
 

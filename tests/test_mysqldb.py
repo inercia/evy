@@ -29,7 +29,6 @@
 
 
 import os
-import sys
 import time
 import traceback
 from tests import skipped, skip_unless, using_pyevent, get_database_auth, LimitedTestCase
@@ -41,6 +40,8 @@ try:
 except ImportError:
     MySQLdb = False
 
+
+
 def mysql_requirement (_f):
     """We want to skip tests if using pyevent, MySQLdb is not installed, or if
     there is no database running on the localhost that the auth file grants
@@ -49,8 +50,6 @@ def mysql_requirement (_f):
     This errs on the side of skipping tests if everything is not right, but
     it's better than a million tests failing when you don't care about mysql
     support."""
-    if using_pyevent(_f):
-        return False
     if MySQLdb is False:
         print "Skipping mysql tests, MySQLdb not importable"
         return False

@@ -54,8 +54,8 @@ def listen_ssl_socket (address = ('127.0.0.1', 0)):
 
 class SSLTest(LimitedTestCase):
 
-    certificate_file = os.path.join(os.path.dirname(__file__), 'test_server.crt')
-    private_key_file = os.path.join(os.path.dirname(__file__), 'test_server.key')
+    certificate_file = os.path.join(os.path.dirname(__file__), 'server.crt')
+    private_key_file = os.path.join(os.path.dirname(__file__), 'server.key')
 
     @skip_if_no_ssl
     def test_duplex_response (self):
