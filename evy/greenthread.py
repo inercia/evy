@@ -140,14 +140,7 @@ def spawn_after_local (seconds, func, *args, **kwargs):
 
 
 
-def exc_after (seconds, *throw_args):
-    warnings.warn("Instead of exc_after, which is deprecated, use "
-                  "Timeout(seconds, exception)",
-                  DeprecationWarning, stacklevel = 2)
-    if seconds is None:  # dummy argument, do nothing
-        return timer.Timer(seconds, lambda: None)
-    hub = hubs.get_hub()
-    return hub.schedule_call_local(seconds, getcurrent().throw, *throw_args)
+# exc_after (seconds, *throw_args): instead of exc_after, which is deprecated, use  Timeout(seconds, exception)
 
 # deprecate, remove
 TimeoutError = timeout.Timeout

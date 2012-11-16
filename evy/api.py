@@ -35,7 +35,7 @@ from evy import greenthread
 from evy import debug
 
 __all__ = [
-    'exc_after', 'getcurrent', 'get_default_hub', 'get_hub',
+    'getcurrent', 'get_default_hub', 'get_hub',
     'GreenletExit', 'kill', 'sleep', 'spawn', 'spew', 'switch',
     'ssl_listener', 'tcp_listener', 'trampoline',
     'unspew', 'use_hub', 'with_timeout', 'timeout']
@@ -44,6 +44,7 @@ warnings.warn("evy.api is deprecated!  Nearly everything in it has moved "
               "to the evy module.", DeprecationWarning, stacklevel = 2)
 
 
+from evy.hubs import timer
 
 def switch (coro, result = None, exc = None):
     if exc is not None:
@@ -71,7 +72,8 @@ class FakeTimer(object):
 
 
 class timeout(object):
-    """Raise an exception in the block after timeout.
+    """
+    Raise an exception in the block after timeout.
     
     Example::
 
@@ -107,7 +109,11 @@ class timeout(object):
         if self.seconds is None:
             self.timer = FakeTimer()
         else:
-            self.timer = exc_after(self.seconds, *self.throw_args)
+            if self.seconds is None:  # dummy argument, do nothing
+                self.timer = timer.Timer(self.seconds, lambda: None)
+            else:
+                self.timer = hubs.get_hub().schedule_call_local(self.seconds, getcurrent().throw, *self.throw_args)
+
         return self.timer
 
     def __exit__ (self, typ, value, tb):
@@ -116,8 +122,6 @@ class timeout(object):
             return True
 
 with_timeout = greenthread.with_timeout
-
-exc_after = greenthread.exc_after
 
 sleep = greenthread.sleep
 
