@@ -37,9 +37,12 @@ def get_ident ():
     return id(greenthread.getcurrent())
 
 
-# the entire purpose of this class is to store off the constructor
-# arguments in a local variable without calling __init__ directly
 class _localbase(object):
+    """
+    This class is used to store off the constructor arguments in a local variable without
+    calling __init__ directly
+    """
+
     __slots__ = '_local__args', '_local__greens'
 
     def __new__ (cls, *args, **kw):
@@ -53,6 +56,7 @@ class _localbase(object):
 
 def _patch (thrl):
     greens = object.__getattribute__(thrl, '_local__greens')
+
     # until we can store the localdict on greenlets themselves,
     # we store it in _local__greens on the local object
     cur = greenthread.getcurrent()
@@ -64,6 +68,7 @@ def _patch (thrl):
             args, kw = object.__getattribute__(thrl, '_local__args')
             thrl.__init__(*args, **kw)
     object.__setattr__(thrl, '__dict__', greens[cur])
+
 
 
 class local(_localbase):

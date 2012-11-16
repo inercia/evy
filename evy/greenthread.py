@@ -116,7 +116,8 @@ def spawn_after (seconds, func, *args, **kwargs):
 
 
 def spawn_after_local (seconds, func, *args, **kwargs):
-    """Spawns *func* after *seconds* have elapsed.  The function will NOT be 
+    """
+    Spawns *func* after *seconds* have elapsed.  The function will NOT be
     called if the current greenthread has exited.
 
     *seconds* may be specified as an integer, or a float if fractional seconds
@@ -137,26 +138,6 @@ def spawn_after_local (seconds, func, *args, **kwargs):
     hub.schedule_call_local(seconds, g.switch, func, args, kwargs)
     return g
 
-
-def call_after_global (seconds, func, *args, **kwargs):
-    warnings.warn("call_after_global is renamed to spawn_after, which"
-                  "has the same signature and semantics (plus a bit extra).  Please do a"
-                  " quick search-and-replace on your codebase, thanks!",
-                  DeprecationWarning, stacklevel = 2)
-    return _spawn_n(seconds, func, args, kwargs)[0]
-
-
-def call_after_local (seconds, function, *args, **kwargs):
-    warnings.warn("call_after_local is renamed to spawn_after_local, which"
-                  "has the same signature and semantics (plus a bit extra).",
-                  DeprecationWarning, stacklevel = 2)
-    hub = hubs.get_hub()
-    g = greenlet.greenlet(function, parent = hub.greenlet)
-    t = hub.schedule_call_local(seconds, g.switch, *args, **kwargs)
-    return t
-
-
-call_after = call_after_local
 
 
 def exc_after (seconds, *throw_args):

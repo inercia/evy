@@ -1,8 +1,4 @@
 #!/usr/bin/env python
-'''
-    greendns - non-blocking DNS support for Eventlet
-'''
-
 # Portions of this code taken from the gogreen project:
 #   http://github.com/slideinc/gogreen
 #
@@ -34,6 +30,13 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+
+"""
+Non-blocking DNS support for Evy
+"""
+
+
 
 import sys
 import struct
@@ -146,7 +149,8 @@ def resolve (name):
 # methods
 #
 def getaliases (host):
-    """Checks for aliases of the given hostname (cname records)
+    """
+    Checks for aliases of the given hostname (cname records)
     returns a list of alias targets
     will return an empty list if no aliases
     """
@@ -170,7 +174,8 @@ def getaliases (host):
 
 
 def getaddrinfo (host, port, family = 0, socktype = 0, proto = 0, flags = 0):
-    """Replacement for Python's socket.getaddrinfo.
+    """
+    Replacement for Python's socket.getaddrinfo.
 
     Currently only supports IPv4.  At present, flags are not
     implemented.
@@ -189,7 +194,8 @@ def getaddrinfo (host, port, family = 0, socktype = 0, proto = 0, flags = 0):
 
 
 def gethostbyname (hostname):
-    """Replacement for Python's socket.gethostbyname.
+    """
+    Replacement for Python's socket.gethostbyname.
 
     Currently only supports IPv4.
     """
@@ -201,7 +207,8 @@ def gethostbyname (hostname):
 
 
 def gethostbyname_ex (hostname):
-    """Replacement for Python's socket.gethostbyname_ex.
+    """
+    Replacement for Python's socket.gethostbyname_ex.
 
     Currently only supports IPv4.
     """
@@ -217,7 +224,8 @@ def gethostbyname_ex (hostname):
 
 
 def getnameinfo (sockaddr, flags):
-    """Replacement for Python's socket.getnameinfo.
+    """
+    Replacement for Python's socket.getnameinfo.
 
     Currently only supports IPv4.
     """
@@ -272,8 +280,8 @@ def getnameinfo (sockaddr, flags):
 
 
 def is_ipv4_addr (host):
-    """is_ipv4_addr returns true if host is a valid IPv4 address in
-    dotted quad notation.
+    """
+    Return true if host is a valid IPv4 address in dotted quad notation.
     """
     try:
         d1, d2, d3, d4 = map(int, host.split('.'))
@@ -286,7 +294,8 @@ def is_ipv4_addr (host):
 
 
 def _net_read (sock, count, expiration):
-    """coro friendly replacement for dns.query._net_write
+    """
+    Coroutines-friendly replacement for dns.query._net_write
     Read the specified number of bytes from sock.  Keep trying until we
     either get the desired amount, or we hit EOF.
     A Timeout exception will be raised if the operation is not completed
@@ -308,7 +317,8 @@ def _net_read (sock, count, expiration):
 
 
 def _net_write (sock, data, expiration):
-    """coro friendly replacement for dns.query._net_write
+    """
+    Coroutines-friendly replacement for dns.query._net_write
     Write the specified data to the socket.
     A Timeout exception will be raised if the operation is not completed
     by the expiration time.
@@ -324,10 +334,10 @@ def _net_write (sock, data, expiration):
                 raise dns.exception.Timeout
 
 
-def udp (
-        q, where, timeout = DNS_QUERY_TIMEOUT, port = 53, af = None, source = None,
-        source_port = 0, ignore_unexpected = False):
-    """coro friendly replacement for dns.query.udp
+def udp (q, where, timeout = DNS_QUERY_TIMEOUT, port = 53, af = None, source = None,
+         source_port = 0, ignore_unexpected = False):
+    """
+    Coroutines-friendly replacement for dns.query.udp
     Return the response obtained after sending a query via UDP.
 
     @param q: the query
@@ -351,7 +361,8 @@ def udp (
     @type source_port: int
     @param ignore_unexpected: If True, ignore responses from unexpected
     sources.  The default is False.
-    @type ignore_unexpected: bool"""
+    @type ignore_unexpected: bool
+    """
 
     wire = q.to_wire()
     if af is None:
@@ -404,7 +415,8 @@ def udp (
 
 def tcp (q, where, timeout = DNS_QUERY_TIMEOUT, port = 53,
          af = None, source = None, source_port = 0):
-    """coro friendly replacement for dns.query.tcp
+    """
+    Coroutines-friendly replacement for dns.query.tcp
     Return the response obtained after sending a query via TCP.
 
     @param q: the query
@@ -425,7 +437,8 @@ def tcp (q, where, timeout = DNS_QUERY_TIMEOUT, port = 53,
     @type source: string
     @param source_port: The port from which to send the message.
     The default is 0.
-    @type source_port: int"""
+    @type source_port: int
+    """
 
     wire = q.to_wire()
     if af is None:
@@ -441,6 +454,7 @@ def tcp (q, where, timeout = DNS_QUERY_TIMEOUT, port = 53,
         destination = (where, port, 0, 0)
         if source is not None:
             source = (source, source_port, 0, 0)
+
     s = socket.socket(af, socket.SOCK_STREAM)
     s.settimeout(timeout)
     try:
@@ -455,6 +469,7 @@ def tcp (q, where, timeout = DNS_QUERY_TIMEOUT, port = 53,
                 raise dns.exception.Timeout
 
         l = len(wire)
+
         # copying the wire into tcpmsg is inefficient, but lets us
         # avoid writev() or doing a short write that would get pushed
         # onto the net
@@ -465,6 +480,7 @@ def tcp (q, where, timeout = DNS_QUERY_TIMEOUT, port = 53,
         wire = _net_read(s, l, expiration)
     finally:
         s.close()
+
     r = dns.message.from_wire(wire, keyring = q.keyring, request_mac = q.mac)
     if not q.is_response(r):
         raise dns.query.BadResponse()

@@ -35,7 +35,7 @@ from evy import greenthread
 from evy import debug
 
 __all__ = [
-    'call_after', 'exc_after', 'getcurrent', 'get_default_hub', 'get_hub',
+    'exc_after', 'getcurrent', 'get_default_hub', 'get_hub',
     'GreenletExit', 'kill', 'sleep', 'spawn', 'spew', 'switch',
     'ssl_listener', 'tcp_listener', 'trampoline',
     'unspew', 'use_hub', 'with_timeout', 'timeout']
@@ -59,9 +59,6 @@ trampoline = hubs.trampoline
 spawn = greenthread.spawn
 spawn_n = greenthread.spawn_n
 kill = greenthread.kill
-call_after = greenthread.call_after
-call_after_local = greenthread.call_after_local
-call_after_global = greenthread.call_after_global
 
 
 class _SilentException(BaseException):

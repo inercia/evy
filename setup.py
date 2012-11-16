@@ -20,7 +20,7 @@ setup(
     url                 = 'http://github.com/inercia/evy',
 
     packages            = find_packages(exclude = ['tests', 'benchmarks']),
-    install_requires    = [],
+    install_requires    = ['dnspython'],
     zip_safe            = False,
 
     long_description    = open(
