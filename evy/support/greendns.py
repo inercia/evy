@@ -35,6 +35,9 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+import sys
+import struct
+
 from evy import patcher
 from evy.green import _socket_nodns
 from evy.green import time
