@@ -134,23 +134,36 @@ struct uv_err_s {
   ...;
 };
 
+struct uv_loop_s {
+  unsigned int active_handles;
+  struct uv_err_s last_err;
+  ...;
+};
+
 struct uv_req_s {
+  void* data;
   ...;
 };
 
 struct uv_shutdown_s {
+  void* data;
+  struct uv_stream_s* handle;
   ...;
 };
 
 struct uv_handle_s {
+  void* data;
+  struct uv_loop_s* loop;
   ...;
 };
 
 struct uv_stream_s {
+  size_t write_queue_size;
   ...;
 };
 
 struct uv_write_s {
+  void* data;
   ...;
 };
 
@@ -159,6 +172,8 @@ struct uv_tcp_s {
 };
 
 struct uv_connect_s {
+  void* data;
+  struct uv_stream_s* handle;
   ...;
 };
 
@@ -167,6 +182,8 @@ struct uv_udp_s {
 };
 
 struct uv_udp_send_s {
+  void* data;
+  struct uv_udp_s* handle;
   ...;
 };
 
@@ -203,6 +220,8 @@ struct uv_timer_s {
 };
 
 struct uv_getaddrinfo_s {
+  void* data;
+  struct uv_loop_s* loop;
   ...;
 };
 
@@ -220,6 +239,8 @@ struct uv_process_s {
 };
 
 struct uv_work_s {
+  void* data;
+  struct uv_loop_s* loop;
   ...;
 };
 
@@ -242,6 +263,11 @@ struct uv_interface_address_s {
 };
 
 struct uv_fs_s {
+  void* data;
+  struct uv_loop_s* loop;
+  ssize_t result;
+  void* ptr;
+  const char* path;
   ...;
 };
 
@@ -258,11 +284,6 @@ struct uv_signal_s {
   ...;
 };
 
-struct uv_loop_s {
-  unsigned int active_handles;
-  struct uv_err_s last_err;
-  ...;
-};
 
 enum uv_fs_event {
   ...
@@ -336,11 +357,7 @@ void uv_unref(uv_handle_t*);
 void uv_update_time(uv_loop_t*);
 int64_t uv_now(uv_loop_t*);
 
-// note: we cannot use the original declaration: uv_buf_t is not fully defined
-// typedef uv_buf_t (*uv_alloc_cb)(uv_handle_t* handle, size_t suggested_size);
-// typedef void (*uv_read_cb)(uv_stream_t* stream, ssize_t nread, uv_buf_t buf);
-// typedef void (*uv_read2_cb)(uv_pipe_t* pipe, ssize_t nread, uv_buf_t buf, uv_handle_type pending);
-
+// note: we cannot use the original declarations: uv_buf_t is not fully defined
 typedef void* uv_alloc_cb;
 typedef void* uv_read_cb;
 typedef void* uv_read2_cb;
@@ -411,7 +428,6 @@ int uv_tcp_connect6(uv_connect_t* req, uv_tcp_t* handle, struct sockaddr_in6 add
 typedef void (*uv_udp_send_cb)(uv_udp_send_t* req, int status);
 
 // note: we cannot use the original declaration: uv_buf_t is not fully defined
-//typedef void (*uv_udp_recv_cb)(uv_udp_t* handle, ssize_t nread, uv_buf_t buf, struct sockaddr* addr, unsigned flags);
 typedef void *uv_udp_recv_cb;
 
 int uv_udp_init(uv_loop_t*, uv_udp_t* handle);

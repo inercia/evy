@@ -118,11 +118,10 @@ def trampoline (fd, read = None, write = None, timeout = None,
 
     if timeout is not None:
         t = hub.schedule_call_global(timeout, current.throw, timeout_exc)
+
     try:
-        if read:
-            listener = hub.add(hub.READ, fileno, current.switch)
-        elif write:
-            listener = hub.add(hub.WRITE, fileno, current.switch)
+        if read:        listener = hub.add(hub.READ,  fileno, current.switch)
+        elif write:     listener = hub.add(hub.WRITE, fileno, current.switch)
 
         try:
             return hub.switch()
@@ -132,3 +131,8 @@ def trampoline (fd, read = None, write = None, timeout = None,
         if t is not None:
             t.cancel()
 
+def wait_read(fd, timeout = None, timeout_exc = timeout.Timeout):
+    trampoline (fd, read = True, timeout = timeout, timeout_exc = timeout_exc)
+
+def wait_write(fd, timeout = None, timeout_exc = timeout.Timeout):
+    trampoline (fd, write = True, timeout = timeout, timeout_exc = timeout_exc)

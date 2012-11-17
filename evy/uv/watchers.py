@@ -165,7 +165,7 @@ class Watcher(object):
         return handle_is_active(self._uv_handle)
 
     ##
-    ## handles
+    ## properties
     ##
 
     @property
@@ -175,22 +175,28 @@ class Watcher(object):
         """
         return cast_to_handle(self._uv_handle)
 
+    @property
+    def loop(self):
+        """
+        Return the uv_loop for this handle
+        """
+        return self.handle.loop
+
+    ##
+    ## internals
+    ##
+
     def _new_libuv_handle(self):
         """
         Return a new libuv C handle for this watcher
         """
         return ffi.new(self.libuv_handle_type)
 
-    def _cast_libuv_handle(self, handle):
-        """
-        Performs a cast for the handle
-        """
-        return ffi.cast(self.libuv_handle_type, handle)
-
-
     def __repr__(self):
         retval =  "%s (%d)" % (type(self).__name__, self.active)
         return retval
+
+
 
 class Poll(Watcher):
     """
