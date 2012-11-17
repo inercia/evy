@@ -193,7 +193,7 @@ class Watcher(object):
         return ffi.new(self.libuv_handle_type)
 
     def __repr__(self):
-        retval =  "%s (%d)" % (type(self).__name__, self.active)
+        retval =  "<%s at %s (%d)>" % (type(self).__name__, hex(id(self)), self.active)
         return retval
 
 
@@ -319,7 +319,7 @@ class Poll(Watcher):
         if self.read_callback: events += 'R'
         if self.write_callback: events += 'W'
 
-        retval =  "Poller (%d, '%s')" % (self.fileno, events)
+        retval =  "<Poller at %s (%d, '%s')>" % (hex(id(self)), self.fileno, events)
         return retval
 
     __str__ = __repr__
@@ -400,6 +400,10 @@ class Timer(Watcher):
         ret = libuv.uv_timer_again(self.hub._uv_ptr, self._uv_handle)
         ## TODO: if the timer has never been started before it returns -1 and sets the error to UV_EINVAL.
         self._python_incref()
+
+    def __repr__(self):
+        retval =  "<Timer at %s (after=%f, repeat=%f)>" % (hex(id(self)), self._after, self._repeat)
+        return retval
 
 
 class Signal(Watcher):

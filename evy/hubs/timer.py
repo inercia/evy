@@ -73,7 +73,7 @@ class Timer(object):
     def __repr__(self):
         secs = getattr(self, 'seconds', None)
         cb = getattr(self, 'callback', None)
-        retval =  "Timer(%s, %s)" % (secs, cb)
+        retval =  "<Timer at %s (after=%s, callback=%s)>" % (hex(id(self)), secs, cb)
         if _g_debug and hasattr(self, 'traceback'):
             retval += '\n' + self.traceback.getvalue()
         return retval
