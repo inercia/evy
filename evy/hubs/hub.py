@@ -273,10 +273,10 @@ class Hub(object):
         """
 
         if not seconds:
-            seconds = self.default_loop()
+            seconds = self.default_sleep()
 
         ## create a timer for avoiding exiting the loop for *seconds*
-        timer = watchers.Timer(self, seconds * 1000)
+        timer = watchers.Timer(self, seconds * 1000.0)
         timer.start(None)
 
         try:
@@ -412,7 +412,7 @@ class Hub(object):
         :param unreferenced: if True, we unreference the timer, so the loop does not wait until it is triggered
         :return:
         """
-        eventtimer = watchers.Timer(self, timer.seconds * 1000)
+        eventtimer = watchers.Timer(self, timer.seconds * 1000.0)
         timer.impltimer = eventtimer
         eventtimer.start(self._timer_triggered, timer)
         self.timers.add(timer)
