@@ -18,7 +18,7 @@ build: setup.py setup_libuv.py $(LIBUV_DIR)/Makefile
 	@echo ">>> Building up..."
 	$(PYTHON) setup.py build
 
-$(LIBUV_DIR)/Makefile: checkout-submodule
+#$(LIBUV_DIR)/Makefile: checkout-submodule
 
 checkout-submodule:
 	@echo ">>> Checking out submodules..."

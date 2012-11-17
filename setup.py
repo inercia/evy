@@ -8,12 +8,15 @@ from distutils.core import setup
 
 from setup_libuv import libuv_build_ext, libuv_sdist, libuv_extension
 
-from evy import __version__
 from os import path
+
+
+## note: do not import anything from evy or it will try to build the CFFI stuff...
+
 
 setup(
     name                = 'evy',
-    version             = __version__,
+    version             = '0.1',
     description         = 'Highly concurrent networking library for Pypy',
     author              = 'Alvaro Saurin',
     author_email        = 'alvaro.saurin@gmail.com',
