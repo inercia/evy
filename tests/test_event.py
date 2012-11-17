@@ -72,7 +72,6 @@ class TestEvent(LimitedTestCase):
             assert result is X, 'Nobody sent anything to event2 yet it received %r' % (result, )
 
 
-class TestWaiters(LimitedTestCase):
     def test_waiting_for_event (self):
         evt = Event()
         value = 'some stuff'
@@ -149,6 +148,7 @@ class TestWaiters(LimitedTestCase):
         evt.send(exc = RuntimeError('from test_double_exception'))
         self.assertRaises(RuntimeError, evt.wait)
         evt.reset()
+
         # shouldn't see the RuntimeError again
         evy.Timeout(0.001)
         self.assertRaises(evy.Timeout, evt.wait)
