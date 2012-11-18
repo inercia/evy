@@ -35,7 +35,7 @@ import random
 
 import evy
 from evy import debug
-from evy import hubs, greenpool, coros, event
+from evy import hubs, greenpool, event
 from evy.support import greenlets as greenlet
 import tests
 
@@ -54,6 +54,7 @@ def raiser (exc):
 
 
 class GreenPool(tests.LimitedTestCase):
+
     def test_spawn (self):
         p = greenpool.GreenPool(4)
         waiters = []
@@ -73,7 +74,7 @@ class GreenPool(tests.LimitedTestCase):
         for i in xrange(10):
             p.spawn(do_something, i)
         p.waitall()
-        self.assertEquals(results_closure, range(10))
+        self.assertEquals(sorted(results_closure), range(10))
 
     def test_waiting (self):
         pool = greenpool.GreenPool(1)
