@@ -29,7 +29,7 @@
 
 
 """
-PyCCurl monkey patching
+PyCurl monkey patching
 """
 
 
@@ -70,19 +70,20 @@ def socket_callback(action, socket, user_data, socket_data):
     LAST_SOCKET = socket
     LAST_SOCKET_DONE = False
     print "SOCKET_CALLBACK", action, socket, user_data, socket_data
+
     hub = evy.hubs.get_hub()
     if action == CURL_POLL_NONE:
         # nothing to do
         return
     elif action == CURL_POLL_IN:
         print "POLLIN"
-        hub.add_descriptor(socket, read=hub_callback)
+        hub.add_descriptor(socket, read = hub_callback)
     elif action == CURL_POLL_OUT:
         print "POLLOUT"
-        hub.add_descriptor(socket, write=hub_callback)
+        hub.add_descriptor(socket, write = hub_callback)
     elif action == CURL_POLL_INOUT:
         print "POLLINOUT"
-        hub.add_descriptor(socket, read=hub_callback, write=hub_callback)
+        hub.add_descriptor(socket, read = hub_callback, write = hub_callback)
     elif action == CURL_POLL_REMOVE:
         print "POLLREMOVE"
         hub.remove_descriptor(socket)
@@ -91,14 +92,8 @@ def socket_callback(action, socket, user_data, socket_data):
 
 THE_MULTI = pycurl_orig.CurlMulti()
 THE_MULTI.setopt(pycurl_orig.M_SOCKETFUNCTION, socket_callback)
+THE_MULTI.setopt(pycurl_orig.M_TIMERFUNCTION, timer_callback)
 
-
-def read(*data):
-    print "READ", data
-
-
-def write(*data):
-    print "WRITE", data
 
 
 def runloop_observer(*_):
@@ -113,12 +108,12 @@ def get(url):
     hub = evy.hubs.get_hub()
     c = pycurl_orig.Curl()
     c.setopt(pycurl_orig.URL, url)
-    #c.setopt(pycurl.M_SOCKETFUNCTION, socket_callback)
-    c.setopt(pycurl_orig.WRITEFUNCTION, write)
-    c.setopt(pycurl_orig.READFUNCTION, read)
+
     c.setopt(pycurl_orig.NOSIGNAL, 1)
     THE_MULTI.add_handle(c)
+
     hub.add_observer(runloop_observer, 'before_waiting')
+
     while True:
         print "TOP"
         result, numhandles = THE_MULTI.socket_all()
