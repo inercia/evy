@@ -37,6 +37,7 @@ LIBUV_DIR     = os.path.join(__here__, '..', '..', 'libuv')
 LIBUV_INC_DIR = os.path.join(LIBUV_DIR, 'include')
 LIBUV_LIB_DIR = LIBUV_DIR
 
+EXTENSION_PACKAGE = 'evy'
 
 
 from cffi import FFI
@@ -605,7 +606,7 @@ extra_link_args = []
 if sys.platform in ['linux', 'linux2']:
     extra_link_args += ['-lrt']
 if sys.platform in ['darwin']:
-    extra_compile_args += ["-U__llvm__", "-arch x86_64", "-arch i386"]
+    extra_compile_args += ['-U__llvm__', '-arch x86_64', '-arch i386']
     extra_link_args += ['-framework CoreServices']
 
 
@@ -614,9 +615,9 @@ libuv = C = ffi.verify("""
 """,
     include_dirs = [LIBUV_INC_DIR],
     extra_compile_args = extra_compile_args,
-    libraries = ["uv"],
+    libraries = ['uv'],
     library_dirs = [LIBUV_LIB_DIR],
-    ext_package = 'evy.uv',                   # must match the package defined in setup.py
+    ext_package = EXTENSION_PACKAGE,                   # must match the package defined in setup.py
     extra_link_args = extra_link_args)
 
 
