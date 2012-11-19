@@ -71,10 +71,13 @@ class Timeout(BaseException):
         else:
             hub = get_hub()
             if self.exception is None or isinstance(self.exception, bool): # timeout that raises self
-                self.timer = hub.schedule_call_global(self.seconds, greenlet.getcurrent().throw, self)
+                exc = self
             else: # regular timeout with user-provided exception
-                self.timer = hub.schedule_call_global(self.seconds, greenlet.getcurrent().throw, self.exception)
-            self.timer.forget()
+                exc = self.exception
+
+            self.timer = hub.schedule_call_global(self.seconds, greenlet.getcurrent().throw, exc)
+
+            ## TODO: breaks some tests, but maybe we should call self.timer.forget()...
 
         return self
 
