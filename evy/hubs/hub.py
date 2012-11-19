@@ -685,8 +685,8 @@ class Hub(object):
 
     def _default_handle_error(self, context, type, value, tb):
         traceback.print_exception(type, value, tb)
-        sys.abort()
-        raise NotImplementedError()
+        self.abort()
+        #sys.exit(1)
 
     ##
     ## exceptions
