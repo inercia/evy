@@ -48,8 +48,8 @@ clean:
 	rm -rf build dist
 	rm -rf *.egg-info __pycache__
 	rm -rf Library
-	rm -rf doc/_build doc/__pycache__
 	rm -f `find . -name '*.pyc'`
+	rm -rf `find . -name '__pycache__'`
 	make -C libuv  clean
 	make -C doc  clean
 
@@ -81,3 +81,15 @@ dist:
 	@echo ">>> redistributable package left in dist/"
 
 
+sdist:
+	@echo ">>> Making redistributable sources package..."
+	$(PYTHON) setup.py sdist
+	@echo ">>> redistributable package left in dist/"
+
+sdist-upload: sdist
+	@echo ">>> Uploading redistributable sources package to PyPI..."
+	$(PYTHON) setup.py sdist upload
+
+sdist-register: sdist
+	@echo ">>> Registering package at PyPI..."
+	$(PYTHON) setup.py register
