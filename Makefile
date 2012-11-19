@@ -80,11 +80,16 @@ dist:
 	$(PYTHON) setup.py bdist
 	@echo ">>> redistributable package left in dist/"
 
-
+dist-debug: clean
+	DISTUTILS_DEBUG=1 make dist
+	
 sdist:
 	@echo ">>> Making redistributable sources package..."
 	$(PYTHON) setup.py sdist
 	@echo ">>> redistributable package left in dist/"
+
+sdist-debug: clean
+	DISTUTILS_DEBUG=1 make sdist
 
 sdist-upload: sdist
 	@echo ">>> Uploading redistributable sources package to PyPI..."
