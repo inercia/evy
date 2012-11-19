@@ -1,4 +1,35 @@
-"""The :mod:`zmq` module wraps the :class:`Socket` and :class:`Context` found in :mod:`pyzmq <zmq>` to be non blocking
+#
+# Evy - a concurrent networking library for Python
+#
+# Unless otherwise noted, the files in Evy are under the following MIT license:
+#
+# Copyright (c) 2012, Alvaro Saurin
+# Copyright (c) 2008-2010, Eventlet Contributors (see AUTHORS)
+# Copyright (c) 2007-2010, Linden Research, Inc.
+# Copyright (c) 2005-2006, Bob Ippolito
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+# THE SOFTWARE.
+#
+
+
+"""
+The :mod:`zmq` module wraps the :class:`Socket` and :class:`Context` found in :mod:`pyzmq <zmq>` to be non blocking
 """
 
 from __future__ import with_statement
@@ -130,6 +161,7 @@ def _wraps (source_fn):
 
     return wrapper
 
+
 # Implementation notes: Each socket in 0mq contains a pipe that the
 # background IO threads use to communicate with the socket. These
 # events are important because they tell the socket when it is able to
@@ -171,6 +203,7 @@ def _wraps (source_fn):
 # TODO: 
 # - Support MessageTrackers and make MessageTracker.wait green
 
+
 _Socket = __zmq__.Socket
 _Socket_recv = _Socket.recv
 _Socket_send = _Socket.send
@@ -178,8 +211,10 @@ _Socket_send_multipart = _Socket.send_multipart
 _Socket_recv_multipart = _Socket.recv_multipart
 _Socket_getsockopt = _Socket.getsockopt
 
+
 class Socket(_Socket):
-    """Green version of :class:`zmq.core.socket.Socket
+    """
+    Green version of :class:`zmq.core.socket.Socket
 
     The following three methods are always overridden:
         * send
