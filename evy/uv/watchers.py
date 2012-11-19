@@ -59,7 +59,6 @@ class Watcher(object):
     hub = None
     callback = None
 
-    _flags = 0
     _start_func = None
     _stop_func = None
 
@@ -68,10 +67,7 @@ class Watcher(object):
         assert self._uv_handle and self._cb
 
         self.hub = _hub
-        if ref:
-            self._flags = 0
-        else:
-            self._flags = 4
+        self.ref = ref
 
         ## prepare a function for starting the watcher
         if self.libuv_start_this_watcher:
@@ -94,44 +90,6 @@ class Watcher(object):
                 self.hub.handle_error(self, *sys.exc_info())
 
     ##
-    ## references
-    ##
-
-    def _libuv_unref(self):
-        #if self._flags & 6 == 4:
-        #    libuv.uv_unref(self.hub._uv_ptr)
-        #    self._flags |= 2
-        pass
-
-    def _python_incref(self):
-        #if not self._flags & 1:
-        #    # Py_INCREF(<PyObjectPtr>self)
-        #    self._flags |= 1
-        pass
-
-    def _get_ref(self):
-        #return False if self._flags & 4 else True
-        pass
-
-    def _set_ref(self, value):
-#        if value:
-#            if not self._flags & 4:
-#                return  # ref is already True
-#            if self._flags & 2:  # uv_unref was called, undo
-#                libuv.uv_ref(self.hub._uv_ptr)
-#            self._flags &= ~6  # do not want unref, no outstanding unref
-#        else:
-#            if self._flags & 4:
-#                return  # ref is already False
-#            self._flags |= 4
-#            if not self._flags & 2 and self.active:
-#                libuv.uv_unref(self.hub._uv_ptr)
-#                self._flags |= 2
-        pass
-
-    ref = property(_get_ref, _set_ref)
-
-    ##
     ## start/stop
     ##
 
@@ -145,11 +103,7 @@ class Watcher(object):
         if callback:
             self.callback = partial(callback, *args, **kwargs)
 
-        self._libuv_unref()
-
         if self._start_func: self._start_func()
-
-        self._python_incref()
 
     def stop(self):
         """
@@ -371,13 +325,10 @@ class Timer(Watcher):
         update = kwargs.get("update", True)
         if callback: self.callback = partial(callback, *args, **kwargs)
 
-        self._libuv_unref()
-
         if update: libuv.uv_update_time(self.hub._uv_ptr)
 
         libuv.uv_timer_start(self._uv_handle, self._cb, self._after, self._repeat)
 
-        self._python_incref()
 
 
     @property
@@ -394,12 +345,10 @@ class Timer(Watcher):
         update = kwargs.get("update", True)
         if callback: self.callback = partial(callback, *args, **kwargs)
 
-        self._libuv_unref()
         if update:
             libuv.uv_now_update(self.hub._uv_ptr)
         ret = libuv.uv_timer_again(self.hub._uv_ptr, self._uv_handle)
         ## TODO: if the timer has never been started before it returns -1 and sets the error to UV_EINVAL.
-        self._python_incref()
 
     def __repr__(self):
         retval =  "<Timer at %s (after=%f, repeat=%f)>" % (hex(id(self)), self._after, self._repeat)
@@ -472,11 +421,8 @@ class Signal(Watcher):
         """
         if callback: self.callback = partial(callback, *args, **kwargs)
 
-        self._libuv_unref()
-
         libuv.uv_signal_start(self._uv_handle, self._cb, self._signum)
 
-        self._python_incref()
 
 
 
@@ -511,7 +457,7 @@ class Prepare(Watcher):
     libuv_stop_this_watcher = libuv.uv_prepare_stop
     libuv_handle_type = 'uv_prepare_t *'
 
-    def __init__(self, hub, ref=True):
+    def __init__(self, hub, ref = True):
         """
         Initialize the watcher
 
@@ -535,7 +481,7 @@ class Async(Watcher):
     libuv_stop_this_watcher = None
     libuv_handle_type = 'uv_sync_t *'
 
-    def __init__(self, hub, ref=True):
+    def __init__(self, hub, ref = True):
         """
         Initialize the watcher
 
@@ -559,7 +505,7 @@ class Callback(Watcher):
     libuv_stop_this_watcher = libuv.uv_prepare_stop
     libuv_handle_type = 'uv_prepare_t *'
 
-    def __init__(self, hub, ref=True):
+    def __init__(self, hub, ref = True):
         """
         Initialize the watcher
 
