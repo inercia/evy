@@ -35,7 +35,7 @@ import random
 
 import evy
 from evy import debug
-from evy import hubs, greenpool, coros, event
+from evy import hubs, greenpool, event
 from evy.support import greenlets as greenlet
 import tests
 

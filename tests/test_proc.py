@@ -35,7 +35,6 @@ import warnings
 warnings.simplefilter('ignore', DeprecationWarning)
 
 warnings.simplefilter('default', DeprecationWarning)
-from evy import coros
 from evy import event as _event
 from evy import Timeout, sleep, getcurrent, with_timeout
 from tests import LimitedTestCase, skipped, silence_warnings

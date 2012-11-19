@@ -143,7 +143,7 @@ class TestDebug(LimitedTestCase):
 
         def hurl (s):
             s.recv(1)
-                {}[1]  # keyerror
+            {}[1]  # keyerror
 
         fake = StringIO()
         orig = sys.stderr
