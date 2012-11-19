@@ -49,7 +49,7 @@ class TestTimer(TestCase):
         # on this thread
         if hub.running:
             hub.abort()
-            evy.sleep(0)
+            sleep(0)
         called = []
 
         #t = timer.Timer(0, lambda: (called.append(True), hub.abort()))

@@ -36,6 +36,8 @@ import tempfile
 
 from tests import LimitedTestCase, main, skip_with_pyevent
 
+
+
 base_module_contents = """
 import socket
 import urllib
@@ -147,7 +149,7 @@ print "newmod", socket.socket, urllib.socket.socket
 from evy import patcher
 patcher.monkey_patch()
 import evy
-evy.sleep(0.01)
+sleep(0.01)
 print "newmod"
 """
         self.write_to_tempfile("newmod", new_mod)
@@ -158,10 +160,10 @@ print "newmod"
     def test_late_patching (self):
         new_mod = """
 import evy
-evy.sleep(0.01)
+sleep(0.01)
 from evy import patcher
 patcher.monkey_patch()
-evy.sleep(0.01)
+sleep(0.01)
 print "newmod"
 """
         self.write_to_tempfile("newmod", new_mod)
@@ -253,7 +255,7 @@ def test_monkey_patch_threading():
     def tick():
         for i in xrange(1000):
             tickcount[0] += 1
-            evy.sleep()
+            sleep()
 
     def do_sleep():
         tpool.execute(time.sleep, 0.5)
@@ -392,7 +394,7 @@ evt = event.Event()
 def test():
     print repr(threading.currentThread())
     evt.send()
-evy.spawn_n(test)
+spawn_n(test)
 evt.wait()
 print len(threading._active)
 """

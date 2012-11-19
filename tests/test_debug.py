@@ -150,12 +150,12 @@ class TestDebug(LimitedTestCase):
         sys.stderr = fake
         try:
             gt = evy.spawn(hurl, client_2)
-            evy.sleep(0)
+            sleep(0)
             client.send(s2b(' '))
-            evy.sleep(0)
+            sleep(0)
             # allow the "hurl" greenlet to trigger the KeyError
             # not sure why the extra context switch is needed
-            evy.sleep(0)
+            sleep(0)
         finally:
             sys.stderr = orig
             self.assertRaises(KeyError, gt.wait)

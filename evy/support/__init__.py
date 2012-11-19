@@ -27,6 +27,11 @@
 # THE SOFTWARE.
 #
 
+
+__import__('pkg_resources').declare_namespace(__name__)
+
+
+
 import sys
 
 def get_errno (exc):

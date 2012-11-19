@@ -52,7 +52,9 @@ import gc
 from tests import skipped, skip_with_pyevent, LimitedTestCase, main
 
 from evy import tpool, debug
-import evy
+from evy.greenthread import spawn, sleep, TimeoutError
+from evy.greenpool import GreenPile
+from evy.timeout import Timeout
 
 one = 1
 two = 2
@@ -186,11 +188,11 @@ class TestTpool(LimitedTestCase):
             for i in xrange(20000):
                 counter[0] += 1
                 if counter[0] % 20 == 0:
-                    evy.sleep(0.0001)
+                    sleep(0.0001)
                 else:
-                    evy.sleep()
+                    sleep()
 
-        gt = evy.spawn(tick)
+        gt = spawn(tick)
         previtem = 0
         for item in tpool.Proxy(foo()):
             self.assert_(item >= previtem)
@@ -225,7 +227,7 @@ class TestTpool(LimitedTestCase):
 
         prox = tpool.Proxy(test_tpool)
 
-        pile = evy.GreenPile(4)
+        pile = GreenPile(4)
         pile.spawn(lambda: self.assertEquals(prox.one, 1))
         pile.spawn(lambda: self.assertEquals(prox.two, 2))
         pile.spawn(lambda: self.assertEquals(prox.three, 3))
@@ -235,8 +237,8 @@ class TestTpool(LimitedTestCase):
     def test_timeout (self):
         import time
 
-        evy.Timeout(0.1, evy.TimeoutError())
-        self.assertRaises(evy.TimeoutError,
+        Timeout(0.1, TimeoutError())
+        self.assertRaises(TimeoutError,
                           tpool.execute, time.sleep, 0.3)
 
     def test_killall (self):
@@ -295,9 +297,9 @@ class TestTpool(LimitedTestCase):
 
     def test_evy_timeout (self):
         def raise_timeout ():
-            raise evy.Timeout()
+            raise Timeout()
 
-        self.assertRaises(evy.Timeout, tpool.execute, raise_timeout)
+        self.assertRaises(Timeout, tpool.execute, raise_timeout)
 
     def test_tpool_set_num_threads (self):
         tpool.set_num_threads(5)
@@ -320,15 +322,15 @@ class TpoolLongTests(LimitedTestCase):
             obj = tpool.Proxy(Dummy())
             count = 100
             for n in xrange(count):
-                evy.sleep(random.random() / 200.0)
+                sleep(random.random() / 200.0)
                 now = time.time()
                 token = loopnum * count + n
                 rv = obj.foo(now, token = token)
                 self.assertEquals(token, rv)
-                evy.sleep(random.random() / 200.0)
+                sleep(random.random() / 200.0)
 
         cnt = 10
-        pile = evy.GreenPile(cnt)
+        pile = GreenPile(cnt)
         for i in xrange(cnt):
             pile.spawn(sender_loop, i)
         results = list(pile)

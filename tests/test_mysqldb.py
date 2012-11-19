@@ -32,8 +32,10 @@ import os
 import time
 import traceback
 from tests import skipped, skip_unless, using_pyevent, get_database_auth, LimitedTestCase
-import evy
+
 from evy import event
+from evy.greenthread import spawn, sleep
+
 
 try:
     from evy.green import MySQLdb
@@ -138,9 +140,9 @@ class TestMySQLdb(LimitedTestCase):
         def tick ():
             while True:
                 counter[0] += 1
-                evy.sleep()
+                sleep()
 
-        gt = evy.spawn(tick)
+        gt = spawn(tick)
         curs.execute("select 1")
         rows = curs.fetchall()
         self.assertEqual(rows, ((1L,),))
@@ -214,7 +216,7 @@ class TestMySQLdb(LimitedTestCase):
             results.append(2)
             evt.send()
 
-        evy.spawn(a_query)
+        spawn(a_query)
         results.append(1)
         self.assertEqual([1], results)
         evt.wait()

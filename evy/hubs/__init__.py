@@ -27,6 +27,11 @@
 # THE SOFTWARE.
 #
 
+
+__import__('pkg_resources').declare_namespace(__name__)
+
+
+
 from evy.support import greenlets as greenlet
 from evy import patcher
 

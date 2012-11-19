@@ -28,17 +28,21 @@
 #
 
 
-""" Tests with-statement behavior of Timeout class.  Don't import when
-using Python 2.4. """
+"""
+Tests with-statement behavior of Timeout class.  Don't import when
+using Python 2.4.
+"""
 
 from __future__ import with_statement
 import sys
 import unittest
 import weakref
 import time
-from evy import sleep
-from evy.timeout import Timeout
+
 from tests import LimitedTestCase
+
+from evy.greenthread import sleep
+from evy.timeout import Timeout
 
 DELAY = 0.01
 

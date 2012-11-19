@@ -41,7 +41,7 @@ from evy.event import Event
 
 
 def do_bail (q):
-    evy.Timeout(0, RuntimeError())
+    Timeout(0, RuntimeError())
     try:
         result = q.get()
         return result
@@ -62,8 +62,8 @@ class TestQueue(LimitedTestCase):
             self.assertEquals(q.get(), 'hi2')
 
         gt = evy.spawn(evy.with_timeout, 0.1, waiter, q)
-        evy.sleep(0)
-        evy.sleep(0)
+        sleep(0)
+        sleep(0)
         q.put('hi2')
         gt.wait()
 
@@ -80,10 +80,10 @@ class TestQueue(LimitedTestCase):
             results.append('c')
 
         gt = evy.spawn(putter, q)
-        evy.sleep(0)
+        sleep(0)
         self.assertEquals(results, ['a', 'b'])
         self.assertEquals(q.get(), 'a')
-        evy.sleep(0)
+        sleep(0)
         self.assertEquals(results, ['a', 'b', 'c'])
         self.assertEquals(q.get(), 'b')
         self.assertEquals(q.get(), 'c')
@@ -102,7 +102,7 @@ class TestQueue(LimitedTestCase):
 
         evt = event.Event()
         gt = evy.spawn(sender, evt, q)
-        evy.sleep(0)
+        sleep(0)
         self.assert_(not evt.ready())
         gt2 = evy.spawn(receiver, q)
         self.assertEquals(gt2.wait(), 'hi')
@@ -118,10 +118,10 @@ class TestQueue(LimitedTestCase):
 
         evt = event.Event()
         gt = evy.spawn(sender, evt, q)
-        evy.sleep(0)
+        sleep(0)
         self.assert_(not evt.ready())
         q.resize(1)
-        evy.sleep(0)
+        sleep(0)
         self.assert_(evt.ready())
         gt.wait()
 
@@ -134,7 +134,7 @@ class TestQueue(LimitedTestCase):
 
         self.assertEquals(list(q.queue), range(5))
         q.resize(1)
-        evy.sleep(0)
+        sleep(0)
         self.assertEquals(list(q.queue), range(5))
 
     def test_resize_to_Unlimited (self):
@@ -146,10 +146,10 @@ class TestQueue(LimitedTestCase):
 
         evt = event.Event()
         gt = evy.spawn(sender, evt, q)
-        evy.sleep()
+        sleep()
         self.assertFalse(evt.ready())
         q.resize(None)
-        evy.sleep()
+        sleep()
         self.assertTrue(evt.ready())
         gt.wait()
 
@@ -161,7 +161,7 @@ class TestQueue(LimitedTestCase):
         gts = [evy.spawn(q.get)
                for x in sendings]
 
-        evy.sleep(0.01) # get 'em all waiting
+        sleep(0.01) # get 'em all waiting
 
         q.put(sendings[0])
         q.put(sendings[1])
@@ -194,7 +194,7 @@ class TestQueue(LimitedTestCase):
         q = evy.Queue()
         dying = evy.spawn(do_bail, q)
         waiting = evy.spawn(waiter, q)
-        evy.sleep(0)
+        sleep(0)
         q.put('hi')
         self.assertEquals(dying.wait(), 'timed out')
         self.assertEquals(waiting.wait(), 'hi')
@@ -203,7 +203,7 @@ class TestQueue(LimitedTestCase):
         q = evy.Queue()
         gt1 = evy.spawn(do_bail, q)
         gt2 = evy.spawn(do_bail, q)
-        evy.sleep(0)
+        sleep(0)
         q.put('sent')
         self.assertEquals(gt1.wait(), 'timed out')
         self.assertEquals(gt2.wait(), 'timed out')
@@ -212,10 +212,10 @@ class TestQueue(LimitedTestCase):
     def test_waiting (self):
         q = evy.Queue()
         gt1 = evy.spawn(q.get)
-        evy.sleep(0)
+        sleep(0)
         self.assertEquals(1, q.getting())
         q.put('hi')
-        evy.sleep(0)
+        sleep(0)
         self.assertEquals(0, q.getting())
         self.assertEquals('hi', gt1.wait())
         self.assertEquals(0, q.getting())
@@ -257,7 +257,7 @@ class TestQueue(LimitedTestCase):
         events.append(channel.get())
 
         self.assertEqual(['waiting', 'sending hello', 'hello', 'sending world', 'world'], events)
-        evy.sleep(0)
+        sleep(0)
         self.assertEqual(
             ['waiting', 'sending hello', 'hello', 'sending world', 'world', 'sent world'], events)
 
@@ -266,7 +266,7 @@ class TestQueue(LimitedTestCase):
         w1 = evy.spawn(c.get)
         w2 = evy.spawn(c.get)
         w3 = evy.spawn(c.get)
-        evy.sleep(0)
+        sleep(0)
         self.assertEquals(c.getting(), 3)
         s1 = evy.spawn(c.put, 1)
         s2 = evy.spawn(c.put, 2)
@@ -317,8 +317,8 @@ class TestNoWait(LimitedTestCase):
         q = evy.Queue(1)
         hub.schedule_call_global(0, store_result, result, q.put_nowait, 2)
         hub.schedule_call_global(0, store_result, result, q.put_nowait, 3)
-        evy.sleep(0)
-        evy.sleep(0)
+        sleep(0)
+        sleep(0)
         assert len(result) == 2, result
         assert result[0] == None, result
         assert isinstance(result[1], queue.Full), result
@@ -332,7 +332,7 @@ class TestNoWait(LimitedTestCase):
         q.put(4)
         hub.schedule_call_global(0, store_result, result, q.get_nowait)
         hub.schedule_call_global(0, store_result, result, q.get_nowait)
-        evy.sleep(0)
+        sleep(0)
         assert len(result) == 2, result
         assert result[0] == 4, result
         assert isinstance(result[1], queue.Empty), result
@@ -347,11 +347,11 @@ class TestNoWait(LimitedTestCase):
         p = evy.spawn(q.put, 5)
         assert q.empty(), q
         assert q.full(), q
-        evy.sleep(0)
+        sleep(0)
         assert q.empty(), q
         assert q.full(), q
         hub.schedule_call_global(0, store_result, result, q.get_nowait)
-        evy.sleep(0)
+        sleep(0)
         assert q.empty(), q
         assert q.full(), q
         assert result == [5], result
@@ -370,13 +370,13 @@ class TestNoWait(LimitedTestCase):
         p = evy.spawn(q.get)
         assert q.empty(), q
         assert q.full(), q
-        evy.sleep(0)
+        sleep(0)
         assert q.empty(), q
         assert q.full(), q
         hub.schedule_call_global(0, store_result, result, q.put_nowait, 10)
         # TODO ready method on greenthread
         #assert not p.ready(), p
-        evy.sleep(0)
+        sleep(0)
         assert result == [None], result
         # TODO ready method
         # assert p.ready(), p
@@ -404,7 +404,7 @@ class TestQueue(LimitedTestCase):
         q = Queue()
 
         def waiter (q):
-            timer = evy.Timeout(0.1)
+            timer = Timeout(0.1)
             self.assertEquals(q.wait(), 'hi2')
             timer.cancel()
 
@@ -466,7 +466,7 @@ class TestQueue(LimitedTestCase):
         gts = [evy.spawn(q.wait)
                for x in sendings]
 
-        evy.sleep(0.01) # get 'em all waiting
+        sleep(0.01) # get 'em all waiting
 
         q.send(sendings[0])
         q.send(sendings[1])
@@ -482,7 +482,7 @@ class TestQueue(LimitedTestCase):
         q = Queue()
 
         def do_receive (q, evt):
-            evy.Timeout(0, RuntimeError())
+            Timeout(0, RuntimeError())
             try:
                 result = q.wait()
                 evt.send(result)
@@ -513,7 +513,7 @@ class TestQueue(LimitedTestCase):
             evt.send(q.wait())
 
         def do_receive (q, evt):
-            evy.Timeout(0, RuntimeError())
+            Timeout(0, RuntimeError())
             try:
                 result = q.wait()
                 evt.send(result)
@@ -533,7 +533,7 @@ class TestQueue(LimitedTestCase):
     @silence_warnings
     def test_two_bogus_waiters (self):
         def do_receive (q, evt):
-            evy.Timeout(0, RuntimeError())
+            Timeout(0, RuntimeError())
             try:
                 result = q.wait()
                 evt.send(result)

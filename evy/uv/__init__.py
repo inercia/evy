@@ -28,5 +28,8 @@
 #
 
 
+__import__('pkg_resources').declare_namespace(__name__)
+
+
 from interface import libuv, ffi, get_version
 from watchers import Watcher, Poll, Timer, Async, Callback, Idle, Prepare, Signal

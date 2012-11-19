@@ -31,7 +31,9 @@
 import unittest
 
 from evy.event import Event
-from evy.api import spawn, sleep, with_timeout
+from evy.greenthread import spawn, spawn_n, sleep, with_timeout
+from evy.timeout import Timeout
+
 import evy
 from tests import LimitedTestCase
 
@@ -63,7 +65,7 @@ class TestEvent(LimitedTestCase):
         event2 = Event()
 
         spawn(event1.send, 'hello event1')
-        evy.Timeout(0, ValueError('interrupted'))
+        Timeout(0, ValueError('interrupted'))
         try:
             result = event1.wait()
         except ValueError:
@@ -79,7 +81,7 @@ class TestEvent(LimitedTestCase):
         def send_to_event ():
             evt.send(value)
 
-        evy.spawn_n(send_to_event)
+        spawn_n(send_to_event)
         self.assertEqual(evt.wait(), value)
 
     def test_multiple_waiters (self):
@@ -104,8 +106,8 @@ class TestEvent(LimitedTestCase):
         count = 5
         for i in range(count):
             waiters.append(Event())
-            evy.spawn_n(wait_on_event, waiters[-1])
-        evy.sleep()  # allow spawns to start executing
+            spawn_n(wait_on_event, waiters[-1])
+        sleep()  # allow spawns to start executing
         evt.send()
 
         for w in waiters:
@@ -124,7 +126,7 @@ class TestEvent(LimitedTestCase):
         def send_to_event ():
             evt.send(value)
 
-        evy.spawn_n(send_to_event)
+        spawn_n(send_to_event)
         self.assertEqual(evt.wait(), value)
 
         # now try it again, and we should get the same exact value,
@@ -139,7 +141,7 @@ class TestEvent(LimitedTestCase):
         def send_to_event2 ():
             evt.send(value2)
 
-        evy.spawn_n(send_to_event2)
+        spawn_n(send_to_event2)
         self.assertEqual(evt.wait(), value2)
 
     def test_double_exception (self):
@@ -150,8 +152,8 @@ class TestEvent(LimitedTestCase):
         evt.reset()
 
         # shouldn't see the RuntimeError again
-        evy.Timeout(0.001)
-        self.assertRaises(evy.Timeout, evt.wait)
+        Timeout(0.001)
+        self.assertRaises(Timeout, evt.wait)
 
 
 if __name__ == '__main__':

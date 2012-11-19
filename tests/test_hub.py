@@ -32,8 +32,10 @@ from __future__ import with_statement
 
 from tests import LimitedTestCase, main, skip_with_pyevent, skip_if_no_itimer
 import time
+
 import evy
 from evy import hubs
+from evy.greenthread import spawn, sleep
 
 DELAY = 0.001
 
@@ -62,7 +64,7 @@ class TestTimerCleanup(LimitedTestCase):
         stimers = hub.timers_count
         for i in xrange(2000):
             t = hubs.get_hub().schedule_call_global(60, noop)
-            evy.sleep()
+            sleep()
             t.cancel()
             # there should be fewer than 1000 new timers and canceled
 
@@ -80,7 +82,7 @@ class TestTimerCleanup(LimitedTestCase):
             t = hubs.get_hub().schedule_call_global(60, noop)
             t2 = hubs.get_hub().schedule_call_global(60, noop)
             t3 = hubs.get_hub().schedule_call_global(60, noop)
-            evy.sleep()
+            sleep()
             t.cancel()
 
             uncanceled_timers.append(t2)
@@ -91,22 +93,22 @@ class TestTimerCleanup(LimitedTestCase):
         for t in uncanceled_timers:
             t.cancel()
 
-        evy.sleep()
+        sleep()
 
 
 class TestScheduleCall(LimitedTestCase):
     def test_local (self):
         lst = [1]
-        evy.spawn(hubs.get_hub().schedule_call_local, DELAY, lst.pop)
-        evy.sleep(0)
-        evy.sleep(DELAY * 2)
+        spawn(hubs.get_hub().schedule_call_local, DELAY, lst.pop)
+        sleep(0)
+        sleep(DELAY * 2)
         assert lst == [1], lst
 
     def test_global (self):
         lst = [1]
-        evy.spawn(hubs.get_hub().schedule_call_global, DELAY, lst.pop)
-        evy.sleep(0)
-        evy.sleep(DELAY * 2)
+        spawn(hubs.get_hub().schedule_call_global, DELAY, lst.pop)
+        sleep(0)
+        sleep(DELAY * 2)
         assert lst == [], lst
 
     def test_ordering (self):
@@ -115,7 +117,7 @@ class TestScheduleCall(LimitedTestCase):
         hubs.get_hub().schedule_call_global(DELAY, lst.append, 1)
         hubs.get_hub().schedule_call_global(DELAY, lst.append, 2)
         while len(lst) < 3:
-            evy.sleep(DELAY)
+            sleep(DELAY)
         self.assertEquals(sorted(lst), sorted([1, 2, 3]))
 
 
@@ -130,7 +132,7 @@ class TestExceptionInMainloop(LimitedTestCase):
     def test_sleep (self):
         # even if there was an error in the mainloop, the hub should continue to work
         start = time.time()
-        evy.sleep(DELAY)
+        sleep(DELAY)
         delay = time.time() - start
 
         assert delay >= DELAY * 0.9, 'sleep returned after %s seconds (was scheduled for %s)' % (
@@ -142,7 +144,7 @@ class TestExceptionInMainloop(LimitedTestCase):
         hubs.get_hub().schedule_call_global(0, fail)
 
         start = time.time()
-        evy.sleep(DELAY)
+        sleep(DELAY)
         delay = time.time() - start
 
         assert delay >= DELAY * 0.9, 'sleep returned after %s seconds (was scheduled for %s)' % (
@@ -162,7 +164,7 @@ class TestHubBlockingDetector(LimitedTestCase):
         from evy import debug
 
         debug.hub_blocking_detection(True)
-        gt = evy.spawn(look_im_blocking)
+        gt = spawn(look_im_blocking)
         self.assertRaises(RuntimeError, gt.wait)
         debug.hub_blocking_detection(False)
 
@@ -176,7 +178,7 @@ class TestHubBlockingDetector(LimitedTestCase):
         from evy import debug
 
         debug.hub_blocking_detection(True, resolution = 0.1)
-        gt = evy.spawn(look_im_blocking)
+        gt = spawn(look_im_blocking)
         self.assertRaises(RuntimeError, gt.wait)
         debug.hub_blocking_detection(False)
 
@@ -197,10 +199,10 @@ class TestSuspend(LimitedTestCase):
         filename = os.path.join(self.tempdir, 'test_suspend.py')
         fd = open(filename, "w")
         fd.write("""import evy
-evy.Timeout(0.5)
+Timeout(0.5)
 try:
    evy.listen(("127.0.0.1", 0)).accept()
-except evy.Timeout:
+except Timeout:
    print "exited correctly"
 """)
         fd.close()
@@ -212,7 +214,7 @@ except evy.Timeout:
                                                                    stdout = subprocess.PIPE,
                                                                    stderr = subprocess.STDOUT,
                                                                    env = new_env)
-        evy.sleep(0.4)  # wait for process to hit accept
+        sleep(0.4)  # wait for process to hit accept
         os.kill(p.pid, signal.SIGSTOP) # suspend and resume to generate EINTR
         os.kill(p.pid, signal.SIGCONT)
         output, _ = p.communicate()
@@ -243,18 +245,18 @@ class TestFork(ProcessBase):
 import os
 import evy
 server = evy.listen(('localhost', 12345))
-t = evy.Timeout(0.01)
+t = Timeout(0.01)
 try:
     new_sock, address = server.accept()
-except evy.Timeout, t:
+except Timeout, t:
     pass
 
 pid = os.fork()
 if not pid:
-    t = evy.Timeout(0.1)
+    t = Timeout(0.1)
     try:
         new_sock, address = server.accept()
-    except evy.Timeout, t:
+    except Timeout, t:
         print "accept blocked"
         
 else:
@@ -287,8 +289,8 @@ else:
 #        def dummyproc ():
 #            hub.switch()
 #
-#        g = evy.spawn(dummyproc)
-#        evy.sleep(0)  # let dummyproc run
+#        g = spawn(dummyproc)
+#        sleep(0)  # let dummyproc run
 #        assert hub.greenlet.parent == evy.greenthread.getcurrent()
 #        self.assertRaises(KeyboardInterrupt, hub.greenlet.throw,
 #                          KeyboardInterrupt())
@@ -298,7 +300,7 @@ else:
 #        # it is from this timer that execution should be returned to this
 #        # greenlet, and not by propogating of the terminating greenlet.
 #        g.kill()
-#        with evy.Timeout(0.5, self.CustomException()):
+#        with Timeout(0.5, self.CustomException()):
 #            # we now switch to the hub, there should be no existing timers
 #            # that switch back to this greenlet and so this hub.switch()
 #            # call should block indefinately.
@@ -315,13 +317,13 @@ else:
 #        def dummyproc ():
 #            pass
 #
-#        g = evy.spawn(dummyproc)
+#        g = spawn(dummyproc)
 #        assert hub.greenlet.parent == evy.greenthread.getcurrent()
 #        self.assertRaises(KeyboardInterrupt, hub.greenlet.throw,
 #                          KeyboardInterrupt())
 #
 #        assert not g.dead  # check dummyproc hasn't completed
-#        with evy.Timeout(0.5, self.CustomException()):
+#        with Timeout(0.5, self.CustomException()):
 #            # we now switch to the hub which will allow
 #            # completion of dummyproc.
 #            # this should return execution back to the runloop and not

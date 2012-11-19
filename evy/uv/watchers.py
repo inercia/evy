@@ -327,7 +327,7 @@ class Timer(Watcher):
 
         if update: libuv.uv_update_time(self.hub._uv_ptr)
 
-        libuv.uv_timer_start(self._uv_handle, self._cb, self._after, self._repeat)
+        libuv.uv_timer_start(self._uv_handle, self._cb, int(self._after), int(self._repeat))
 
 
 

@@ -34,7 +34,6 @@ import evy
 from evy.green import urllib2
 from evy.green import httplib
 from evy.websocket import WebSocket, WebSocketWSGI
-from evy import wsgi
 from evy import event
 from evy import greenio
 
@@ -54,7 +53,7 @@ def handle (ws):
     elif ws.path == '/range':
         for i in xrange(10):
             ws.send("msg %d" % i)
-            evy.sleep(0.01)
+            sleep(0.01)
     elif ws.path == '/error':
         # some random socket error that we shouldn't normally get
         raise socket.error(errno.ENOTSOCK)
@@ -247,13 +246,13 @@ class TestWebSocket(_TestBase):
         result = sock.recv(1024)
         self.assertEqual(result, '\x00hello\xff')
         sock.sendall('\x00start')
-        evy.sleep(0.001)
+        sleep(0.001)
         sock.sendall(' end\xff')
         result = sock.recv(1024)
         self.assertEqual(result, '\x00start end\xff')
         sock.shutdown(socket.SHUT_RDWR)
         sock.close()
-        evy.sleep(0.01)
+        sleep(0.01)
 
     def test_sending_messages_to_websocket_76 (self):
         connect = [
@@ -275,13 +274,13 @@ class TestWebSocket(_TestBase):
         result = sock.recv(1024)
         self.assertEqual(result, '\x00hello\xff')
         sock.sendall('\x00start')
-        evy.sleep(0.001)
+        sleep(0.001)
         sock.sendall(' end\xff')
         result = sock.recv(1024)
         self.assertEqual(result, '\x00start end\xff')
         sock.shutdown(socket.SHUT_RDWR)
         sock.close()
-        evy.sleep(0.01)
+        sleep(0.01)
 
     def test_getting_messages_from_websocket_75 (self):
         connect = [
@@ -591,13 +590,13 @@ class TestWebSocketSSL(_TestBase):
         result = sock.recv(1024)
         self.assertEqual(result, '\x00hello\xff')
         sock.sendall('\x00start')
-        evy.sleep(0.001)
+        sleep(0.001)
         sock.sendall(' end\xff')
         result = sock.recv(1024)
         self.assertEqual(result, '\x00start end\xff')
         greenio.shutdown_safe(sock)
         sock.close()
-        evy.sleep(0.01)
+        sleep(0.01)
 
 
 class TestWebSocketObject(LimitedTestCase):

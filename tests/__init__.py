@@ -1,4 +1,6 @@
 # package is named tests, not test, so it won't be confused with test in stdlib
+
+
 import sys
 import os
 import errno
@@ -6,6 +8,8 @@ import unittest
 import warnings
 
 from evy import debug, hubs
+
+from evy.timeout import Timeout
 
 # convenience for importers
 main = unittest.main
@@ -130,26 +134,25 @@ class TestIsTakingTooLong(Exception):
 
 
 class LimitedTestCase(unittest.TestCase):
-    """ Unittest subclass that adds a timeout to all tests.  Subclasses must
+    """
+    Unittest subclass that adds a timeout to all tests.  Subclasses must
     be sure to call the LimitedTestCase setUp and tearDown methods.  The default 
     timeout is 1 second, change it by setting self.TEST_TIMEOUT to the desired
-    quantity."""
+    quantity.
+    """
 
     TEST_TIMEOUT = 1
 
     def setUp (self):
-        import evy
-
-        self.timer = evy.Timeout(self.TEST_TIMEOUT,
-                                      TestIsTakingTooLong(self.TEST_TIMEOUT))
+        self.timer = Timeout(self.TEST_TIMEOUT,
+                             TestIsTakingTooLong(self.TEST_TIMEOUT))
 
     def reset_timeout (self, new_timeout):
-        """Changes the timeout duration; only has effect during one test case"""
-        import evy
-
+        """
+        Changes the timeout duration; only has effect during one test case
+        """
         self.timer.cancel()
-        self.timer = evy.Timeout(new_timeout,
-                                      TestIsTakingTooLong(new_timeout))
+        self.timer = Timeout(new_timeout, TestIsTakingTooLong(new_timeout))
 
     def tearDown (self):
         self.timer.cancel()

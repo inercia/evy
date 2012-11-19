@@ -1,6 +1,6 @@
 import evy
 
-evy.sleep(0)
+sleep(0)
 from evy import patcher
 
 patcher.monkey_patch()

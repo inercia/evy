@@ -32,15 +32,23 @@ import evy
 import warnings
 
 warnings.simplefilter('ignore', DeprecationWarning)
-from evy import pool, coros, api, hubs, timeout
+from evy import hubs, timeout
 
 warnings.simplefilter('default', DeprecationWarning)
+
 from evy import event as _event
+from evy.greenthread import spawn, sleep
+from evy.greenpool import GreenPool
+from evy.greenthread import TimeoutError
+
 from tests import LimitedTestCase
+
 from unittest import main
 
+
+
+
 class TestCoroutinePool(LimitedTestCase):
-    klass = pool.Pool
 
     def test_execute_async (self):
         done = _event.Event()
@@ -48,7 +56,7 @@ class TestCoroutinePool(LimitedTestCase):
         def some_work ():
             done.send()
 
-        pool = self.klass(0, 2)
+        pool = GreenPool(2)
         pool.execute_async(some_work)
         done.wait()
 
@@ -58,12 +66,12 @@ class TestCoroutinePool(LimitedTestCase):
         def some_work ():
             return value
 
-        pool = self.klass(0, 2)
+        pool = GreenPool(2)
         worker = pool.execute(some_work)
         self.assertEqual(value, worker.wait())
 
     def test_waiting (self):
-        pool = self.klass(0, 1)
+        pool = GreenPool(1)
         done = _event.Event()
 
         def consume ():
@@ -75,13 +83,13 @@ class TestCoroutinePool(LimitedTestCase):
 
         waiters = []
         waiters.append(evy.spawn(waiter, pool))
-        api.sleep(0)
+        sleep(0)
         self.assertEqual(pool.waiting(), 0)
         waiters.append(evy.spawn(waiter, pool))
-        api.sleep(0)
+        sleep(0)
         self.assertEqual(pool.waiting(), 1)
         waiters.append(evy.spawn(waiter, pool))
-        api.sleep(0)
+        sleep(0)
         self.assertEqual(pool.waiting(), 2)
         done.send(None)
         for w in waiters:
@@ -101,7 +109,7 @@ class TestCoroutinePool(LimitedTestCase):
             evt.wait()
             results.append('cons2')
 
-        pool = self.klass(0, 2)
+        pool = GreenPool(2)
         done = pool.execute(consumer)
         pool.execute_async(producer)
         done.wait()
@@ -118,14 +126,14 @@ class TestCoroutinePool(LimitedTestCase):
         def some_work ():
             hubs.get_hub().schedule_call_local(0, fire_timer)
 
-        pool = self.klass(0, 2)
+        pool = GreenPool(2)
         worker = pool.execute(some_work)
         worker.wait()
-        api.sleep(0)
+        sleep(0)
         self.assertEquals(timer_fired, [])
 
     def test_reentrant (self):
-        pool = self.klass(0, 1)
+        pool = GreenPool(1)
 
         def reenter ():
             waiter = pool.execute(lambda a: a, 'reenter')
@@ -147,7 +155,7 @@ class TestCoroutinePool(LimitedTestCase):
         def wait_long_time (e):
             e.wait()
 
-        timer = timeout.Timeout(1, api.TimeoutError)
+        timer = timeout.Timeout(1, TimeoutError)
         try:
             evt = _event.Event()
             for x in xrange(num_free):
@@ -164,8 +172,8 @@ class TestCoroutinePool(LimitedTestCase):
 
         # clean up by causing all the wait_long_time functions to return
         evt.send(None)
-        api.sleep(0)
-        api.sleep(0)
+        sleep(0)
+        sleep(0)
 
     def test_resize (self):
         pool = self.klass(max_size = 2)
@@ -185,8 +193,8 @@ class TestCoroutinePool(LimitedTestCase):
         # cause the wait_long_time functions to return, which will
         # trigger puts to the pool
         evt.send(None)
-        api.sleep(0)
-        api.sleep(0)
+        sleep(0)
+        sleep(0)
 
         self.assertEquals(pool.free(), 1)
         self.assert_pool_has_free(pool, 1)
@@ -219,16 +227,16 @@ class TestCoroutinePool(LimitedTestCase):
             self.assertRaises(RuntimeError, waiter.wait)
             # the pool should have something free at this point since the
             # waiter returned
-            # pool.Pool change: if an exception is raised during execution of a link, 
+            # GreenPool change: if an exception is raised during execution of a link, 
             # the rest of the links are scheduled to be executed on the next hub iteration
             # this introduces a delay in updating pool.sem which makes pool.free() report 0
             # therefore, sleep:
-            api.sleep(0)
+            sleep(0)
             self.assertEqual(pool.free(), 1)
             # shouldn't block when trying to get
             t = timeout.Timeout(0.1)
             try:
-                pool.execute(api.sleep, 1)
+                pool.execute(sleep, 1)
             finally:
                 t.cancel()
         finally:
@@ -245,7 +253,7 @@ class TestCoroutinePool(LimitedTestCase):
         pool = self.klass(track_events = True)
 
         def slow ():
-            api.sleep(0.1)
+            sleep(0.1)
             return 'ok'
 
         pool.execute(slow)
@@ -278,7 +286,7 @@ class TestCoroutinePool(LimitedTestCase):
         def send_wakeup (tp):
             tp.put('wakeup')
 
-        api.spawn(send_wakeup, tp)
+        spawn(send_wakeup, tp)
 
         # now we ask the pool to run something else, which should not
         # be affected by the previous send at all
@@ -293,7 +301,7 @@ class TestCoroutinePool(LimitedTestCase):
 
 
 class TestPoolBasicTests(LimitedTestCase):
-    klass = pool.Pool
+    klass = GreenPool
 
     def test_execute_async (self):
         p = self.klass(max_size = 2)
@@ -307,7 +315,7 @@ class TestPoolBasicTests(LimitedTestCase):
         self.assertEqual(p.free(), 1)
         evt.wait()
         self.assertEqual(r, [1])
-        api.sleep(0)
+        sleep(0)
         self.assertEqual(p.free(), 2)
 
         #Once the pool is exhausted, calling an execute forces a yield.
@@ -322,7 +330,7 @@ class TestPoolBasicTests(LimitedTestCase):
 
         p.execute_async(foo, 4)
         self.assertEqual(r, [1, 2, 3])
-        api.sleep(0)
+        sleep(0)
         self.assertEqual(r, [1, 2, 3, 4])
 
     def test_execute (self):
@@ -341,7 +349,7 @@ class TestPoolBasicTests(LimitedTestCase):
         def subtest (intpool_size, pool_size, num_executes):
             def run (int_pool):
                 token = int_pool.get()
-                api.sleep(0.0001)
+                sleep(0.0001)
                 int_pool.put(token)
                 return token
 

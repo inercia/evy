@@ -196,7 +196,7 @@ class _TestBase(LimitedTestCase):
 
     def tearDown (self):
         greenthread.kill(self.killer)
-        evy.sleep(0)
+        sleep(0)
         super(_TestBase, self).tearDown()
 
     def spawn_server (self, **kwargs):
@@ -205,7 +205,7 @@ class _TestBase(LimitedTestCase):
         running it.
 
         Kills any previously-running server."""
-        evy.sleep(0) # give previous server a chance to start
+        sleep(0) # give previous server a chance to start
         if self.killer:
             greenthread.kill(self.killer)
 
@@ -218,7 +218,7 @@ class _TestBase(LimitedTestCase):
             new_kwargs['sock'] = evy.listen(('localhost', 0))
 
         self.port = new_kwargs['sock'].getsockname()[1]
-        self.killer = evy.spawn_n(
+        self.killer = spawn_n(
             wsgi.server,
             **new_kwargs)
 
@@ -264,7 +264,7 @@ class TestHttpd(_TestBase):
         fd = sock.makefile('rw')
         fd.write('GET / HTTP/1.1\r\nHost: localhost\r\n\r\n')
         fd.flush()
-        cancel = evy.Timeout(1, RuntimeError)
+        cancel = Timeout(1, RuntimeError)
         self.assertRaises(TypeError, fd.read, "This shouldn't work")
         cancel.cancel()
         fd.close()
@@ -646,7 +646,7 @@ class TestHttpd(_TestBase):
         # shut down the server and verify the server_socket fd is still open,
         # but the actual socketobject passed in to wsgi.server is closed
         greenthread.kill(self.killer)
-        evy.sleep(0) # make the kill go through
+        sleep(0) # make the kill go through
         try:
             server_sock_2.accept()
             # shouldn't be able to use this one anymore
@@ -769,7 +769,7 @@ class TestHttpd(_TestBase):
         old_stderr = sys.stderr
         try:
             sys.stderr = self.logfile
-            evy.sleep(0) # need to enter server loop
+            sleep(0) # need to enter server loop
             try:
                 evy.connect(('localhost', self.port))
                 self.fail("Didn't expect to connect")
@@ -856,13 +856,13 @@ class TestHttpd(_TestBase):
                                          keyfile = private_key_file,
                                          server_side = True)
             port = srv_sock.getsockname()[1]
-            g = evy.spawn_n(server, srv_sock)
+            g = spawn_n(server, srv_sock)
             client = evy.connect(('localhost', port))
             if data: # send non-ssl request
                 client.sendall(data)
             else: # close sock prematurely
                 client.close()
-            evy.sleep(0) # let context switch back to server
+            sleep(0) # let context switch back to server
             self.assert_(not errored[0], errored[0])
             # make another request to ensure the server's still alive
             try:
@@ -1090,10 +1090,10 @@ class TestHttpd(_TestBase):
             except ValueError:
                 log.write('broked')
 
-        evy.spawn_n(run_server)
+        spawn_n(run_server)
         logval = log.getvalue()
         while not logval:
-            evy.sleep(0.0)
+            sleep(0.0)
             logval = log.getvalue()
         if 'broked' in logval:
             self.fail('WSGI server raised exception with ipv6 socket')
@@ -1320,7 +1320,7 @@ class TestChunkedInput(_TestBase):
             fd = self.connect()
             fd.sendall(req)
             fd.close()
-            evy.sleep(0.0)
+            sleep(0.0)
         finally:
             signal.alarm(0)
             signal.signal(signal.SIGALRM, signal.SIG_DFL)
