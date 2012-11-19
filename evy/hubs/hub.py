@@ -341,7 +341,11 @@ class Hub(object):
                 if self.num_active == 0:
                     self.stopping = True
             else:
+                ## remove all the timers and pollers
+                for timer in self.timers:               timer.destroy()
+                for poller in self.pollers.values():    poller.destroy()
                 self.timers = set()
+                self.pollers = {}
 
         finally:
             self.running = False
@@ -384,6 +388,13 @@ class Hub(object):
         """
         global _default_loop_destroyed
         if self._uv_ptr:
+
+            ## destroy all the timers and pollers
+            for timer in self.timers:               timer.destroy()
+            for poller in self.pollers.values():    poller.destroy()
+            self.timers = set()
+            self.pollers = {}
+
             self._stop_signal_checker()
             #if __SYSERR_CALLBACK == self._handle_syserr:
             #    set_syserr_cb(None)
@@ -391,6 +402,8 @@ class Hub(object):
                 _default_loop_destroyed = True
             libuv.uv_loop_destroy(self._uv_ptr)
             self._uv_ptr = ffi.NULL
+
+
 
     @property
     def num_active(self):
@@ -445,13 +458,17 @@ class Hub(object):
             timer()
         except self.SYSTEM_EXCEPTIONS:
             self.interrupted = True
-        except:
-            self.squelch_exception(-1, sys.exc_info())
+        except Exception, e:
+            self.squelch_timer_exception(timer, sys.exc_info())
 
         try:
             timer.destroy()
-            self.timers.remove(timer)
         except (AttributeError, TypeError):
+            pass
+
+        try:
+            self.timers.remove(timer)
+        except KeyError:
             pass
 
     def forget_timer(self, timer):
@@ -700,13 +717,13 @@ class Hub(object):
 
     def squelch_exception (self, fileno, exc_info):
         traceback.print_exception(*exc_info)
-        sys.stderr.write("Removing descriptor: %r\n" % (fileno,))
-        sys.stderr.flush()
-        try:
-            self.remove_descriptor(fileno)
-        except Exception, e:
-            sys.stderr.write("Exception while removing descriptor! %r\n" % (e,))
-            sys.stderr.flush()
+
+        if fileno > 0:
+            try:
+                self.remove_descriptor(fileno)
+            except Exception, e:
+                sys.stderr.write("Exception while removing descriptor! %r\n" % (e,))
+                sys.stderr.flush()
 
     def squelch_timer_exception (self, timer, exc_info):
         if self.debug_exceptions:
