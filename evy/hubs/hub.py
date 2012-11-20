@@ -200,7 +200,7 @@ class Hub(object):
         self._poller_canceled(p)
 
 
-    def remove_descriptor (self, fileno):
+    def remove_descriptor (self, fileno, skip_callbacks = False):
         """
         Completely remove all watchers for this *fileno*. For internal use only.
         """
@@ -210,9 +210,10 @@ class Hub(object):
             return
 
         try:
-            # invoke the callbacks in the poller and destroy it
-            p(READ)
-            p(WRITE)
+            if not skip_callbacks:
+                # invoke the callbacks in the poller and destroy it
+                p(READ)
+                p(WRITE)
         except self.SYSTEM_EXCEPTIONS:
             self.interrupted = True
         except:
