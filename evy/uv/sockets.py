@@ -182,12 +182,13 @@ class UvSocket(object):
         self.fd = fd
 
         ## setup the UV handle from the file descriptor
-        self.handle = None
-        if self.is_tcp:
+        if self._is_tcp():
+            self.handle = ffi.new('struct uv_tcp_s*')
             libuv.uv_tcp_init(hub.ptr, self.handle)
             if self.fileno() > 0:
                 libuv.uv_tcp_open(self.handle, self.fileno())
-        elif self.is_udp:
+        elif self._is_udp():
+            self.handle = ffi.new('struct uv_udp_s*')
             libuv.uv_udp_init(hub.ptr, self.handle)
             if self.fileno() > 0:
                 libuv.uv_udp_open(self.handle, self.fileno())
@@ -208,11 +209,9 @@ class UvSocket(object):
     def _sock (self):
         return self
 
-    @property
-    def is_tcp(self):   return self.fd.family is _original_socket.SOCK_STREAM
+    def _is_tcp(self):   return self.fd.type is socket.SOCK_STREAM
 
-    @property
-    def is_udp(self):   return self.fd.family is _original_socket.SOCK_DGRAM
+    def _is_udp(self):   return self.fd.type is socket.SOCK_DGRAM
 
     def __getattr__ (self, name):
         """
@@ -236,7 +235,7 @@ class UvSocket(object):
         if self.act_non_blocking:
             return self.fd.accept()
         else:
-            if self.is_tcp:
+            if self._is_tcp():
                 return self._accept_tcp()
             else:
                 fd = self.fd
