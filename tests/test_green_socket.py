@@ -33,16 +33,16 @@ from tests import LimitedTestCase, main, skipped, s2b, skip_on_windows
 
 from evy import event
 from evy import greenio
+from evy import convenience
 from evy.support import get_errno
 from evy.green import socket
 from evy.green import time
-from evy.greenthread import spawn_n, sleep
+from evy.greenthread import spawn, spawn_n, sleep
 from evy.timeout import Timeout
 from evy.greenthread import TimeoutError
 
 import errno
 
-import evy
 import os
 import sys
 import array
@@ -137,7 +137,7 @@ class TestGreenSocket(LimitedTestCase):
             sock, addr = listener.accept()
             evt.wait()
 
-        gt = evy.spawn(server)
+        gt = spawn(server)
 
         addr = listener.getsockname()
 
@@ -198,7 +198,7 @@ class TestGreenSocket(LimitedTestCase):
             sock, addr = listener.accept()
             evt.wait()
 
-        gt = evy.spawn(server)
+        gt = spawn(server)
 
         addr = listener.getsockname()
 
@@ -218,7 +218,7 @@ class TestGreenSocket(LimitedTestCase):
         gt.wait()
 
     def test_send_timeout (self):
-        listener = bufsized(evy.listen(('', 0)))
+        listener = bufsized(convenience.listen(('', 0)))
 
         evt = event.Event()
 
@@ -228,7 +228,7 @@ class TestGreenSocket(LimitedTestCase):
             sock = bufsized(sock)
             evt.wait()
 
-        gt = evy.spawn(server)
+        gt = spawn(server)
 
         addr = listener.getsockname()
 
@@ -263,7 +263,7 @@ class TestGreenSocket(LimitedTestCase):
             sock, addr = listener.accept()
             evt.wait()
 
-        gt = evy.spawn(server)
+        gt = spawn(server)
 
         addr = listener.getsockname()
 
@@ -327,7 +327,7 @@ class TestGreenSocket(LimitedTestCase):
         server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         server.bind(('0.0.0.0', 0))
         server.listen(50)
-        killer = evy.spawn(accept_close_early, server)
+        killer = spawn(accept_close_early, server)
         did_it_work(server)
         killer.wait()
 
@@ -335,7 +335,7 @@ class TestGreenSocket(LimitedTestCase):
         server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         server.bind(('0.0.0.0', 0))
         server.listen(50)
-        killer = evy.spawn(accept_close_late, server)
+        killer = spawn(accept_close_late, server)
         did_it_work(server)
         killer.wait()
 
@@ -357,7 +357,7 @@ class TestGreenSocket(LimitedTestCase):
         server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         server.bind(('127.0.0.1', 0))
         server.listen(50)
-        killer = evy.spawn(accept_once, server)
+        killer = spawn(accept_once, server)
         client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         client.connect(('127.0.0.1', server.getsockname()[1]))
         fd = client.makefile()
@@ -387,7 +387,7 @@ class TestGreenSocket(LimitedTestCase):
         def server ():
             (sock, addr) = listener.accept()
             sock = bufsized(sock)
-            send_large_coro = evy.spawn(send_large, sock)
+            send_large_coro = spawn(send_large, sock)
             sleep(0)
             result = sock.recv(10)
             expected = s2b('hello world')
@@ -396,11 +396,11 @@ class TestGreenSocket(LimitedTestCase):
             self.assertEquals(result, expected)
             send_large_coro.wait()
 
-        server_evt = evy.spawn(server)
+        server_evt = spawn(server)
         client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         client.connect(('127.0.0.1', listener.getsockname()[1]))
         bufsized(client)
-        large_evt = evy.spawn(read_large, client)
+        large_evt = spawn(read_large, client)
         sleep(0)
         client.sendall(s2b('hello world'))
         server_evt.wait()
@@ -426,7 +426,7 @@ class TestGreenSocket(LimitedTestCase):
             listener.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             listener.bind(("", 0))
             listener.listen(50)
-            sender_coro = evy.spawn(sender, listener)
+            sender_coro = spawn(sender, listener)
             client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             client.connect(('127.0.0.1', listener.getsockname()[1]))
             bufsized(client, size = bufsize)
@@ -483,7 +483,7 @@ class TestGreenSocket(LimitedTestCase):
         from evy import event
 
         evt = event.Event()
-        evy.spawn(sender, evt)
+        spawn(sender, evt)
         sleep(0)  # lets the socket enter accept mode, which
         # is necessary for connect to succeed on windows
         try:
@@ -508,16 +508,16 @@ class TestGreenSocket(LimitedTestCase):
         def handle (sock, addr):
             sock.recv(1)
             sock.sendall("a")
-            raise evy.StopServe()
+            raise convenience.StopServe()
 
-        listener = evy.listen(('127.0.0.1', 0))
-        server = evy.spawn(evy.serve, listener, handle)
+        listener = convenience.listen(('127.0.0.1', 0))
+        server = spawn(convenience.serve, listener, handle)
 
         def reader (s):
             s.recv(1)
 
-        s = evy.connect(('127.0.0.1', listener.getsockname()[1]))
-        a = evy.spawn(reader, s)
+        s = convenience.connect(('127.0.0.1', listener.getsockname()[1]))
+        a = spawn(reader, s)
         sleep(0)
         self.assertRaises(RuntimeError, s.recv, 1)
         s.sendall('b')
@@ -525,7 +525,7 @@ class TestGreenSocket(LimitedTestCase):
 
     def test_closure (self):
         def spam_to_me (address):
-            sock = evy.connect(address)
+            sock = convenience.connect(address)
             while True:
                 try:
                     sock.sendall('hello world')
@@ -534,8 +534,8 @@ class TestGreenSocket(LimitedTestCase):
                         return
                     raise
 
-        server = evy.listen(('127.0.0.1', 0))
-        sender = evy.spawn(spam_to_me, server.getsockname())
+        server = convenience.listen(('127.0.0.1', 0))
+        sender = spawn(spam_to_me, server.getsockname())
         client, address = server.accept()
         server.close()
 
@@ -553,15 +553,15 @@ class TestGreenSocket(LimitedTestCase):
         def closer ():
             client.close()
 
-        reader = evy.spawn(reader)
+        reader = spawn(reader)
         spawn_n(closer)
         reader.wait()
         sender.wait()
 
     def test_invalid_connection (self):
         # find an unused port by creating a socket then closing it
-        port = evy.listen(('127.0.0.1', 0)).getsockname()[1]
-        self.assertRaises(socket.error, evy.connect, ('127.0.0.1', port))
+        port = convenience.listen(('127.0.0.1', 0)).getsockname()[1]
+        self.assertRaises(socket.error, convenience.connect, ('127.0.0.1', port))
 
 
 class TestGreenPipe(LimitedTestCase):
@@ -586,7 +586,7 @@ class TestGreenPipe(LimitedTestCase):
             f.close()
 
         one_line = "12345\n";
-        evy.spawn(sender, wf, one_line * 5)
+        spawn(sender, wf, one_line * 5)
         for i in xrange(5):
             line = rf.readline()
             sleep(0.01)
@@ -611,7 +611,7 @@ class TestGreenPipe(LimitedTestCase):
             w.write('line\r\n')
             w.flush()
 
-        gt = evy.spawn(writer)
+        gt = spawn(writer)
 
         sleep(0)
 
@@ -635,7 +635,7 @@ class TestGreenPipe(LimitedTestCase):
             w.write(large_message)
             w.close()
 
-        gt = evy.spawn(writer)
+        gt = spawn(writer)
 
         for i in xrange(65):
             buf = r.read(1024)
@@ -736,7 +736,7 @@ class TestGreenIoStarvation(LimitedTestCase):
         clients = []
         servers = []
         for r in results:
-            servers.append(evy.spawn(server, r))
+            servers.append(spawn(server, r))
         for r in results:
             clients.append(client())
 

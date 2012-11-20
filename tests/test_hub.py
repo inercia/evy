@@ -201,7 +201,7 @@ class TestSuspend(LimitedTestCase):
         fd.write("""import evy
 Timeout(0.5)
 try:
-   evy.listen(("127.0.0.1", 0)).accept()
+   listen(("127.0.0.1", 0)).accept()
 except Timeout:
    print "exited correctly"
 """)
@@ -244,7 +244,7 @@ class TestFork(ProcessBase):
         new_mod = """
 import os
 import evy
-server = evy.listen(('localhost', 12345))
+server = listen(('localhost', 12345))
 t = Timeout(0.01)
 try:
     new_sock, address = server.accept()
