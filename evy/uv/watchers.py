@@ -118,6 +118,12 @@ class Watcher(object):
     def active(self):
         return handle_is_active(self._uv_handle)
 
+    def destroy(self):
+        """
+        Free any resources used by this watcher
+        """
+        libuv.uv_close(self.handle, ffi.NULL)
+
     ##
     ## properties
     ##
