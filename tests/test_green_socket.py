@@ -29,13 +29,17 @@
 
 
 import socket as _orig_sock
-from tests import LimitedTestCase, skip_with_pyevent, main, skipped, s2b, skip_if, skip_on_windows
+from tests import LimitedTestCase, main, skipped, s2b, skip_on_windows
+
 from evy import event
 from evy import greenio
-from evy import debug
 from evy.support import get_errno
 from evy.green import socket
 from evy.green import time
+from evy.greenthread import spawn_n, sleep
+from evy.timeout import Timeout
+from evy.greenthread import TimeoutError
+
 import errno
 
 import evy
@@ -384,7 +388,7 @@ class TestGreenSocket(LimitedTestCase):
             (sock, addr) = listener.accept()
             sock = bufsized(sock)
             send_large_coro = evy.spawn(send_large, sock)
-            evy.sleep(0)
+            sleep(0)
             result = sock.recv(10)
             expected = s2b('hello world')
             while len(result) < len(expected):
@@ -397,7 +401,7 @@ class TestGreenSocket(LimitedTestCase):
         client.connect(('127.0.0.1', listener.getsockname()[1]))
         bufsized(client)
         large_evt = evy.spawn(read_large, client)
-        evy.sleep(0)
+        sleep(0)
         client.sendall(s2b('hello world'))
         server_evt.wait()
         large_evt.wait()
@@ -471,7 +475,7 @@ class TestGreenSocket(LimitedTestCase):
             s2, addr = server.accept()
             wrap_wfile = s2.makefile('w')
 
-            evy.sleep(0.02)
+            sleep(0.02)
             wrap_wfile.write('hi')
             s2.close()
             evt.send('sent via event')
@@ -480,18 +484,18 @@ class TestGreenSocket(LimitedTestCase):
 
         evt = event.Event()
         evy.spawn(sender, evt)
-        evy.sleep(0)  # lets the socket enter accept mode, which
+        sleep(0)  # lets the socket enter accept mode, which
         # is necessary for connect to succeed on windows
         try:
             # try and get some data off of this pipe
             # but bail before any is sent
-            evy.Timeout(0.01)
+            Timeout(0.01)
             client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             client.connect(('127.0.0.1', bound_port))
             wrap_rfile = client.makefile()
             _c = wrap_rfile.read(1)
             self.fail()
-        except evy.TimeoutError:
+        except TimeoutError:
             pass
 
         result = evt.wait()
@@ -514,7 +518,7 @@ class TestGreenSocket(LimitedTestCase):
 
         s = evy.connect(('127.0.0.1', listener.getsockname()[1]))
         a = evy.spawn(reader, s)
-        evy.sleep(0)
+        sleep(0)
         self.assertRaises(RuntimeError, s.recv, 1)
         s.sendall('b')
         a.wait()
@@ -550,7 +554,7 @@ class TestGreenSocket(LimitedTestCase):
             client.close()
 
         reader = evy.spawn(reader)
-        evy.spawn_n(closer)
+        spawn_n(closer)
         reader.wait()
         sender.wait()
 
@@ -577,7 +581,7 @@ class TestGreenPipe(LimitedTestCase):
 
         def sender (f, content):
             for ch in content:
-                evy.sleep(0.0001)
+                sleep(0.0001)
                 f.write(ch)
             f.close()
 
@@ -585,7 +589,7 @@ class TestGreenPipe(LimitedTestCase):
         evy.spawn(sender, wf, one_line * 5)
         for i in xrange(5):
             line = rf.readline()
-            evy.sleep(0.01)
+            sleep(0.01)
             self.assertEquals(line, one_line)
         self.assertEquals(rf.readline(), '')
 
@@ -599,7 +603,7 @@ class TestGreenPipe(LimitedTestCase):
         w = greenio.GreenPipe(w, 'w')
 
         def writer ():
-            evy.sleep(.1)
+            sleep(.1)
 
             w.write('line\n')
             w.flush()
@@ -609,7 +613,7 @@ class TestGreenPipe(LimitedTestCase):
 
         gt = evy.spawn(writer)
 
-        evy.sleep(0)
+        sleep(0)
 
         line = r.readline()
         self.assertEquals(line, 'line\n')

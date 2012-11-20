@@ -10,6 +10,7 @@ try:
 except ImportError:
     from distutils.core import Extension, setup
 
+
 from distutils.command.build_ext    import build_ext
 from distutils.command.sdist        import sdist as _sdist
 from distutils.errors               import CCompilerError, DistutilsExecError, DistutilsPlatformError
@@ -19,7 +20,7 @@ ext_errors = (CCompilerError, DistutilsExecError, DistutilsPlatformError, IOErro
 __here__ = os.path.dirname(__file__)
 
 
-
+#: where the libuv is found...
 LIBUV_DIR = os.path.join(__here__, 'libuv')
 
 
@@ -29,7 +30,14 @@ def _system(cmd):
     sys.stdout.write('Running %r in %s\n' % (cmd, os.getcwd()))
     return os.system(cmd)
 
-def make(done=[]):
+
+def make(done = []):
+    """
+    Run the make proccess in the libuv directory
+
+    :param done:
+    :return:
+    """
     print 'making libuv'
 
     if not done:
@@ -43,13 +51,12 @@ def make(done=[]):
             new_ldflags = ""
             prev_ldflags = os.environ.get("LDFLAGS", "")
 
-            if sys.platform == "darwin":
-                new_cflags = new_cflags + " -U__llvm__ -arch x86_64 -arch i386"
-                new_ldflags = new_cflags + " -framework CoreServices"
+            if sys.platform == 'darwin':
+                new_cflags = new_cflags + ' -O3 -U__llvm__ -arch x86_64 -arch i386'
+                new_ldflags = new_ldflags + ' -framework CoreServices'
+            elif sys.platform in ['linux', 'linux2']:
+                new_cflags = new_cflags + ' -fPIC '
 
-            if sys.platform in ["linux", "linux2"]:
-                new_cflags = new_cflags + " -fPIC"
-            
             os.environ["CFLAGS"] = ("%s %s" % (prev_cflags, new_cflags)).lstrip()
             os.environ["LDFLAGS"] = ("%s %s" % (prev_ldflags, new_ldflags)).lstrip()
 
@@ -76,20 +83,28 @@ class libuv_sdist(_sdist):
 
 
 class libuv_build_ext(build_ext):
+    """
+    Builder for the libuv 'extension'
+    """
 
-    def build_extension(self, ext):
+    def build_extensions(self):
+        """
+        Runs the builder
+        """
         print 'building libuv extension'
         make()
 
         import evy.uv.interface
-        libuv_modules = [evy.uv.interface.ffi.verifier.get_extension()]
+        libuv_extension = evy.uv.interface.ffi.verifier.get_extension()
+        self.extensions = [libuv_extension]
 
         print 'using libuv version: %s' % evy.uv.get_version()
-        return libuv_modules
-
-libuv_extension = Extension(name='libuv', sources=[])
+        print '(build path: %s)' % self.get_ext_fullpath(libuv_extension.name)
 
 
 
-class BuildFailed(Exception):
-    pass
+libuv_extension = Extension(name = 'libuv',
+                            sources = [])
+
+
+

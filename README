@@ -27,5 +27,5 @@ The built html files can be found in doc/_build/html afterward.
 Status
 ======
 
-It doesn't work yet...
+Most of the unit tests are running now, but it doesn't work yet...
 

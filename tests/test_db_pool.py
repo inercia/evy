@@ -151,7 +151,7 @@ class DBConnectionPool(DBTester):
     def test_put_doesnt_double_wrap (self):
         self.pool.put(self.connection)
         conn = self.pool.get()
-        self.assert_(not isinstance(conn._base, db_pool.PooledConnectionWrapper))
+        self.assert_(not isinstance(conn._base, db_GreenPooledConnectionWrapper))
         self.pool.put(conn)
 
     def test_bool (self):
@@ -356,17 +356,17 @@ class DBConnectionPool(DBTester):
         self.connection = self.pool.get()
         self.connection.close()
         self.assertEquals(len(self.pool.free_items), 1)
-        evy.sleep(0.01)  # not long enough to trigger the idle timeout
+        sleep(0.01)  # not long enough to trigger the idle timeout
         self.assertEquals(len(self.pool.free_items), 1)
         self.connection = self.pool.get()
         self.connection.close()
         self.assertEquals(len(self.pool.free_items), 1)
-        evy.sleep(0.01)  # idle timeout should have fired but done nothing
+        sleep(0.01)  # idle timeout should have fired but done nothing
         self.assertEquals(len(self.pool.free_items), 1)
         self.connection = self.pool.get()
         self.connection.close()
         self.assertEquals(len(self.pool.free_items), 1)
-        evy.sleep(0.03) # long enough to trigger idle timeout for real
+        sleep(0.03) # long enough to trigger idle timeout for real
         self.assertEquals(len(self.pool.free_items), 0)
 
     @skipped
@@ -378,11 +378,11 @@ class DBConnectionPool(DBTester):
         self.pool = self.create_pool(max_size = 2, max_idle = 0.02)
         self.connection, conn2 = self.pool.get(), self.pool.get()
         self.connection.close()
-        evy.sleep(0.01)
+        sleep(0.01)
         self.assertEquals(len(self.pool.free_items), 1)
         conn2.close()
         self.assertEquals(len(self.pool.free_items), 2)
-        evy.sleep(0.02)  # trigger cleanup of conn1 but not conn2
+        sleep(0.02)  # trigger cleanup of conn1 but not conn2
         self.assertEquals(len(self.pool.free_items), 1)
 
     @skipped
@@ -395,12 +395,12 @@ class DBConnectionPool(DBTester):
         self.connection = self.pool.get()
         self.connection.close()
         self.assertEquals(len(self.pool.free_items), 1)
-        evy.sleep(0.01)  # not long enough to trigger the age timeout
+        sleep(0.01)  # not long enough to trigger the age timeout
         self.assertEquals(len(self.pool.free_items), 1)
         self.connection = self.pool.get()
         self.connection.close()
         self.assertEquals(len(self.pool.free_items), 1)
-        evy.sleep(0.05) # long enough to trigger age timeout
+        sleep(0.05) # long enough to trigger age timeout
         self.assertEquals(len(self.pool.free_items), 0)
 
     @skipped
@@ -413,9 +413,9 @@ class DBConnectionPool(DBTester):
         self.connection, conn2 = self.pool.get(), self.pool.get()
         self.connection.close()
         self.assertEquals(len(self.pool.free_items), 1)
-        evy.sleep(0)  # not long enough to trigger the age timeout
+        sleep(0)  # not long enough to trigger the age timeout
         self.assertEquals(len(self.pool.free_items), 1)
-        evy.sleep(0.2) # long enough to trigger age timeout
+        sleep(0.2) # long enough to trigger age timeout
         self.assertEquals(len(self.pool.free_items), 0)
         conn2.close()  # should not be added to the free items
         self.assertEquals(len(self.pool.free_items), 0)
@@ -438,12 +438,12 @@ class DBConnectionPool(DBTester):
             ev.send(c)
 
         evy.spawn(retrieve, self.pool, e)
-        evy.sleep(0) # these two sleeps should advance the retrieve
-        evy.sleep(0) # coroutine until it's waiting in get()
+        sleep(0) # these two sleeps should advance the retrieve
+        sleep(0) # coroutine until it's waiting in get()
         self.assertEquals(self.pool.free(), 0)
         self.assertEquals(self.pool.waiting(), 1)
         self.pool.put(self.connection)
-        timer = evy.Timeout(1)
+        timer = Timeout(1)
         conn = e.wait()
         timer.cancel()
         self.assertEquals(self.pool.free(), 0)

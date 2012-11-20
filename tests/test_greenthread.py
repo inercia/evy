@@ -247,8 +247,6 @@ class TestGreenHub(TestCase):
         check_hub()
 
     def test_001_trampoline_timeout (self):
-        from evy import coros
-
         server_sock = evy.listen(('127.0.0.1', 0))
         bound_port = server_sock.getsockname()[1]
 
@@ -299,17 +297,6 @@ class TestGreenHub(TestCase):
         greenthread.kill(server_coro)
 
         check_hub()
-
-    def test_named (self):
-        named_foo = greenthread.named('tests.api_test.Foo')
-        self.assertEquals(
-            named_foo.__name__,
-            "Foo")
-
-    def test_naming_missing_class (self):
-        self.assertRaises(
-            ImportError, greenthread.named, 'this_name_should_hopefully_not_exist.Foo')
-
 
     def test_killing_dormant (self):
         DELAY = 0.1

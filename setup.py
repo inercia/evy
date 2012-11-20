@@ -1,10 +1,11 @@
 #!/usr/bin/env python
 
 
-import sys
+try:
+    from setuptools import setup, find_packages
+except ImportError:
+    from distutils.core import setup, find_packages
 
-from setuptools import find_packages
-from distutils.core import setup
 
 from setup_libuv import libuv_build_ext, libuv_sdist, libuv_extension
 
@@ -23,7 +24,10 @@ setup(
     url                 = 'http://github.com/inercia/evy',
 
     packages            = find_packages(exclude = ['tests', 'benchmarks']),
-    install_requires    = ['dnspython'],
+
+    install_requires    = ['setuptools',
+                           'dnspython'
+    ],
     zip_safe            = False,
 
     long_description    = open(
@@ -36,7 +40,7 @@ setup(
     cmdclass            = {'build_ext': libuv_build_ext,
                            'sdist'    : libuv_sdist},
 
-    ext_package         = 'evy.uv',              # must match the package defined in the CFFI verify()
+    ext_package         = 'evy',              # must match the package defined in the CFFI verify()
     ext_modules         = [libuv_extension],
 
     test_suite          = 'nose.collector',

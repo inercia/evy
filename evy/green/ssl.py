@@ -1,3 +1,33 @@
+#
+# Evy - a concurrent networking library for Python
+#
+# Unless otherwise noted, the files in Evy are under the following MIT license:
+#
+# Copyright (c) 2012, Alvaro Saurin
+# Copyright (c) 2008-2010, Eventlet Contributors (see AUTHORS)
+# Copyright (c) 2007-2010, Linden Research, Inc.
+# Copyright (c) 2005-2006, Bob Ippolito
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+# THE SOFTWARE.
+#
+
+
 __ssl = __import__('ssl')
 
 from evy.patcher import slurp_properties
@@ -25,7 +55,8 @@ else:
 __patched__ = ['SSLSocket', 'wrap_socket', 'sslwrap_simple']
 
 class GreenSSLSocket(__ssl.SSLSocket):
-    """ This is a green version of the SSLSocket class from the ssl module added 
+    """
+    This is a green version of the SSLSocket class from the ssl module added
     in 2.6.  For documentation on it, please see the Python standard
     documentation.
     
@@ -38,6 +69,7 @@ class GreenSSLSocket(__ssl.SSLSocket):
     settimeout(), and to close/reopen the connection when a timeout 
     occurs at an unexpected juncture in the code.
     """
+
     # we are inheriting from SSLSocket because its constructor calls 
     # do_handshake whose behavior we wish to override
     def __init__ (self, sock, *args, **kw):
@@ -257,9 +289,11 @@ class GreenSSLSocket(__ssl.SSLSocket):
             self.do_handshake()
 
     def accept (self):
-        """Accepts a new connection from a remote client, and returns
+        """
+        Accepts a new connection from a remote client, and returns
         a tuple containing that new connection wrapped with a server-side
-        SSL channel, and the address of the remote client."""
+        SSL channel, and the address of the remote client.
+        """
         # RDW grr duplication of code from greenio
         if self.act_non_blocking:
             newsock, addr = socket.accept(self)

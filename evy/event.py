@@ -32,13 +32,18 @@
 from evy import hubs
 from evy.support import greenlets as greenlet
 
+
 __all__ = ['Event']
+
 
 class NOT_USED:
     def __repr__ (self):
         return 'NOT_USED'
 
 NOT_USED = NOT_USED()
+
+
+
 
 class Event(object):
     """
@@ -58,12 +63,15 @@ class Event(object):
     >>> def baz(b):
     ...     evt.send(b + 1)
     ...
-    >>> _ = evy.spawn_n(baz, 3)
+    >>> _ = spawn_n(baz, 3)
     >>> evt.wait()
     4
     """
+
+    __slots__ = ['_result', '_exc', '_waiters']
     _result = None
     _exc = None
+
 
     def __init__ (self):
         self._waiters = set()
@@ -132,7 +140,7 @@ class Event(object):
         ...    print "waited for", retval
         >>> _ = evy.spawn(wait_on)
         >>> evt.send('result')
-        >>> evy.sleep(0)
+        >>> sleep(0)
         waited for result
 
         Returns immediately if the event has already
@@ -165,10 +173,10 @@ class Event(object):
         ...     result = evt.wait()
         ...     print 'waited for', result
         >>> _ = evy.spawn(waiter)
-        >>> evy.sleep(0)
+        >>> sleep(0)
         about to wait
         >>> evt.send('a')
-        >>> evy.sleep(0)
+        >>> sleep(0)
         waited for a
 
         It is an error to call :meth:`send` multiple times on the same event.

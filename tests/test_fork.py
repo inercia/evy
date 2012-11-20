@@ -28,7 +28,7 @@
 #
 
 
-from tests.patcher_test import ProcessBase
+from tests.test_patcher import ProcessBase
 
 
 class ForkTest(ProcessBase):
@@ -42,7 +42,7 @@ mydir = %r
 signal_file = os.path.join(mydir, "output.txt")
 pid = os.fork()
 if (pid != 0):
-  evy.Timeout(10)
+  Timeout(10)
   try:
     port = None
     while True:
@@ -51,7 +51,7 @@ if (pid != 0):
         port = int(contents.split()[0])
         break
       except (IOError, IndexError, ValueError, TypeError):
-        evy.sleep(0.1)
+        sleep(0.1)
     evy.connect(('127.0.0.1', port))
     while True:
       try:
@@ -59,7 +59,7 @@ if (pid != 0):
         result = contents.split()[1]
         break
       except (IOError, IndexError):
-        evy.sleep(0.1)
+        sleep(0.1)
     print 'result', result
   finally:
     os.kill(pid, signal.SIGTERM)

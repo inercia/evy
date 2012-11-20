@@ -27,7 +27,12 @@
 # THE SOFTWARE.
 #
 
-from evy import coros
+import greenlet
+from greenlet.greenlet import getcurrent
+
+from evy.greenpool import GreenPool
+from evy.greenthread import spawn
+from evy.queue import Queue
 from evy.semaphore import Semaphore
 
 import warnings
@@ -42,9 +47,9 @@ class Pool(object):
             raise ValueError('min_size cannot be bigger than max_size')
         self.max_size = max_size
         self.sem = Semaphore(max_size)
-        self.procs = proc.RunningProcSet()
+        self.procs = GreenPool()
         if track_events:
-            self.results = coros.queue()
+            self.results = Queue()
         else:
             self.results = None
 
@@ -63,7 +68,7 @@ class Pool(object):
     @property
     def current_size (self):
         """ The number of coroutines that are currently executing jobs. """
-        return len(self.procs)
+        return self.procs.running()
 
     def free (self):
         """ Returns the number of coroutines that are available for doing
@@ -84,8 +89,8 @@ class Pool(object):
         """
         # if reentering an empty pool, don't try to wait on a coroutine freeing
         # itself -- instead, just execute in the current coroutine
-        if self.sem.locked() and api.getcurrent() in self.procs:
-            p = proc.spawn(func, *args, **kwargs)
+        if self.sem.locked() and getcurrent() in self.procs:
+            p = spawn(func, *args, **kwargs)
             try:
                 p.wait()
             except:
@@ -158,7 +163,6 @@ class Pool(object):
         coroutines, newly-launched plus any previously-submitted :meth:`execute()`
         or :meth:`execute_async` calls, have completed.
 
-        >>> from evy import coros
         >>> pool = coros.CoroutinePool()
         >>> def saw(x): print "I saw %s!" % x
         ...
@@ -215,9 +219,8 @@ class Pool(object):
         above is when the *iterable*, which may itself be a generator, produces
         millions of items.)
 
-        >>> from evy import coros
         >>> import string
-        >>> pool = coros.CoroutinePool(max_size=5)
+        >>> pool = CoroutinePool(max_size=5)
         >>> pausers = [coros.Event() for x in xrange(2)]
         >>> def longtask(evt, desc):
         ...     print "%s woke up with %s" % (desc, evt.wait())
@@ -291,7 +294,7 @@ class Pool(object):
         # coroutine calls send(result). We slyly pass a queue rather than an
         # event -- the same queue instance for all coroutines. This is why our
         # queue interface intentionally resembles the event interface.
-        q = coros.queue(max_size = qsize)
+        q = Queue(max_size = qsize)
         # How many results have we yielded so far?
         finished = 0
         # This first loop is only until we've launched all the coroutines. Its

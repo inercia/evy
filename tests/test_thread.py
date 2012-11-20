@@ -66,14 +66,14 @@ class Locals(LimitedTestCase):
 
         thread.start_new_thread(setter, args = (tls, 1))
         thread.start_new_thread(setter, args = (tls, 2))
-        evy.sleep()
+        sleep()
         objs = object.__getattribute__(tls, "__objs")
         self.failUnlessEqual(sorted(g_ids), sorted(objs.keys()))
         self.failUnlessEqual(objs[g_ids[0]]['value'], 1)
         self.failUnlessEqual(objs[g_ids[1]]['value'], 2)
         self.failUnlessRaises(AttributeError, lambda: tls.value)
         evt.send("done")
-        evy.sleep()
+        sleep()
 
     def test_assignment (self):
         my_local = corolocal.local()

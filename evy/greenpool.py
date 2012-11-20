@@ -40,8 +40,12 @@ __all__ = ['GreenPool', 'GreenPile']
 
 DEBUG = True
 
+
+
+
 class GreenPool(object):
-    """The GreenPool class is a pool of green threads.
+    """
+    The GreenPool class is a pool of green threads.
     """
 
     def __init__ (self, size = 1000):
@@ -69,14 +73,16 @@ class GreenPool(object):
         return len(self.coroutines_running)
 
     def free (self):
-        """ Returns the number of greenthreads available for use.
+        """
+        Returns the number of greenthreads available for use.
 
         If zero or less, the next call to :meth:`spawn` or :meth:`spawn_n` will
         block the calling greenthread until a slot becomes available."""
         return self.sem.counter
 
     def spawn (self, function, *args, **kwargs):
-        """Run the *function* with its arguments in its own green thread.
+        """
+        Run the *function* with its arguments in its own green thread.
         Returns the :class:`GreenThread <evy.greenthread.GreenThread>`
         object that is running the function, which can be used to retrieve the
         results.
@@ -200,7 +206,8 @@ def return_stop_iteration ():
 
 
 class GreenPile(object):
-    """GreenPile is an abstraction representing a bunch of I/O-related tasks.
+    """
+    GreenPile is an abstraction representing a bunch of I/O-related tasks.
 
     Construct a GreenPile with an existing GreenPool object.  The GreenPile will
     then use that pool's concurrency as it processes its jobs.  There can be
@@ -225,8 +232,10 @@ class GreenPile(object):
         self.counter = 0
 
     def spawn (self, func, *args, **kw):
-        """Runs *func* in its own green thread, with the result available by
-        iterating over the GreenPile object."""
+        """
+        Runs *func* in its own green thread, with the result available by
+        iterating over the GreenPile object.
+        """
         self.used = True
         self.counter += 1
         try:
@@ -240,8 +249,10 @@ class GreenPile(object):
         return self
 
     def next (self):
-        """Wait for the next result, suspending the current greenthread until it
-        is available.  Raises StopIteration when there are no more results."""
+        """
+        Wait for the next result, suspending the current greenthread until it
+        is available.  Raises StopIteration when there are no more results.
+        """
         if self.counter == 0 and self.used:
             raise StopIteration()
         try:
@@ -249,10 +260,14 @@ class GreenPile(object):
         finally:
             self.counter -= 1
 
-# this is identical to GreenPile but it blocks on spawn if the results
-# aren't consumed, and it doesn't generate its own StopIteration exception,
-# instead relying on the spawning process to send one in when it's done
+
 class GreenMap(GreenPile):
+    """
+    A GreenMap is identical to GreenPile but it blocks on spawn if the results
+    aren't consumed, and it doesn't generate its own StopIteration exception,
+    instead relying on the spawning process to send one in when it's done
+    """
+
     def __init__ (self, size_or_pool):
         super(GreenMap, self).__init__(size_or_pool)
         self.waiters = queue.LightQueue(maxsize = self.pool.size)

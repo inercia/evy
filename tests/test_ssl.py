@@ -36,7 +36,7 @@ from tests import skip_if_no_ssl
 from unittest import main
 
 import evy
-from evy import util, coros, greenio
+from evy import api, util, greenio
 from evy import greenthread
 
 

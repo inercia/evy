@@ -29,8 +29,10 @@
 
 
 import evy
+
 from evy import backdoor
 from evy.green import socket
+from evy.greenthread import sleep
 
 from tests import LimitedTestCase, main
 
@@ -56,7 +58,7 @@ class BackdoorTest(LimitedTestCase):
         client.close()
         serv.kill()
         # wait for the console to discover that it's dead
-        evy.sleep(0.1)
+        sleep(0.1)
 
 
 if __name__ == '__main__':

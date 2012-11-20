@@ -28,13 +28,16 @@
 #
 
 
-"""Test than modules in evy.green package are indeed green.
+"""
+Test than modules in evy.green package are indeed green.
 To do that spawn a green server and then access it using a green socket.
 If either operation blocked the whole script would block and timeout.
 """
+
 import unittest
+
 from evy.green import urllib2, BaseHTTPServer
-from evy import spawn, kill
+from evy.greenthread import spawn, kill
 
 class QuietHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     protocol_version = "HTTP/1.0"
