@@ -415,7 +415,7 @@ int uv_is_writable(const uv_stream_t* handle);
 int uv_is_closing(const uv_handle_t* handle);
 
 int uv_tcp_init(uv_loop_t*, uv_tcp_t* handle);
-int uv_tcp_open(uv_tcp_t* handle, uv_os_sock_t sock);
+int uv_tcp_open(uv_tcp_t* handle, int sock);
 int uv_tcp_nodelay(uv_tcp_t* handle, int enable);
 int uv_tcp_keepalive(uv_tcp_t* handle, int enable, unsigned int delay);
 int uv_tcp_simultaneous_accepts(uv_tcp_t* handle, int enable);
@@ -432,7 +432,7 @@ typedef void (*uv_udp_send_cb)(uv_udp_send_t* req, int status);
 typedef void *uv_udp_recv_cb;
 
 int uv_udp_init(uv_loop_t*, uv_udp_t* handle);
-int uv_udp_open(uv_udp_t* handle, uv_os_sock_t sock);
+int uv_udp_open(uv_udp_t* handle, int sock);
 int uv_udp_bind(uv_udp_t* handle, struct sockaddr_in addr, unsigned flags);
 int uv_udp_bind6(uv_udp_t* handle, struct sockaddr_in6 addr, unsigned flags);
 int uv_udp_getsockname(uv_udp_t* handle, struct sockaddr* name, int* namelen);
