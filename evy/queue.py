@@ -191,13 +191,17 @@ class LightQueue(object):
         return result
 
     def qsize (self):
-        """Return the size of the queue."""
+        """
+        Return the size of the queue.
+        """
         return len(self.queue)
 
     def resize (self, size):
-        """Resizes the queue's maximum size.
+        """
+        Resizes the queue's maximum size.
 
-        If the size is increased, and there are putters waiting, they may be woken up."""
+        If the size is increased, and there are putters waiting, they may be woken up.
+        """
         if self.maxsize is not None and (
         size is None or size > self.maxsize): # None is not comparable in 3.x
             # Maybe wake some stuff up
@@ -210,23 +214,29 @@ class LightQueue(object):
         return len(self.putters)
 
     def getting (self):
-        """Returns the number of greenthreads that are blocked waiting on an 
-        empty queue."""
+        """
+        Returns the number of greenthreads that are blocked waiting on an
+        empty queue.
+        """
         return len(self.getters)
 
     def empty (self):
-        """Return ``True`` if the queue is empty, ``False`` otherwise."""
+        """
+        Return ``True`` if the queue is empty, ``False`` otherwise.
+        """
         return not self.qsize()
 
     def full (self):
-        """Return ``True`` if the queue is full, ``False`` otherwise.
+        """
+        Return ``True`` if the queue is full, ``False`` otherwise.
 
         ``Queue(None)`` is never full.
         """
         return self.maxsize is not None and self.qsize() >= self.maxsize # None is not comparable in 3.x
 
     def put (self, item, block = True, timeout = None):
-        """Put an item into the queue.
+        """
+        Put an item into the queue.
 
         If optional arg *block* is true and *timeout* is ``None`` (the default),
         block if necessary until a free slot is available. If *timeout* is
@@ -278,7 +288,8 @@ class LightQueue(object):
         self.put(item, False)
 
     def get (self, block = True, timeout = None):
-        """Remove and return an item from the queue.
+        """
+        Remove and return an item from the queue.
 
         If optional args *block* is true and *timeout* is ``None`` (the default),
         block if necessary until an item is available. If *timeout* is a positive number,
@@ -374,7 +385,8 @@ class ItemWaiter(Waiter):
 
 
 class Queue(LightQueue):
-    '''Create a queue object with a given maximum size.
+    """
+    Create a queue object with a given maximum size.
 
     If *maxsize* is less than zero or ``None``, the queue size is infinite.
 
@@ -384,7 +396,7 @@ class Queue(LightQueue):
     
     In all other respects, this Queue class resembled the standard library,
     :class:`Queue`.
-    '''
+    """
 
     def __init__ (self, maxsize = None):
         LightQueue.__init__(self, maxsize)
@@ -407,7 +419,8 @@ class Queue(LightQueue):
             self._cond.reset()
 
     def task_done (self):
-        '''Indicate that a formerly enqueued task is complete. Used by queue consumer threads.
+        """
+        Indicate that a formerly enqueued task is complete. Used by queue consumer threads.
         For each :meth:`get <Queue.get>` used to fetch a task, a subsequent call to :meth:`task_done` tells the queue
         that the processing on the task is complete.
 
@@ -416,7 +429,7 @@ class Queue(LightQueue):
         :meth:`put <Queue.put>` into the queue).
 
         Raises a :exc:`ValueError` if called more times than there were items placed in the queue.
-        '''
+        """
 
         if self.unfinished_tasks <= 0:
             raise ValueError('task_done() called too many times')
@@ -425,21 +438,23 @@ class Queue(LightQueue):
             self._cond.send(None)
 
     def join (self):
-        '''Block until all items in the queue have been gotten and processed.
+        """
+        Block until all items in the queue have been gotten and processed.
 
         The count of unfinished tasks goes up whenever an item is added to the queue.
         The count goes down whenever a consumer thread calls :meth:`task_done` to indicate
         that the item was retrieved and all work on it is complete. When the count of
         unfinished tasks drops to zero, :meth:`join` unblocks.
-        '''
-        self._cond.wait()
+        """
+        return self._cond.wait()
 
 
 class PriorityQueue(Queue):
-    '''A subclass of :class:`Queue` that retrieves entries in priority order (lowest first).
+    """
+    A subclass of :class:`Queue` that retrieves entries in priority order (lowest first).
 
     Entries are typically tuples of the form: ``(priority number, data)``.
-    '''
+    """
 
     def _init (self, maxsize):
         self.queue = []
@@ -453,7 +468,7 @@ class PriorityQueue(Queue):
 
 
 class LifoQueue(Queue):
-    '''A subclass of :class:`Queue` that retrieves most recently added entries first.'''
+    """A subclass of :class:`Queue` that retrieves most recently added entries first."""
 
     def _init (self, maxsize):
         self.queue = []
