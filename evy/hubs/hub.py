@@ -329,7 +329,7 @@ class Hub(object):
                     self.block_detect_pre()
 
                 try:
-                    status = self.loop(once = True)
+                    more_events = self.loop(once = True)
                 except self.SYSTEM_EXCEPTIONS:
                     self.interrupted = True
                 except:
@@ -339,7 +339,7 @@ class Hub(object):
                     self.block_detect_post()
 
                 ## if there are no active events, just get out of here...
-                if self.num_active == 0:
+                if not more_events:
                     self.stopping = True
             else:
                 ## remove all the timers and pollers
@@ -357,11 +357,13 @@ class Hub(object):
         """
         Loop the events
 
-        :param once: if True, runs only once
-        :return: None
+        :param once: if True, polls for new events once (and it blocks if there are no pending events)
+        :return: 1 if more events are expected, 0 otherwise (when *once* is False, it always returns 0)
         """
-        if once:    libuv.uv_run_once(self._uv_ptr)
-        else:       libuv.uv_run(self._uv_ptr)
+        if once:
+            return libuv.uv_run_once(self._uv_ptr)
+        else:
+            return libuv.uv_run(self._uv_ptr)
 
     def abort (self, wait = False):
         """
