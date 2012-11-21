@@ -34,11 +34,12 @@ import warnings
 from tests import LimitedTestCase
 from tests import skip_if_no_ssl
 
-import evy
 from evy import greenthread
-from evy.support import greenlets as greenlet
-from evy import greenio, util, hubs, greenthread, spawn
+from evy import hubs
 
+from evy.support import greenlets as greenlet
+from evy.greenthread import spawn
+from evy.convenience import listen, connect
 
 
 
@@ -216,7 +217,7 @@ class TestGreenHub(TestCase):
 
 
     def test_tcp_listener (self):
-        socket = evy.listen(('0.0.0.0', 0))
+        socket = listen(('0.0.0.0', 0))
         assert socket.getsockname()[0] == '0.0.0.0'
         socket.close()
 
@@ -233,10 +234,10 @@ class TestGreenHub(TestCase):
             finally:
                 listenfd.close()
 
-        server = evy.listen(('0.0.0.0', 0))
+        server = listen(('0.0.0.0', 0))
         greenthread.spawn(accept_once, server)
 
-        client = evy.connect(('127.0.0.1', server.getsockname()[1]))
+        client = connect(('127.0.0.1', server.getsockname()[1]))
         fd = client.makefile()
         client.close()
         assert fd.readline() == 'hello\n'
@@ -247,7 +248,7 @@ class TestGreenHub(TestCase):
         check_hub()
 
     def test_001_trampoline_timeout (self):
-        server_sock = evy.listen(('127.0.0.1', 0))
+        server_sock = listen(('127.0.0.1', 0))
         bound_port = server_sock.getsockname()[1]
 
         def server (sock):
@@ -257,7 +258,7 @@ class TestGreenHub(TestCase):
         server_evt = spawn(server, server_sock)
         greenthread.sleep(0)
         try:
-            desc = evy.connect(('127.0.0.1', bound_port))
+            desc = connect(('127.0.0.1', bound_port))
             hubs.trampoline(desc, read = True, write = False, timeout = 0.001)
         except greenthread.TimeoutError:
             pass # test passed
@@ -268,7 +269,7 @@ class TestGreenHub(TestCase):
         check_hub()
 
     def test_timeout_cancel (self):
-        server = evy.listen(('0.0.0.0', 0))
+        server = listen(('0.0.0.0', 0))
         bound_port = server.getsockname()[1]
 
         done = [False]
@@ -279,7 +280,7 @@ class TestGreenHub(TestCase):
                 conn.close()
 
         def go ():
-            desc = evy.connect(('127.0.0.1', bound_port))
+            desc = connect(('127.0.0.1', bound_port))
             try:
                 hubs.trampoline(desc, read = True, timeout = 0.1)
             except greenthread.TimeoutError:

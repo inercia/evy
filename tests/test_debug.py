@@ -137,8 +137,8 @@ class TestDebug(LimitedTestCase):
 
     def test_hub_exceptions (self):
         debug.hub_exceptions(True)
-        server = evy.listen(('0.0.0.0', 0))
-        client = evy.connect(('127.0.0.1', server.getsockname()[1]))
+        server = listen(('0.0.0.0', 0))
+        client = connect(('127.0.0.1', server.getsockname()[1]))
         client_2, addr = server.accept()
 
         def hurl (s):

@@ -31,14 +31,11 @@ from unittest import main
 
 from tests import LimitedTestCase, main, silence_warnings
 
-import evy
 from evy import event
 from evy.greenthread import spawn, sleep
 from evy.queue import Queue, LifoQueue
 from evy.event import Event
-
-
-
+from evy.timeout import Timeout, with_timeout
 
 def do_bail (q):
     Timeout(0, RuntimeError())
@@ -51,24 +48,24 @@ def do_bail (q):
 
 class TestQueue(LimitedTestCase):
     def test_send_first (self):
-        q = evy.Queue()
+        q = Queue()
         q.put('hi')
         self.assertEquals(q.get(), 'hi')
 
     def test_send_last (self):
-        q = evy.Queue()
+        q = Queue()
 
         def waiter (q):
             self.assertEquals(q.get(), 'hi2')
 
-        gt = evy.spawn(evy.with_timeout, 0.1, waiter, q)
+        gt = spawn(with_timeout, 0.1, waiter, q)
         sleep(0)
         sleep(0)
         q.put('hi2')
         gt.wait()
 
     def test_max_size (self):
-        q = evy.Queue(2)
+        q = Queue(2)
         results = []
 
         def putter (q):
@@ -79,7 +76,7 @@ class TestQueue(LimitedTestCase):
             q.put('c')
             results.append('c')
 
-        gt = evy.spawn(putter, q)
+        gt = spawn(putter, q)
         sleep(0)
         self.assertEquals(results, ['a', 'b'])
         self.assertEquals(q.get(), 'a')
@@ -90,7 +87,7 @@ class TestQueue(LimitedTestCase):
         gt.wait()
 
     def test_zero_max_size (self):
-        q = evy.Queue(0)
+        q = Queue(0)
 
         def sender (evt, q):
             q.put('hi')
@@ -101,23 +98,23 @@ class TestQueue(LimitedTestCase):
             return x
 
         evt = event.Event()
-        gt = evy.spawn(sender, evt, q)
+        gt = spawn(sender, evt, q)
         sleep(0)
         self.assert_(not evt.ready())
-        gt2 = evy.spawn(receiver, q)
+        gt2 = spawn(receiver, q)
         self.assertEquals(gt2.wait(), 'hi')
         self.assertEquals(evt.wait(), 'done')
         gt.wait()
 
     def test_resize_up (self):
-        q = evy.Queue(0)
+        q = Queue(0)
 
         def sender (evt, q):
             q.put('hi')
             evt.send('done')
 
         evt = event.Event()
-        gt = evy.spawn(sender, evt, q)
+        gt = spawn(sender, evt, q)
         sleep(0)
         self.assert_(not evt.ready())
         q.resize(1)
@@ -127,7 +124,7 @@ class TestQueue(LimitedTestCase):
 
     def test_resize_down (self):
         size = 5
-        q = evy.Queue(5)
+        q = Queue(5)
 
         for i in range(5):
             q.put(i)
@@ -138,14 +135,14 @@ class TestQueue(LimitedTestCase):
         self.assertEquals(list(q.queue), range(5))
 
     def test_resize_to_Unlimited (self):
-        q = evy.Queue(0)
+        q = Queue(0)
 
         def sender (evt, q):
             q.put('hi')
             evt.send('done')
 
         evt = event.Event()
-        gt = evy.spawn(sender, evt, q)
+        gt = spawn(sender, evt, q)
         sleep()
         self.assertFalse(evt.ready())
         q.resize(None)
@@ -155,10 +152,10 @@ class TestQueue(LimitedTestCase):
 
     def test_multiple_waiters (self):
         # tests that multiple waiters get their results back
-        q = evy.Queue()
+        q = Queue()
 
         sendings = ['1', '2', '3', '4']
-        gts = [evy.spawn(q.get)
+        gts = [spawn(q.get)
                for x in sendings]
 
         sleep(0.01) # get 'em all waiting
@@ -173,17 +170,17 @@ class TestQueue(LimitedTestCase):
         self.assertEquals(results, set(sendings))
 
     def test_waiters_that_cancel (self):
-        q = evy.Queue()
+        q = Queue()
 
-        gt = evy.spawn(do_bail, q)
+        gt = spawn(do_bail, q)
         self.assertEquals(gt.wait(), 'timed out')
 
         q.put('hi')
         self.assertEquals(q.get(), 'hi')
 
     def test_getting_before_sending (self):
-        q = evy.Queue()
-        gt = evy.spawn(q.put, 'sent')
+        q = Queue()
+        gt = spawn(q.put, 'sent')
         self.assertEquals(q.get(), 'sent')
         gt.wait()
 
@@ -191,18 +188,18 @@ class TestQueue(LimitedTestCase):
         def waiter (q):
             return q.get()
 
-        q = evy.Queue()
-        dying = evy.spawn(do_bail, q)
-        waiting = evy.spawn(waiter, q)
+        q = Queue()
+        dying = spawn(do_bail, q)
+        waiting = spawn(waiter, q)
         sleep(0)
         q.put('hi')
         self.assertEquals(dying.wait(), 'timed out')
         self.assertEquals(waiting.wait(), 'hi')
 
     def test_two_bogus_waiters (self):
-        q = evy.Queue()
-        gt1 = evy.spawn(do_bail, q)
-        gt2 = evy.spawn(do_bail, q)
+        q = Queue()
+        gt1 = spawn(do_bail, q)
+        gt2 = spawn(do_bail, q)
         sleep(0)
         q.put('sent')
         self.assertEquals(gt1.wait(), 'timed out')
@@ -210,8 +207,8 @@ class TestQueue(LimitedTestCase):
         self.assertEquals(q.get(), 'sent')
 
     def test_waiting (self):
-        q = evy.Queue()
-        gt1 = evy.spawn(q.get)
+        q = Queue()
+        gt1 = spawn(q.get)
         sleep(0)
         self.assertEquals(1, q.getting())
         q.put('hi')
@@ -221,14 +218,14 @@ class TestQueue(LimitedTestCase):
         self.assertEquals(0, q.getting())
 
     def test_channel_send (self):
-        channel = evy.Queue(0)
+        channel = Queue(0)
         events = []
 
         def another_greenlet ():
             events.append(channel.get())
             events.append(channel.get())
 
-        gt = evy.spawn(another_greenlet)
+        gt = spawn(another_greenlet)
 
         events.append('sending')
         channel.put('hello')
@@ -240,7 +237,7 @@ class TestQueue(LimitedTestCase):
 
 
     def test_channel_wait (self):
-        channel = evy.Queue(0)
+        channel = Queue(0)
         events = []
 
         def another_greenlet ():
@@ -250,7 +247,7 @@ class TestQueue(LimitedTestCase):
             channel.put('world')
             events.append('sent world')
 
-        gt = evy.spawn(another_greenlet)
+        gt = spawn(another_greenlet)
 
         events.append('waiting')
         events.append(channel.get())
@@ -262,15 +259,15 @@ class TestQueue(LimitedTestCase):
             ['waiting', 'sending hello', 'hello', 'sending world', 'world', 'sent world'], events)
 
     def test_channel_waiters (self):
-        c = evy.Queue(0)
-        w1 = evy.spawn(c.get)
-        w2 = evy.spawn(c.get)
-        w3 = evy.spawn(c.get)
+        c = Queue(0)
+        w1 = spawn(c.get)
+        w2 = spawn(c.get)
+        w3 = spawn(c.get)
         sleep(0)
         self.assertEquals(c.getting(), 3)
-        s1 = evy.spawn(c.put, 1)
-        s2 = evy.spawn(c.put, 2)
-        s3 = evy.spawn(c.put, 3)
+        s1 = spawn(c.put, 1)
+        s2 = spawn(c.put, 2)
+        s3 = spawn(c.put, 3)
 
         s1.wait()
         s2.wait()
@@ -283,7 +280,7 @@ class TestQueue(LimitedTestCase):
     def test_channel_sender_timing_out (self):
         from evy import queue
 
-        c = evy.Queue(0)
+        c = Queue(0)
         self.assertRaises(queue.Full, c.put, "hi", timeout = 0.001)
         self.assertRaises(queue.Empty, c.get_nowait)
 
@@ -292,7 +289,7 @@ class TestQueue(LimitedTestCase):
 
         channel = queue.Queue(0)
         X = object()
-        gt = evy.spawn(channel.put, X)
+        gt = spawn(channel.put, X)
         result = channel.get()
         assert result is X, (result, X)
         assert channel.unfinished_tasks == 1, channel.unfinished_tasks
@@ -314,7 +311,7 @@ class TestNoWait(LimitedTestCase):
 
         hub = hubs.get_hub()
         result = []
-        q = evy.Queue(1)
+        q = Queue(1)
         hub.schedule_call_global(0, store_result, result, q.put_nowait, 2)
         hub.schedule_call_global(0, store_result, result, q.put_nowait, 3)
         sleep(0)
@@ -344,7 +341,7 @@ class TestNoWait(LimitedTestCase):
         hub = hubs.get_hub()
         result = []
         q = queue.Queue(0)
-        p = evy.spawn(q.put, 5)
+        p = spawn(q.put, 5)
         assert q.empty(), q
         assert q.full(), q
         sleep(0)
@@ -367,7 +364,7 @@ class TestNoWait(LimitedTestCase):
         hub = hubs.get_hub()
         result = []
         q = queue.Queue(0)
-        p = evy.spawn(q.get)
+        p = spawn(q.get)
         assert q.empty(), q
         assert q.full(), q
         sleep(0)
@@ -390,14 +387,8 @@ class TestQueue(LimitedTestCase):
     @silence_warnings
     def test_send_first (self):
         q = Queue()
-        q.send('hi')
-        self.assertEquals(q.wait(), 'hi')
-
-    @silence_warnings
-    def test_send_exception_first (self):
-        q = Queue()
-        q.send(exc = RuntimeError())
-        self.assertRaises(RuntimeError, q.wait)
+        q.put('hi')
+        self.assertEquals(q.get(), 'hi')
 
     @silence_warnings
     def test_send_last (self):
@@ -405,13 +396,13 @@ class TestQueue(LimitedTestCase):
 
         def waiter (q):
             timer = Timeout(0.1)
-            self.assertEquals(q.wait(), 'hi2')
+            self.assertEquals(q.join(), 'hi2')
             timer.cancel()
 
         spawn(waiter, q)
         sleep(0)
         sleep(0)
-        q.send('hi2')
+        q.put('hi2')
 
     @silence_warnings
     def test_max_size (self):
@@ -419,32 +410,32 @@ class TestQueue(LimitedTestCase):
         results = []
 
         def putter (q):
-            q.send('a')
+            q.put('a')
             results.append('a')
-            q.send('b')
+            q.put('b')
             results.append('b')
-            q.send('c')
+            q.put('c')
             results.append('c')
 
         spawn(putter, q)
         sleep(0)
         self.assertEquals(results, ['a', 'b'])
-        self.assertEquals(q.wait(), 'a')
+        self.assertEquals(q.get(), 'a')
         sleep(0)
         self.assertEquals(results, ['a', 'b', 'c'])
-        self.assertEquals(q.wait(), 'b')
-        self.assertEquals(q.wait(), 'c')
+        self.assertEquals(q.get(), 'b')
+        self.assertEquals(q.get(), 'c')
 
     @silence_warnings
     def test_zero_max_size (self):
         q = Queue(0)
 
         def sender (evt, q):
-            q.send('hi')
+            q.put('hi')
             evt.send('done')
 
         def receiver (evt, q):
-            x = q.wait()
+            x = q.join()
             evt.send(x)
 
         e1 = Event()
@@ -463,15 +454,15 @@ class TestQueue(LimitedTestCase):
         q = Queue()
 
         sendings = ['1', '2', '3', '4']
-        gts = [evy.spawn(q.wait)
+        gts = [spawn(q.join)
                for x in sendings]
 
         sleep(0.01) # get 'em all waiting
 
-        q.send(sendings[0])
-        q.send(sendings[1])
-        q.send(sendings[2])
-        q.send(sendings[3])
+        q.put(sendings[0])
+        q.put(sendings[1])
+        q.put(sendings[2])
+        q.put(sendings[3])
         results = set()
         for i, gt in enumerate(gts):
             results.add(gt.wait())
@@ -484,7 +475,7 @@ class TestQueue(LimitedTestCase):
         def do_receive (q, evt):
             Timeout(0, RuntimeError())
             try:
-                result = q.wait()
+                result = q.join()
                 evt.send(result)
             except RuntimeError:
                 evt.send('timed out')
@@ -494,28 +485,28 @@ class TestQueue(LimitedTestCase):
         spawn(do_receive, q, evt)
         self.assertEquals(evt.wait(), 'timed out')
 
-        q.send('hi')
-        self.assertEquals(q.wait(), 'hi')
+        q.put('hi')
+        self.assertEquals(q.get(), 'hi')
 
     @silence_warnings
     def test_senders_that_die (self):
         q = Queue()
 
         def do_send (q):
-            q.send('sent')
+            q.put('sent')
 
         spawn(do_send, q)
-        self.assertEquals(q.wait(), 'sent')
+        self.assertEquals(q.join(), 'sent')
 
     @silence_warnings
     def test_two_waiters_one_dies (self):
         def waiter (q, evt):
-            evt.send(q.wait())
+            evt.send(q.join())
 
         def do_receive (q, evt):
             Timeout(0, RuntimeError())
             try:
-                result = q.wait()
+                result = q.get()
                 evt.send(result)
             except RuntimeError:
                 evt.send('timed out')
@@ -526,7 +517,7 @@ class TestQueue(LimitedTestCase):
         spawn(do_receive, q, dying_evt)
         spawn(waiter, q, waiting_evt)
         sleep(0)
-        q.send('hi')
+        q.put('hi')
         self.assertEquals(dying_evt.wait(), 'timed out')
         self.assertEquals(waiting_evt.wait(), 'hi')
 
@@ -535,7 +526,7 @@ class TestQueue(LimitedTestCase):
         def do_receive (q, evt):
             Timeout(0, RuntimeError())
             try:
-                result = q.wait()
+                result = q.join()
                 evt.send(result)
             except RuntimeError:
                 evt.send('timed out')
@@ -546,27 +537,27 @@ class TestQueue(LimitedTestCase):
         spawn(do_receive, q, e1)
         spawn(do_receive, q, e2)
         sleep(0)
-        q.send('sent')
+        q.put('sent')
         self.assertEquals(e1.wait(), 'timed out')
         self.assertEquals(e2.wait(), 'timed out')
-        self.assertEquals(q.wait(), 'sent')
+        self.assertEquals(q.get(), 'sent')
 
     @silence_warnings
     def test_waiting (self):
         def do_wait (q, evt):
-            result = q.wait()
+            result = q.join()
             evt.send(result)
 
         q = Queue()
         e1 = Event()
         spawn(do_wait, q, e1)
         sleep(0)
-        self.assertEquals(1, q.waiting())
-        q.send('hi')
+        self.assertEquals(1, q.join())
+        q.put('hi')
         sleep(0)
-        self.assertEquals(0, q.waiting())
+        self.assertEquals(0, q.join())
         self.assertEquals('hi', e1.wait())
-        self.assertEquals(0, q.waiting())
+        self.assertEquals(0, q.join())
 
 
 class TestChannel(LimitedTestCase):
@@ -584,9 +575,9 @@ class TestChannel(LimitedTestCase):
         spawn(another_greenlet)
 
         events.append('sending')
-        channel.send('hello')
+        channel.put('hello')
         events.append('sent hello')
-        channel.send('world')
+        channel.put('world')
         events.append('sent world')
 
         self.assertEqual(['sending', 'hello', 'sent hello', 'world', 'sent world'], events)
@@ -600,9 +591,9 @@ class TestChannel(LimitedTestCase):
 
         def another_greenlet ():
             events.append('sending hello')
-            channel.send('hello')
+            channel.put('hello')
             events.append('sending world')
-            channel.send('world')
+            channel.put('world')
             events.append('sent world')
 
         spawn(another_greenlet)
@@ -619,14 +610,14 @@ class TestChannel(LimitedTestCase):
     @silence_warnings
     def test_waiters (self):
         c = LifoQueue()
-        w1 = evy.spawn(c.wait)
-        w2 = evy.spawn(c.wait)
-        w3 = evy.spawn(c.wait)
+        w1 = spawn(c.wait)
+        w2 = spawn(c.wait)
+        w3 = spawn(c.wait)
         sleep(0)
         self.assertEquals(c.waiting(), 3)
-        s1 = evy.spawn(c.send, 1)
-        s2 = evy.spawn(c.send, 2)
-        s3 = evy.spawn(c.send, 3)
+        s1 = spawn(c.put, 1)
+        s2 = spawn(c.put, 2)
+        s3 = spawn(c.put, 3)
         sleep(0)  # this gets all the sends into a waiting state
         self.assertEquals(c.waiting(), 0)
 

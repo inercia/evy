@@ -182,16 +182,17 @@ class UvSocket(object):
         self.fd = fd
 
         ## setup the UV handle from the file descriptor
+        assert self.fd.fileno() > 0
+        fileno = self.fd.fileno()
+        self.handle = None
         if self._is_tcp():
             self.handle = ffi.new('struct uv_tcp_s*')
             libuv.uv_tcp_init(hub.ptr, self.handle)
-            if self.fileno() > 0:
-                libuv.uv_tcp_open(self.handle, self.fileno())
+            libuv.uv_tcp_open(self.handle, fileno)
         elif self._is_udp():
             self.handle = ffi.new('struct uv_udp_s*')
             libuv.uv_udp_init(hub.ptr, self.handle)
-            if self.fileno() > 0:
-                libuv.uv_udp_open(self.handle, self.fileno())
+            libuv.uv_udp_open(self.handle, fileno)
         else:
             raise RuntimeError('unsupported socket type')
 
@@ -200,10 +201,21 @@ class UvSocket(object):
 
 
     def close(self):
+        fd = self.fd
+
+        def closed_callback(handle):
+            fd.close()
+
         if self.handle:
-            libuv.uv_close(cast_to_handle(self.handle), ffi.NULL)
-            self.handle = None
-        self.fd.close()
+            uv_handle = cast_to_handle(self.handle)
+
+            ## we must remove all pollers on this socket
+            get_hub().remove_descriptor(self.fileno(), skip_callbacks = True)
+
+            if not libuv.uv_is_closing(uv_handle):
+                _closed_callback = ffi.callback('void(*)(uv_handle_t*)', closed_callback)
+                libuv.uv_close(uv_handle, _closed_callback)
+                self.handle = None
 
     @property
     def _sock (self):
@@ -235,18 +247,15 @@ class UvSocket(object):
         if self.act_non_blocking:
             return self.fd.accept()
         else:
-            if self._is_tcp():
-                return self._accept_tcp()
-            else:
-                fd = self.fd
-                while True:
-                    res = socket_accept(fd)
-                    if not res:
-                        wait_read(fd, self.gettimeout(), socket.timeout("timed out"))
-                    else:
-                        client, addr = res
-                        set_nonblocking(client)
-                        return type(self)(client), addr
+            fd = self.fd
+            while True:
+                res = socket_accept(fd)
+                if not res:
+                    wait_read(fd, self.gettimeout(), socket.timeout("timed out"))
+                else:
+                    client, addr = res
+                    set_nonblocking(client)
+                    return type(self)(client), addr
 
 
 

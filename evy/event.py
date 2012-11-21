@@ -69,11 +69,10 @@ class Event(object):
     """
 
     __slots__ = ['_result', '_exc', '_waiters']
-    _result = None
-    _exc = None
-
 
     def __init__ (self):
+        self._result = None
+        self._exc = None
         self._waiters = set()
         self.reset()
 

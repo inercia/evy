@@ -138,7 +138,7 @@ class TestWebSocket(_TestBase):
             "Origin: http://localhost:%s" % self.port,
             "WebSocket-Protocol: ws",
             ]
-        sock = evy.connect(
+        sock = connect(
             ('localhost', self.port))
 
         sock.sendall('\r\n'.join(connect) + '\r\n\r\n')
@@ -162,7 +162,7 @@ class TestWebSocket(_TestBase):
             "Sec-WebSocket-Key1: 4 @1  46546xW%0l 1 5",
             "Sec-WebSocket-Key2: 12998 5 Y3 1  .P00",
             ]
-        sock = evy.connect(
+        sock = connect(
             ('localhost', self.port))
 
         sock.sendall('\r\n'.join(connect) + '\r\n\r\n^n:ds[4U')
@@ -189,7 +189,7 @@ class TestWebSocket(_TestBase):
             "Sec-WebSocket-Key1: 4 @1  46546xW%0l 1 5",
             "Sec-WebSocket-Key2: 12998 5 Y3 1  .P00",
             ]
-        sock = evy.connect(
+        sock = connect(
             ('localhost', self.port))
 
         sock.sendall('\r\n'.join(connect) + '\r\n\r\n^n:ds[4U')
@@ -214,7 +214,7 @@ class TestWebSocket(_TestBase):
             "Sec-WebSocket-Key1: 4 @1  46546xW%0l 1 5",
             "Sec-WebSocket-Key2: 12998 5 Y3 1  .P00",
             ]
-        sock = evy.connect(
+        sock = connect(
             ('localhost', self.port))
 
         sock.sendall('\r\n'.join(connect) + '\r\n\r\n^n:ds[4U')
@@ -237,7 +237,7 @@ class TestWebSocket(_TestBase):
             "Origin: http://localhost:%s" % self.port,
             "WebSocket-Protocol: ws",
             ]
-        sock = evy.connect(
+        sock = connect(
             ('localhost', self.port))
 
         sock.sendall('\r\n'.join(connect) + '\r\n\r\n')
@@ -265,7 +265,7 @@ class TestWebSocket(_TestBase):
             "Sec-WebSocket-Key1: 4 @1  46546xW%0l 1 5",
             "Sec-WebSocket-Key2: 12998 5 Y3 1  .P00",
             ]
-        sock = evy.connect(
+        sock = connect(
             ('localhost', self.port))
 
         sock.sendall('\r\n'.join(connect) + '\r\n\r\n^n:ds[4U')
@@ -291,7 +291,7 @@ class TestWebSocket(_TestBase):
             "Origin: http://localhost:%s" % self.port,
             "WebSocket-Protocol: ws",
             ]
-        sock = evy.connect(
+        sock = connect(
             ('localhost', self.port))
 
         sock.sendall('\r\n'.join(connect) + '\r\n\r\n')
@@ -316,7 +316,7 @@ class TestWebSocket(_TestBase):
             "Sec-WebSocket-Key1: 4 @1  46546xW%0l 1 5",
             "Sec-WebSocket-Key2: 12998 5 Y3 1  .P00",
             ]
-        sock = evy.connect(
+        sock = connect(
             ('localhost', self.port))
 
         sock.sendall('\r\n'.join(connect) + '\r\n\r\n^n:ds[4U')
@@ -355,7 +355,7 @@ class TestWebSocket(_TestBase):
             "Origin: http://localhost:%s" % self.port,
             "WebSocket-Protocol: ws",
             ]
-        sock = evy.connect(
+        sock = connect(
             ('localhost', self.port))
         sock.sendall('\r\n'.join(connect) + '\r\n\r\n')
         resp = sock.recv(1024)  # get the headers
@@ -390,7 +390,7 @@ class TestWebSocket(_TestBase):
             "Sec-WebSocket-Key1: 4 @1  46546xW%0l 1 5",
             "Sec-WebSocket-Key2: 12998 5 Y3 1  .P00",
             ]
-        sock = evy.connect(
+        sock = connect(
             ('localhost', self.port))
         sock.sendall('\r\n'.join(connect) + '\r\n\r\n^n:ds[4U')
         resp = sock.recv(1024)  # get the headers
@@ -425,7 +425,7 @@ class TestWebSocket(_TestBase):
             "Sec-WebSocket-Key1: 4 @1  46546xW%0l 1 5",
             "Sec-WebSocket-Key2: 12998 5 Y3 1  .P00",
             ]
-        sock = evy.connect(
+        sock = connect(
             ('localhost', self.port))
         sock.sendall('\r\n'.join(connect) + '\r\n\r\n^n:ds[4U')
         resp = sock.recv(1024)  # get the headers
@@ -460,7 +460,7 @@ class TestWebSocket(_TestBase):
             "Sec-WebSocket-Key1: 4 @1  46546xW%0l 1 5",
             "Sec-WebSocket-Key2: 12998 5 Y3 1  .P00",
             ]
-        sock = evy.connect(
+        sock = connect(
             ('localhost', self.port))
         sock.sendall('\r\n'.join(connect) + '\r\n\r\n^n:ds[4U')
         resp = sock.recv(1024)  # get the headers
@@ -479,7 +479,7 @@ class TestWebSocket(_TestBase):
             "Sec-WebSocket-Key1: 4 @1  46546xW%0l 1 5",
             "Sec-WebSocket-Key2: 12998 5 Y3 1  .P00",
             ]
-        sock = evy.connect(
+        sock = connect(
             ('localhost', self.port))
 
         sock.sendall('\r\n'.join(connect) + '\r\n\r\n^n:ds[4U')
@@ -513,7 +513,7 @@ class TestWebSocket(_TestBase):
             "Origin: http://localhost:%s" % self.port,
             "WebSocket-Protocol: ws",
             ]
-        sock = evy.connect(
+        sock = connect(
             ('localhost', self.port))
         sock.sendall('\r\n'.join(connect) + '\r\n\r\n')
         resp = sock.recv(1024)
@@ -547,7 +547,7 @@ class TestWebSocket(_TestBase):
             "Sec-WebSocket-Key1: 4 @1  46546xW%0l 1 5",
             "Sec-WebSocket-Key2: 12998 5 Y3 1  .P00",
             ]
-        sock = evy.connect(
+        sock = connect(
             ('localhost', self.port))
         sock.sendall('\r\n'.join(connect) + '\r\n\r\n^n:ds[4U')
         resp = sock.recv(1024)
@@ -561,7 +561,7 @@ class TestWebSocketSSL(_TestBase):
 
     @skip_if_no_ssl
     def test_ssl_sending_messages (self):
-        s = evy.wrap_ssl(evy.listen(('localhost', 0)),
+        s = evy.wrap_ssl(listen(('localhost', 0)),
                               certfile = certificate_file,
                               keyfile = private_key_file,
                               server_side = True)
@@ -576,7 +576,7 @@ class TestWebSocketSSL(_TestBase):
             "Sec-WebSocket-Key1: 4 @1  46546xW%0l 1 5",
             "Sec-WebSocket-Key2: 12998 5 Y3 1  .P00",
             ]
-        sock = evy.wrap_ssl(evy.connect(
+        sock = evy.wrap_ssl(connect(
             ('localhost', self.port)))
 
         sock.sendall('\r\n'.join(connect) + '\r\n\r\n^n:ds[4U')

@@ -68,7 +68,7 @@ class SSLTest(LimitedTestCase):
 
         server_coro = evy.spawn(serve, sock)
 
-        client = util.wrap_ssl(evy.connect(('127.0.0.1', sock.getsockname()[1])))
+        client = util.wrap_ssl(connect(('127.0.0.1', sock.getsockname()[1])))
         client.write('line 1\r\nline 2\r\n\r\n')
         self.assertEquals(client.read(8192), 'response')
         server_coro.wait()
@@ -87,7 +87,7 @@ class SSLTest(LimitedTestCase):
 
         server_coro = evy.spawn(serve, sock)
 
-        raw_client = evy.connect(('127.0.0.1', sock.getsockname()[1]))
+        raw_client = connect(('127.0.0.1', sock.getsockname()[1]))
         client = util.wrap_ssl(raw_client)
         client.write('X')
         greenio.shutdown_safe(client)
@@ -128,7 +128,7 @@ class SSLTest(LimitedTestCase):
                                   self.private_key_file)
         greenthread.spawn(accept_once, server)
 
-        raw_client = evy.connect(('127.0.0.1', server.getsockname()[1]))
+        raw_client = connect(('127.0.0.1', server.getsockname()[1]))
         client = util.wrap_ssl(raw_client)
         fd = socket._fileobject(client, 'rb', 8192)
 
@@ -154,9 +154,9 @@ class SSLTest(LimitedTestCase):
             self.assertEquals(sock2.recv(5), 'after')
             sock2.close()
 
-        listener = evy.listen(('127.0.0.1', 0))
+        listener = listen(('127.0.0.1', 0))
         server_coro = evy.spawn(serve)
-        client = evy.connect((listener.getsockname()))
+        client = connect((listener.getsockname()))
         client.send('before')
         client_ssl = util.wrap_ssl(client)
         client_ssl.do_handshake()
@@ -187,7 +187,7 @@ class SocketSSLTest(LimitedTestCase):
         killer = evy.spawn(serve, listener)
         from evy.green.socket import ssl
 
-        client = ssl(evy.connect(('localhost', listener.getsockname()[1])))
+        client = ssl(connect(('localhost', listener.getsockname()[1])))
         self.assertEquals(client.read(1024), 'content')
         self.assertEquals(client.read(1024), '')
 

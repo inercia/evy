@@ -96,6 +96,7 @@ class Timer(object):
         Invoke this method when this timer is no longer used
         """
         self.impltimer.stop()
+        self.impltimer.destroy()
         del self.impltimer
 
     def forget(self):

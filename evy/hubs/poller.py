@@ -140,6 +140,7 @@ class Poller(object):
 
         if self.impl is not None:
             self.impl.stop()
+            self.impl.destroy()
             self.impl = None
 
     def forget(self):

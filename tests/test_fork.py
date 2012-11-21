@@ -52,7 +52,7 @@ if (pid != 0):
         break
       except (IOError, IndexError, ValueError, TypeError):
         sleep(0.1)
-    evy.connect(('127.0.0.1', port))
+    connect(('127.0.0.1', port))
     while True:
       try:
         contents = open(signal_file, "rb").read()
@@ -65,7 +65,7 @@ if (pid != 0):
     os.kill(pid, signal.SIGTERM)
 else:
   try:
-    s = evy.listen(('', 0))
+    s = listen(('', 0))
     fd = open(signal_file, "wb")
     fd.write(str(s.getsockname()[1]))
     fd.write("\\n")
