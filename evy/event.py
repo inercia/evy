@@ -31,7 +31,7 @@
 
 from evy import hubs
 from evy.support import greenlets as greenlet
-
+from evy.timeout import Timeout, with_timeout
 
 __all__ = ['Event']
 
@@ -158,6 +158,7 @@ class Event(object):
         if self._exc is not None:
             current.throw(*self._exc)
         return self._result
+
 
     def send (self, result = None, exc = None):
         """
