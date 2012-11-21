@@ -71,11 +71,15 @@ def _convert_to_sslerror (ex):
 
 
 class GreenSSLObject(object):
-    """ Wrapper object around the SSLObjects returned by socket.ssl, which have a
-    slightly different interface from SSL.Connection objects. """
+    """
+    Wrapper object around the SSLObjects returned by socket.ssl, which have a
+    slightly different interface from SSL.Connection objects.
+    """
 
     def __init__ (self, green_ssl_obj):
-        """ Should only be called by a 'green' socket.ssl """
+        """
+        Should only be called by a 'green' socket.ssl
+        """
         self.connection = green_ssl_obj
         try:
             # if it's already connected, do the handshake
