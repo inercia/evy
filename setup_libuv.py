@@ -57,11 +57,20 @@ def make(done = []):
             elif sys.platform in ['linux', 'linux2']:
                 new_cflags = new_cflags + ' -fPIC '
 
-            os.environ["CFLAGS"] = ("%s %s" % (prev_cflags, new_cflags)).lstrip()
-            os.environ["LDFLAGS"] = ("%s %s" % (prev_ldflags, new_ldflags)).lstrip()
+            c_flags = ("%s %s" % (prev_cflags, new_cflags)).lstrip()
+            ld_flags = ("%s %s" % (prev_ldflags, new_ldflags)).lstrip()
+
+            print '... using CFLAGS="%s", LDFLAGS="%s"' % (c_flags, ld_flags)
+
+            if len(c_flags) > 0:    os.environ["CFLAGS"] = c_flags
+            if len(ld_flags) > 0:   os.environ["LDFLAGS"] = ld_flags
 
             if os.system('make -C %s' % LIBUV_DIR):
                 sys.exit(1)
+
+            ## reset the env
+            os.environ["CFLAGS"] = prev_cflags
+            os.environ["LDFLAGS"] = prev_ldflags
         else:
             print 'ERROR: no Makefile found'
         done.append(1)
