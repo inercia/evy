@@ -1539,6 +1539,7 @@ def isTipcAvailable():
     return False
 
 class TIPCTest (unittest.TestCase):
+    @unittest.skip
     def testRDM(self):
         srv = socket.socket(socket.AF_TIPC, socket.SOCK_RDM)
         cli = socket.socket(socket.AF_TIPC, socket.SOCK_RDM)
@@ -1584,6 +1585,7 @@ class TIPCThreadableTest (unittest.TestCase, ThreadableTest):
         self.cli.connect(addr)
         self.cliaddr = self.cli.getsockname()
 
+    @unittest.skip
     def testStream(self):
         msg = self.conn.recv(1024)
         self.assertEqual(msg, MSG)
