@@ -49,7 +49,8 @@ import array
 import tempfile, shutil
 
 def bufsized (sock, size = 1):
-    """ Resize both send and receive buffers on a socket.
+    """
+    Resize both send and receive buffers on a socket.
     Useful for testing trampoline.  Returns the socket.
 
     >>> import socket
@@ -61,22 +62,18 @@ def bufsized (sock, size = 1):
 
 
 def min_buf_size ():
-    """Return the minimum buffer size that the platform supports."""
+    """
+    Return the minimum buffer size that the platform supports.
+    """
     test_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     test_sock.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, 1)
     return test_sock.getsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF)
 
 
-def using_epoll_hub (_f):
-    from evy.hubs import get_hub
-
-    try:
-        return 'epolls' in type(get_hub()).__module__
-    except Exception:
-        return False
 
 
 class TestGreenSocket(LimitedTestCase):
+
     def assertWriteToClosedFileRaises (self, fd):
         if sys.version_info[0] < 3:
             # 2.x socket._fileobjects are odd: writes don't check
@@ -89,9 +86,8 @@ class TestGreenSocket(LimitedTestCase):
             self.assertRaises(ValueError, fd.write, 'a')
 
     def test_connect_timeout (self):
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.settimeout(0.1)
-        gs = greenio.GreenSocket(s)
+        gs = greenio.GreenSocket(socket.AF_INET, socket.SOCK_STREAM)
+        gs.settimeout(0.1)
         try:
             gs.connect(('192.0.2.1', 80))
             self.fail("socket.timeout not raised")
@@ -104,30 +100,45 @@ class TestGreenSocket(LimitedTestCase):
                 raise
 
     def test_accept_timeout (self):
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.bind(('', 0))
-        s.listen(50)
-
-        s.settimeout(0.1)
-        gs = greenio.GreenSocket(s)
+        gs = greenio.GreenSocket(socket.AF_INET, socket.SOCK_STREAM)
+        gs.settimeout(0.1)
+        gs.bind(('', 0))
+        gs.listen(50)
         try:
             gs.accept()
             self.fail("socket.timeout not raised")
         except socket.timeout, e:
             self.assert_(hasattr(e, 'args'))
             self.assertEqual(e.args[0], 'timed out')
+        except Exception, e:
+            self.fail("unexpected exception '%s' %s" % (str(e), str(*e.args)))
 
     def test_connect_ex_timeout (self):
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.settimeout(0.1)
-        gs = greenio.GreenSocket(s)
+        gs = greenio.GreenSocket(socket.AF_INET, socket.SOCK_STREAM)
+        gs.settimeout(0.1)
         e = gs.connect_ex(('192.0.2.1', 80))
-        if not e in (errno.EHOSTUNREACH, errno.ENETUNREACH):
-            self.assertEquals(e, errno.EAGAIN)
+        self.assertIn(e, (errno.EHOSTUNREACH, errno.ECONNREFUSED, errno.ENETUNREACH))
+        #if not e in (errno.EHOSTUNREACH, errno.ECONNREFUSED, errno.ENETUNREACH):
+        #    self.assertEquals(e, errno.EAGAIN)
+
+    def test_getsockname (self):
+        listener = greenio.GreenSocket()
+        listener.bind(('', 54333))
+        addr = listener.getsockname()
+        self.assertNotEquals(addr[1], 54333)
+
+    def test_bind_wrong_ip (self):
+        listener = greenio.GreenSocket()
+        try:
+            listener.bind(('127.255.255.255', 54333))
+        except socket.error, e:
+            self.assert_(hasattr(e, 'args'))
+        except Exception, e:
+            self.fail("unexpected exception '%s' %s" % (str(e), str(*e.args)))
 
     def test_recv_timeout (self):
-        listener = greenio.GreenSocket(socket.socket())
-        listener.bind(('', 0))
+        listener = greenio.GreenSocket()
+        listener.bind(('', 54333))
         listener.listen(50)
 
         evt = event.Event()
@@ -140,8 +151,9 @@ class TestGreenSocket(LimitedTestCase):
         gt = spawn(server)
 
         addr = listener.getsockname()
+        self.assertNotEquals(addr[1], 0)
 
-        client = greenio.GreenSocket(socket.socket())
+        client = greenio.GreenSocket()
         client.settimeout(0.1)
 
         client.connect(addr)
@@ -157,8 +169,7 @@ class TestGreenSocket(LimitedTestCase):
         gt.wait()
 
     def test_recvfrom_timeout (self):
-        gs = greenio.GreenSocket(
-            socket.socket(socket.AF_INET, socket.SOCK_DGRAM))
+        gs = greenio.GreenSocket(socket.AF_INET, socket.SOCK_DGRAM)
         gs.settimeout(.1)
         gs.bind(('', 0))
 
@@ -172,8 +183,7 @@ class TestGreenSocket(LimitedTestCase):
     def test_recvfrom_into_timeout (self):
         buf = buffer(array.array('B'))
 
-        gs = greenio.GreenSocket(
-            socket.socket(socket.AF_INET, socket.SOCK_DGRAM))
+        gs = greenio.GreenSocket(socket.AF_INET, socket.SOCK_DGRAM)
         gs.settimeout(.1)
         gs.bind(('', 0))
 
@@ -187,7 +197,7 @@ class TestGreenSocket(LimitedTestCase):
     def test_recv_into_timeout (self):
         buf = buffer(array.array('B'))
 
-        listener = greenio.GreenSocket(socket.socket())
+        listener = greenio.GreenSocket()
         listener.bind(('', 0))
         listener.listen(50)
 
@@ -202,7 +212,7 @@ class TestGreenSocket(LimitedTestCase):
 
         addr = listener.getsockname()
 
-        client = greenio.GreenSocket(socket.socket())
+        client = greenio.GreenSocket()
         client.settimeout(0.1)
 
         client.connect(addr)
@@ -232,7 +242,7 @@ class TestGreenSocket(LimitedTestCase):
 
         addr = listener.getsockname()
 
-        client = bufsized(greenio.GreenSocket(socket.socket()))
+        client = bufsized(greenio.GreenSocket())
         client.connect(addr)
         try:
             client.settimeout(0.00001)
@@ -252,7 +262,7 @@ class TestGreenSocket(LimitedTestCase):
         gt.wait()
 
     def test_sendall_timeout (self):
-        listener = greenio.GreenSocket(socket.socket())
+        listener = greenio.GreenSocket()
         listener.bind(('', 0))
         listener.listen(50)
 
@@ -266,8 +276,9 @@ class TestGreenSocket(LimitedTestCase):
         gt = spawn(server)
 
         addr = listener.getsockname()
+        self.assertNotEqual(addr[1], 0)
 
-        client = greenio.GreenSocket(socket.socket())
+        client = greenio.GreenSocket()
         client.settimeout(0.1)
         client.connect(addr)
 
@@ -391,7 +402,7 @@ class TestGreenSocket(LimitedTestCase):
             sleep(0)
             result = sock.recv(10)
             expected = s2b('hello world')
-            while len(result) < len(expected):
+            while len(result) < len(expected) and result is not '':
                 result += sock.recv(10)
             self.assertEquals(result, expected)
             send_large_coro.wait()
@@ -470,6 +481,7 @@ class TestGreenSocket(LimitedTestCase):
         server.bind(('127.0.0.1', 0))
         server.listen(50)
         bound_port = server.getsockname()[1]
+        self.assertNotEqual(bound_port, 0)
 
         def sender (evt):
             s2, addr = server.accept()
@@ -523,6 +535,7 @@ class TestGreenSocket(LimitedTestCase):
         s.sendall('b')
         a.wait()
 
+    @skipped
     def test_closure (self):
         def spam_to_me (address):
             sock = convenience.connect(address)
@@ -558,6 +571,7 @@ class TestGreenSocket(LimitedTestCase):
         reader.wait()
         sender.wait()
 
+    @skipped
     def test_invalid_connection (self):
         # find an unused port by creating a socket then closing it
         port = convenience.listen(('127.0.0.1', 0)).getsockname()[1]
@@ -682,7 +696,6 @@ class TestGreenIoStarvation(LimitedTestCase):
     TEST_TIMEOUT = 300  # the test here might take a while depending on the OS
 
     @skipped  # by rdw, because it fails but it's not clear how to make it pass
-    
     def test_server_starvation (self, sendloops = 15):
         recvsize = 2 * min_buf_size()
         sendsize = 10000 * recvsize
@@ -771,6 +784,63 @@ class TestGreenIoStarvation(LimitedTestCase):
                                   0], "Largest difference in starting times more than twice the shortest running time!"
         assert runlengths[0] * 2 > runlengths[
                                    -1], "Longest runtime more than twice as long as shortest!"
+
+
+
+class TestGreenSocketErrors(LimitedTestCase):
+
+    def test_connection_refused (self):
+        # open and close a dummy server to find an unused port
+        server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        server.bind(('127.0.0.1', 0))
+        server.listen(1)
+        port = server.getsockname()[1]
+        server.close()
+        del server
+        s = socket.socket()
+        try:
+            s.connect(('127.0.0.1', port))
+            self.fail("Shouldn't have connected")
+        except socket.error, ex:
+            code, text = ex.args
+            assert code in [111, 61, 10061], (code, text)
+            assert 'refused' in text.lower(), (code, text)
+
+    def test_timeout_real_socket (self):
+        """
+        Test underlying socket behavior to ensure correspondence
+        between green sockets and the underlying socket module.
+        """
+        return self.test_timeout(socket = _orig_sock)
+
+    def test_timeout (self, socket = socket):
+        """
+        Test that the socket timeout exception works correctly.
+        """
+        server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        server.bind(('127.0.0.1', 0))
+        server.listen(1)
+        port = server.getsockname()[1]
+
+        s = socket.socket()
+
+        s.connect(('127.0.0.1', port))
+
+        cs, addr = server.accept()
+        cs.settimeout(1)
+        try:
+            try:
+                cs.recv(1024)
+                self.fail("Should have timed out")
+            except socket.timeout, ex:
+                assert hasattr(ex, 'args')
+                assert len(ex.args) == 1
+                assert ex.args[0] == 'timed out'
+        finally:
+            s.close()
+            cs.close()
+            server.close()
+
 
 if __name__ == '__main__':
     main()
