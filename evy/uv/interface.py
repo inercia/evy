@@ -48,6 +48,31 @@ ffi.cdef("""
 #define UV_VERSION_MAJOR ...
 #define UV_VERSION_MINOR ...
 
+
+/**
+ * some external definitions
+ */
+
+struct in_addr  { ...; };
+struct in6_addr { ...; };
+struct sockaddr { ...; };
+
+struct sockaddr_in {
+  unsigned short    sin_port;
+  struct in_addr    sin_addr;
+  ...;
+};
+
+struct sockaddr_in6 {
+  uint16_t        sin6_port;
+  struct in6_addr sin6_addr;
+  ...;
+};
+
+/**
+ * livuv definitions
+ */
+
 enum uv_err_code_e {
   UV_UNKNOWN = -1,
   UV_OK = 0,
@@ -115,8 +140,6 @@ typedef enum uv_err_code_e uv_err_code;
 
 typedef ... uv_handle_type;
 typedef ... uv_req_type;
-
-typedef ... uv_buf_t;
 typedef ... uv_os_sock_t;
 typedef ... uv_file;
 typedef ... uv_mutex_t;
@@ -130,6 +153,13 @@ typedef ... uv_statbuf_t;
 typedef ... uv_fs_type;
 typedef ... uv_membership;
 
+typedef struct
+{
+  char * base;
+  size_t len;
+} uv_buf_t;
+
+
 struct uv_err_s {
   uv_err_code code;
   ...;
@@ -140,6 +170,7 @@ struct uv_loop_s {
   struct uv_err_s last_err;
   ...;
 };
+
 
 struct uv_req_s {
   void* data;
