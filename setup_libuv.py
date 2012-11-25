@@ -53,7 +53,7 @@ def make(done = []):
 
             if sys.platform == 'darwin':
                 new_cflags = new_cflags + ' -O3 -U__llvm__ -arch x86_64 -arch i386'
-                new_ldflags = new_ldflags + ' -framework CoreServices'
+                new_ldflags = new_ldflags + ' -framework CoreFoundation -framework CoreServices '
             elif sys.platform in ['linux', 'linux2']:
                 new_cflags = new_cflags + ' -fPIC '
 
@@ -65,8 +65,13 @@ def make(done = []):
             if len(c_flags) > 0:    os.environ["CFLAGS"] = c_flags
             if len(ld_flags) > 0:   os.environ["LDFLAGS"] = ld_flags
 
-            if os.system('make -C %s' % LIBUV_DIR):
+            if os.system('make -C %s libuv.a' % LIBUV_DIR):
                 sys.exit(1)
+
+            for x in ['libuv.dylib', 'libuv.so']:
+                x_full = os.path.join(LIBUV_DIR, x)
+                if os.path.exists(x_full):
+                    os.remove(x_full)
 
             ## reset the env
             os.environ["CFLAGS"] = prev_cflags
@@ -103,13 +108,18 @@ class libuv_build_ext(build_ext):
         print 'building libuv extension'
         make()
 
-        import evy.uv.interface
-        libuv_extension = evy.uv.interface.ffi.verifier.get_extension()
-        self.extensions = [libuv_extension]
+        try:
+            import evy.uv.interface
+            libuv_extension = evy.uv.interface.ffi.verifier.get_extension()
+            self.extensions = [libuv_extension]
 
-        print 'using libuv version: %s' % evy.uv.get_version()
-        print '(build path: %s)' % self.get_ext_fullpath(libuv_extension.name)
+            print 'using libuv version: %s' % evy.uv.get_version()
+            print '(build path: %s)' % self.get_ext_fullpath(libuv_extension.name)
 
+        except Exception, e:
+            print 'ERROR when building the libuv extension: %s' % str(e)
+            import traceback
+            traceback.print_exception(*sys.exc_info())
 
 
 libuv_extension = Extension(name = 'libuv',

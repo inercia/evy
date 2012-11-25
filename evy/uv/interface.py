@@ -602,19 +602,25 @@ int uv_thread_join(uv_thread_t *tid);
 # check if we need any extra libraries...
 extra_compile_args = []
 extra_link_args = []
+define_macros = []
 
 if sys.platform in ['linux', 'linux2']:
     extra_link_args += ['-lrt']
 if sys.platform in ['darwin']:
-    extra_compile_args += ['-U__llvm__', '-arch x86_64', '-arch i386']
-    extra_link_args += ['-framework CoreServices']
+    extra_compile_args += [' -arch x86_64 -arch i386 -framework CoreServices ']
+    extra_link_args += [' -framework CoreServices ']
 
+
+## NOTE: do not ask me why, but we need to set the env flags or distutils will ignore them...
+if len(extra_compile_args) > 0:     os.environ["CFLAGS"] = ' '.join(extra_compile_args)
+if len(extra_link_args) > 0:        os.environ["LDFLAGS"] = ' '.join(extra_link_args)
 
 libuv = C = ffi.verify("""
 #include <uv.h>
 """,
     include_dirs = [LIBUV_INC_DIR],
     extra_compile_args = extra_compile_args,
+    define_macros = define_macros,
     libraries = ['uv'],
     library_dirs = [LIBUV_LIB_DIR],
     ext_package = EXTENSION_PACKAGE,                   # must match the package defined in setup.py
