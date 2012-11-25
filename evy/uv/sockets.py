@@ -82,7 +82,7 @@ _UV_ERR_TO_ERRNO_MAP = {
     'UV_ENOMEM' : errno.ENOMEM,
     'UV_ENOTDIR' : errno.ENOTDIR,
     'UV_EISDIR' : errno.EISDIR,
-    'UV_ENONET' : errno.ENONET,
+    #'UV_ENONET' : errno.ENONET,
     'UV_ENOTCONN' : errno.ENOTCONN,
     'UV_ENOTSOCK' : errno.ENOTSOCK,
     'UV_ENOTSUP' : errno.ENOTSUP,
