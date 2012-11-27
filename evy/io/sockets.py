@@ -317,7 +317,6 @@ class GreenSocket(object):
         """
         self.delegate = None
 
-
         if isinstance(family, (int, long)):
             if type == socket.SOCK_STREAM:
                 self.delegate = TcpSocket(family, type, proto, _sock)
