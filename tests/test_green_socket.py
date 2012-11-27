@@ -87,9 +87,9 @@ class TestGreenSocket(LimitedTestCase):
 
     def test_connect_timeout (self):
         gs = greenio.GreenSocket(socket.AF_INET, socket.SOCK_STREAM)
-        gs.settimeout(0.1)
+        gs.settimeout(0.5)
         try:
-            gs.connect(('192.0.2.1', 80))
+            gs.connect(('192.0.2.2', 80))
             self.fail("socket.timeout not raised")
         except socket.timeout, e:
             self.assert_(hasattr(e, 'args'))
@@ -99,11 +99,18 @@ class TestGreenSocket(LimitedTestCase):
             if not get_errno(e) in (errno.EHOSTUNREACH, errno.ENETUNREACH):
                 raise
 
+    def test_connect_invalid_ip (self):
+        gs = greenio.GreenSocket(socket.AF_INET, socket.SOCK_STREAM)
+        gs.connect(('0.0.0.0', 80))
+
+
     def test_accept_timeout (self):
         gs = greenio.GreenSocket(socket.AF_INET, socket.SOCK_STREAM)
         gs.settimeout(0.1)
         gs.bind(('', 0))
         gs.listen(50)
+        self.assertNotEqual(gs.getsockname()[1], 0)
+
         try:
             gs.accept()
             self.fail("socket.timeout not raised")
@@ -112,6 +119,7 @@ class TestGreenSocket(LimitedTestCase):
             self.assertEqual(e.args[0], 'timed out')
         except Exception, e:
             self.fail("unexpected exception '%s' %s" % (str(e), str(*e.args)))
+
 
     def test_connect_ex_timeout (self):
         gs = greenio.GreenSocket(socket.AF_INET, socket.SOCK_STREAM)
@@ -123,22 +131,29 @@ class TestGreenSocket(LimitedTestCase):
 
     def test_getsockname (self):
         listener = greenio.GreenSocket()
-        listener.bind(('', 54333))
+        listener.bind(('', 0))
         addr = listener.getsockname()
-        self.assertNotEquals(addr[1], 54333)
+        self.assertNotEquals(addr[1], 0)
 
     def test_bind_wrong_ip (self):
         listener = greenio.GreenSocket()
         try:
-            listener.bind(('127.255.255.255', 54333))
+            listener.bind(('127.255.255.255', 0))
         except socket.error, e:
             self.assert_(hasattr(e, 'args'))
         except Exception, e:
             self.fail("unexpected exception '%s' %s" % (str(e), str(*e.args)))
 
+        addr = listener.getsockname()
+        self.assertNotEquals(addr[1], 0)
+
+    def test_listen_without_bind (self):
+        listener = greenio.GreenSocket()
+        listener.listen(50)
+
     def test_recv_timeout (self):
         listener = greenio.GreenSocket()
-        listener.bind(('', 54333))
+        listener.bind(('', 0))
         listener.listen(50)
 
         evt = event.Event()
@@ -147,7 +162,6 @@ class TestGreenSocket(LimitedTestCase):
             # accept the connection in another greenlet
             sock, addr = listener.accept()
             evt.wait()
-
         gt = spawn(server)
 
         addr = listener.getsockname()
@@ -214,7 +228,6 @@ class TestGreenSocket(LimitedTestCase):
 
         client = greenio.GreenSocket()
         client.settimeout(0.1)
-
         client.connect(addr)
 
         try:
@@ -327,7 +340,9 @@ class TestGreenSocket(LimitedTestCase):
 
         def did_it_work (server):
             client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            client.connect(('127.0.0.1', server.getsockname()[1]))
+            port = server.getsockname()[1]
+            print 'connecting to port', port
+            client.connect(('127.0.0.1', port))
             fd = client.makefile()
             client.close()
             assert fd.readline() == 'hello\n'
@@ -336,7 +351,8 @@ class TestGreenSocket(LimitedTestCase):
 
         server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        server.bind(('0.0.0.0', 0))
+        server.bind(('0.0.0.0', 61222))
+        self.assertEqual(server.getsockname()[1], 61222)
         server.listen(50)
         killer = spawn(accept_close_early, server)
         did_it_work(server)
@@ -786,17 +802,16 @@ class TestGreenIoStarvation(LimitedTestCase):
                                    -1], "Longest runtime more than twice as long as shortest!"
 
 
-
-class TestGreenSocketErrors(LimitedTestCase):
-
     def test_connection_refused (self):
         # open and close a dummy server to find an unused port
         server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         server.bind(('127.0.0.1', 0))
         server.listen(1)
         port = server.getsockname()[1]
+        self.assertNotEqual(port, 0)
         server.close()
         del server
+
         s = socket.socket()
         try:
             s.connect(('127.0.0.1', port))
@@ -821,6 +836,7 @@ class TestGreenSocketErrors(LimitedTestCase):
         server.bind(('127.0.0.1', 0))
         server.listen(1)
         port = server.getsockname()[1]
+        self.assertNotEqual(port, 0)
 
         s = socket.socket()
 
