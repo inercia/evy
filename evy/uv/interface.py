@@ -58,12 +58,14 @@ struct in6_addr { ...; };
 struct sockaddr { ...; };
 
 struct sockaddr_in {
+  short             sin_family;
   unsigned short    sin_port;
   struct in_addr    sin_addr;
   ...;
 };
 
 struct sockaddr_in6 {
+  uint16_t        sin6_family;
   uint16_t        sin6_port;
   struct in6_addr sin6_addr;
   ...;
@@ -627,6 +629,8 @@ void uv_once(uv_once_t* guard, void *callback);
 int uv_thread_create(uv_thread_t *tid, void *entry, void *arg);
 unsigned long uv_thread_self(void);
 int uv_thread_join(uv_thread_t *tid);
+
+
 """)
 
 
