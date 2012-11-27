@@ -1,0 +1,5 @@
+TODO
+----
+
+* finish the I/O integration
+* integrate with http-parser (https://github.com/benoitc/http-parser)
