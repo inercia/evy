@@ -33,7 +33,7 @@ from evy.uv.errors import uv_last_exception
 
 MAX_HOSTNAME_LEN = 128
 
-def malloc(size, destructor):
+def malloc(size, destructor = None):
     """
     Return a new cdata object that points to some memory that, when this new cdata object is
     garbage-collected, destructor(old_cdata_object) will be called.
@@ -44,7 +44,8 @@ def malloc(size, destructor):
     assert callable(destructor)
 
     def _destructor(pointer):
-        destructor(pointer)
+        if destructor:
+            destructor(pointer)
         C.free(pointer)
 
     ptr = ffi.gc(C.malloc(size), _destructor)
