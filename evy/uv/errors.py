@@ -116,8 +116,12 @@ def uv_last_error(default_code = 0, default_str = 'none'):
     if _errno is 0: return default_code, default_str
     else:           return _errno, os.strerror(_errno)
 
-def uv_last_exception(exception = socket.error, default_code = 0, default_str = 'none'):
+
+####################################################################################################
+
+
+def last_socket_error(default_code = 0, default_str = 'none'):
     """
-    Raise the exception for the last error
+    Utility function for getting the last exception as a socket.error
     """
-    raise exception(*uv_last_error(default_code, default_str))
+    return socket.error(*uv_last_error(default_code, default_str))

@@ -74,6 +74,8 @@ def min_buf_size ():
 
 class TestGreenSocket(LimitedTestCase):
 
+    TEST_TIMEOUT = 2
+
     def assertWriteToClosedFileRaises (self, fd):
         if sys.version_info[0] < 3:
             # 2.x socket._fileobjects are odd: writes don't check
@@ -124,7 +126,8 @@ class TestGreenSocket(LimitedTestCase):
     def test_connect_ex_timeout (self):
         gs = greenio.GreenSocket(socket.AF_INET, socket.SOCK_STREAM)
         gs.settimeout(0.1)
-        e = gs.connect_ex(('192.0.2.1', 80))
+        #e = gs.connect_ex(('192.0.2.1', 80))
+        e = gs.connect_ex(('255.255.0.1', 80))
         self.assertIn(e, (errno.EHOSTUNREACH, errno.ECONNREFUSED, errno.ENETUNREACH))
         #if not e in (errno.EHOSTUNREACH, errno.ECONNREFUSED, errno.ENETUNREACH):
         #    self.assertEquals(e, errno.EAGAIN)
@@ -152,6 +155,48 @@ class TestGreenSocket(LimitedTestCase):
         listener.listen(50)
 
     def test_recv (self):
+        self.reset_timeout(1000000)
+
+        listener = greenio.GreenSocket()
+        listener.bind(('', 0))
+        listener.listen(50)
+
+        address, port = listener.getsockname()
+        self.assertNotEquals(address, 0)
+
+        accept_ready = event.Event()
+        did_send_data = event.Event()
+        did_receive_data = event.Event()
+
+        def server ():
+            # accept the connection in another greenlet
+            accept_ready.send()
+            sock, addr = listener.accept()
+            s = 'hello'
+            sock.send(s)
+            did_send_data.send(s)
+
+        gt_server = spawn(server)
+
+        def client():
+            client = greenio.GreenSocket()
+            accept_ready.wait()
+            client.connect(('127.0.0.1', port))
+            received_data = client.recv(8192)
+            did_receive_data.send(received_data)
+
+        gt_client = spawn(client)
+
+        sent_data = did_send_data.wait()
+        received_data = did_receive_data.wait()
+
+        self.assertEquals(sent_data, received_data)
+
+    def test_recv_something (self):
+        DATLEN = 5
+
+        self.reset_timeout(1000000)
+
         listener = greenio.GreenSocket()
         listener.bind(('', 0))
         listener.listen(50)
@@ -160,34 +205,35 @@ class TestGreenSocket(LimitedTestCase):
         self.assertNotEquals(address, 0)
 
         accepting = event.Event()
-        accepted = event.Event()
+        sent = event.Event()
         received = event.Event()
 
         def server ():
-            print 'starting server'
             # accept the connection in another greenlet
             accepting.send()
             sock, addr = listener.accept()
-            print '... sending data'
-            sock.send('hello')
-            accepted.send()
+            s = '1234567890'
+            sock.send(s)
+            sent.send(s)
 
         gt_server = spawn(server)
 
         def client():
-            print 'starting client'
             client = greenio.GreenSocket()
             accepting.wait()
             sleep(0.5)
             client.connect(('127.0.0.1', port))
-            print '... receiving data'
-            res = client.recv(8192)
-            received.send()
+            received_data = client.recv(DATLEN)
+            received.send(received_data)
 
         gt_client = spawn(client)
 
-        received.wait()
-        gt_server.wait()
+        sent_data = sent.wait()
+        received_data = received.wait()
+
+        self.assertEquals(sent_data[:DATLEN], received_data)
+
+
 
     def test_recv_timeout (self):
         listener = greenio.GreenSocket()
@@ -234,6 +280,8 @@ class TestGreenSocket(LimitedTestCase):
         except socket.timeout, e:
             self.assert_(hasattr(e, 'args'))
             self.assertEqual(e.args[0], 'timed out')
+        except:
+            self.fail('unknown exception')
 
     def test_recvfrom_into_timeout (self):
         buf = buffer(array.array('B'))
@@ -248,6 +296,8 @@ class TestGreenSocket(LimitedTestCase):
         except socket.timeout, e:
             self.assert_(hasattr(e, 'args'))
             self.assertEqual(e.args[0], 'timed out')
+        except:
+            self.fail('unknown exception')
 
     def test_recv_into_timeout (self):
         buf = buffer(array.array('B'))
@@ -381,7 +431,7 @@ class TestGreenSocket(LimitedTestCase):
 
         def did_it_work (server):
             client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            port = server.getsockname()[1]
+            _, port = server.getsockname()
             print 'connecting to port', port
             client.connect(('127.0.0.1', port))
             fd = client.makefile()
@@ -481,10 +531,13 @@ class TestGreenSocket(LimitedTestCase):
         self.timer.cancel()
         second_bytes = 10
 
+        listener_ready = event.Event()
+
         def test_sendall_impl (many_bytes):
             bufsize = max(many_bytes // 15, 2)
 
             def sender (listener):
+                listener_ready.send()
                 (sock, addr) = listener.accept()
                 sock = bufsized(sock, size = bufsize)
                 sock.sendall(s2b('x') * many_bytes)
@@ -496,7 +549,12 @@ class TestGreenSocket(LimitedTestCase):
             listener.listen(50)
             sender_coro = spawn(sender, listener)
             client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            client.connect(('127.0.0.1', listener.getsockname()[1]))
+
+            listener_ready.wait()
+
+            _, port = listener.getsockname()
+            client.connect(('127.0.0.1', port))
+
             bufsized(client, size = bufsize)
             total = 0
             while total < many_bytes:
@@ -844,11 +902,13 @@ class TestGreenIoStarvation(LimitedTestCase):
 
 
     def test_connection_refused (self):
+        self.reset_timeout(1000000)
+
         # open and close a dummy server to find an unused port
         server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         server.bind(('127.0.0.1', 0))
         server.listen(1)
-        port = server.getsockname()[1]
+        _, port = server.getsockname()
         self.assertNotEqual(port, 0)
         server.close()
         del server
@@ -861,6 +921,8 @@ class TestGreenIoStarvation(LimitedTestCase):
             code, text = ex.args
             assert code in [111, 61, 10061], (code, text)
             assert 'refused' in text.lower(), (code, text)
+        except Exception, e:
+            self.fail('unexpected exception: %s' % str(e))
 
     def test_timeout_real_socket (self):
         """

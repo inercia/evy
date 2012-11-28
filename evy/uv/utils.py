@@ -28,7 +28,7 @@
 import socket
 
 from evy.uv.interface import libuv, ffi
-from evy.uv.errors import uv_last_exception
+from evy.uv.errors import last_socket_error
 
 
 MAX_HOSTNAME_LEN = 128
@@ -46,13 +46,13 @@ def sockaddr_to_tuple(family, addr):
         addr_in = ffi.cast('struct sockaddr_in*', addr)
         c_port = addr_in[0].sin_port
         res = libuv.uv_ip4_name(addr_in, c_name, MAX_HOSTNAME_LEN)
-        if res != 0: uv_last_exception()
+        if res != 0: raise last_socket_error()
 
     elif family == socket.AF_INET6:
         addr_in = ffi.cast('struct sockaddr_in6*', addr)
         c_port = addr_in[0].sin6_port
         res = libuv.uv_ip6_name(addr_in, c_name, MAX_HOSTNAME_LEN)
-        if res != 0: uv_last_exception()
+        if res != 0: raise last_socket_error()
 
     return ffi.string(c_name), socket.ntohs(int(c_port))
 
