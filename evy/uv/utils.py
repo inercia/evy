@@ -27,28 +27,11 @@
 
 import socket
 
-from evy.uv.interface import libuv, ffi, C
+from evy.uv.interface import libuv, ffi
 from evy.uv.errors import uv_last_exception
 
 
 MAX_HOSTNAME_LEN = 128
-
-def malloc(size, destructor = None):
-    """
-    Return a new cdata object that points to some memory that, when this new cdata object is
-    garbage-collected, destructor(old_cdata_object) will be called.
-    :param size: th desired size for the allocated memory
-    :param destructor: a destructor function that will be invoked when this memory is garbage collected. it will accept the cdata pointer as parameter
-    :return:
-    """
-    assert callable(destructor)
-
-    def _destructor(pointer):
-        if destructor:
-            destructor(pointer)
-        C.free(pointer)
-
-    ptr = ffi.gc(C.malloc(size), _destructor)
 
 
 def sockaddr_to_tuple(family, addr):
