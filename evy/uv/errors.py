@@ -96,6 +96,7 @@ def uv_error_to_errno(code, not_found = None):
     :param not_found: the result if there is not valid mapping
     :return: an errno
     """
+    assert isinstance(code, str)
     try:
         return _UV_ERR_TO_ERRNO_MAP[code]
     except KeyError:
@@ -105,18 +106,18 @@ def uv_last_error_str():
     hub = get_hub()
     return str(libuv.uv_last_error(hub.ptr).code)
 
-def uv_last_error():
+def uv_last_error(default_code = 0, default_str = 'none'):
     """
     Get the last libuv error that happened
     :return: a tuple with the errno equivalent and the string representation
     """
-    _errno = uv_error_to_errno(uv_last_error_str, not_found = 0)
+    _errno = uv_error_to_errno(uv_last_error_str(), not_found = 0)
 
-    if _errno is 0: return 0, 'none'
+    if _errno is 0: return default_code, default_str
     else:           return _errno, os.strerror(_errno)
 
-def uv_last_exception(exception = socket.error):
+def uv_last_exception(exception = socket.error, default_code = 0, default_str = 'none'):
     """
     Raise the exception for the last error
     """
-    raise exception(*uv_last_error())
+    raise exception(*uv_last_error(default_code, default_str))
