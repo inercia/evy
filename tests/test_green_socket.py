@@ -151,26 +151,67 @@ class TestGreenSocket(LimitedTestCase):
         listener = greenio.GreenSocket()
         listener.listen(50)
 
+    def test_recv (self):
+        listener = greenio.GreenSocket()
+        listener.bind(('', 0))
+        listener.listen(50)
+
+        address, port = listener.getsockname()
+        self.assertNotEquals(address, 0)
+
+        accepting = event.Event()
+        accepted = event.Event()
+        received = event.Event()
+
+        def server ():
+            print 'starting server'
+            # accept the connection in another greenlet
+            accepting.send()
+            sock, addr = listener.accept()
+            print '... sending data'
+            sock.send('hello')
+            accepted.send()
+
+        gt_server = spawn(server)
+
+        def client():
+            print 'starting client'
+            client = greenio.GreenSocket()
+            accepting.wait()
+            sleep(0.5)
+            client.connect(('127.0.0.1', port))
+            print '... receiving data'
+            res = client.recv(8192)
+            received.send()
+
+        gt_client = spawn(client)
+
+        received.wait()
+        gt_server.wait()
+
     def test_recv_timeout (self):
         listener = greenio.GreenSocket()
         listener.bind(('', 0))
         listener.listen(50)
 
-        evt = event.Event()
+        accepting = event.Event()
+        accepted = event.Event()
 
         def server ():
             # accept the connection in another greenlet
+            accepting.send()
             sock, addr = listener.accept()
-            evt.wait()
+            accepted.wait()
         gt = spawn(server)
 
-        addr = listener.getsockname()
-        self.assertNotEquals(addr[1], 0)
+        address, port = listener.getsockname()
+        self.assertNotEquals(address, 0)
 
         client = greenio.GreenSocket()
         client.settimeout(0.1)
 
-        client.connect(addr)
+        accepting.wait()
+        client.connect(('127.0.0.1', port))
 
         try:
             client.recv(8192)
@@ -179,7 +220,7 @@ class TestGreenSocket(LimitedTestCase):
             self.assert_(hasattr(e, 'args'))
             self.assertEqual(e.args[0], 'timed out')
 
-        evt.send()
+        accepted.send()
         gt.wait()
 
     def test_recvfrom_timeout (self):
