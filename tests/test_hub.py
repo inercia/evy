@@ -128,7 +128,8 @@ class TestDebug(LimitedTestCase):
         hubs.get_hub().set_timer_exceptions(False)
 
 
-class TestExceptionInMainloop(LimitedTestCase):
+class TestExceptions(LimitedTestCase):
+
     def test_sleep (self):
         # even if there was an error in the mainloop, the hub should continue to work
         start = time.time()
@@ -150,15 +151,27 @@ class TestExceptionInMainloop(LimitedTestCase):
         assert delay >= DELAY * 0.9, 'sleep returned after %s seconds (was scheduled for %s)' % (
         delay, DELAY)
 
+    def test_exception_spawn (self):
+        def server ():
+            raise RuntimeError(1234)
+
+        try:
+            gt_server = spawn(server)
+            gt_server.wait()
+        except RuntimeError, e:
+            if e.args[0] != 1234:
+                self.fail('did not raise the right exception (%s)' % str(e.args[0]))
+        except:
+            self.fail('did not raise the right exception')
+
 
 class TestHubBlockingDetector(LimitedTestCase):
-    TEST_TIMEOUT = 10
 
-    
+    TEST_TIMEOUT = 5
+
     def test_block_detect (self):
         def look_im_blocking ():
             import time
-
             time.sleep(2)
 
         from evy import debug
@@ -244,6 +257,9 @@ class TestFork(ProcessBase):
         new_mod = """
 import os
 import evy
+from evy.convenience import listen
+from evy.timeout import Timeout
+
 server = listen(('localhost', 12345))
 t = Timeout(0.01)
 try:
