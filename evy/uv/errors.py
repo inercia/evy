@@ -101,14 +101,16 @@ def uv_error_to_errno(code, not_found = None):
     except KeyError:
         return not_found
 
+def uv_last_error_str():
+    hub = get_hub()
+    return str(libuv.uv_last_error(hub.ptr).code)
+
 def uv_last_error():
     """
     Get the last libuv error that happened
     :return: a tuple with the errno equivalent and the string representation
     """
-    hub = get_hub()
-    _err = str(libuv.uv_last_error(hub.ptr).code)
-    _errno = uv_error_to_errno(_err, not_found = 0)
+    _errno = uv_error_to_errno(uv_last_error_str, not_found = 0)
 
     if _errno is 0: return 0, 'none'
     else:           return _errno, os.strerror(_errno)
