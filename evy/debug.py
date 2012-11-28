@@ -176,7 +176,8 @@ def tpool_exceptions (state = False):
 
 
 def hub_blocking_detection (state = False, resolution = 1):
-    """Toggles whether Evy makes an effort to detect blocking
+    """
+    Toggles whether Evy makes an effort to detect blocking
     behavior in an application.
 
     It does this by telling the kernel to raise a SIGALARM after a
@@ -197,6 +198,6 @@ def hub_blocking_detection (state = False, resolution = 1):
     assert resolution > 0
     hubs.get_hub().debug_blocking = state
     hubs.get_hub().debug_blocking_resolution = resolution
-    if(not state):
+    if not state:
         hubs.get_hub().block_detect_post()
     
