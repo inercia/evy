@@ -154,7 +154,8 @@ def _spawn_n (seconds, func, args, kwargs):
 
 
 class GreenThread(greenlet.greenlet):
-    """The GreenThread class is a type of Greenlet which has the additional
+    """
+    The GreenThread class is a type of Greenlet which has the additional
     property of being able to retrieve the return value of the main function.  
     Do not construct GreenThread objects directly; call :func:`spawn` to get one.
     """
@@ -164,23 +165,26 @@ class GreenThread(greenlet.greenlet):
         self._exit_event = event.Event()
 
     def wait (self):
-        """ Returns the result of the main function of this GreenThread.  If the   
+        """
+        Returns the result of the main function of this GreenThread.  If the
         result is a normal return value, :meth:`wait` returns it.  If it raised
         an exception, :meth:`wait` will raise the same exception (though the 
         stack trace will unavoidably contain some frames from within the
-        greenthread module)."""
+        greenthread module).
+        """
         return self._exit_event.wait()
 
     def link (self, func, *curried_args, **curried_kwargs):
-        """ Set up a function to be called with the results of the GreenThread.
+        """
+        Set up a function to be called with the results of the GreenThread.
         
         The function must have the following signature::
         
             def func(gt, [curried args/kwargs]):
           
         When the GreenThread finishes its run, it calls *func* with itself
-        and with the `curried arguments <http://en.wikipedia.org/wiki/Currying>`_ supplied at link-time.  If the function wants
-        to retrieve the result of the GreenThread, it should call wait()
+        and with the `curried arguments <http://en.wikipedia.org/wiki/Currying>`_ supplied at link-time.
+        If the function wants to retrieve the result of the GreenThread, it should call wait()
         on its first argument.
         
         Note that *func* is called within execution context of 
@@ -211,29 +215,36 @@ class GreenThread(greenlet.greenlet):
         self._exit_funcs = [] # so they don't get called again
 
     def kill (self, *throw_args):
-        """Kills the greenthread using :func:`kill`.  After being killed
+        """
+        Kills the greenthread using :func:`kill`.  After being killed
         all calls to :meth:`wait` will raise *throw_args* (which default 
-        to :class:`greenlet.GreenletExit`)."""
+        to :class:`greenlet.GreenletExit`).
+        """
         return kill(self, *throw_args)
 
     def cancel (self, *throw_args):
-        """Kills the greenthread using :func:`kill`, but only if it hasn't 
+        """
+        Kills the greenthread using :func:`kill`, but only if it hasn't
         already started running.  After being canceled,
         all calls to :meth:`wait` will raise *throw_args* (which default 
-        to :class:`greenlet.GreenletExit`)."""
+        to :class:`greenlet.GreenletExit`).
+        """
         return cancel(self, *throw_args)
 
 
 def cancel (g, *throw_args):
-    """Like :func:`kill`, but only terminates the greenthread if it hasn't
+    """
+    Like :func:`kill`, but only terminates the greenthread if it hasn't
     already started execution.  If the grenthread has already started 
-    execution, :func:`cancel` has no effect."""
+    execution, :func:`cancel` has no effect.
+    """
     if not g:
         kill(g, *throw_args)
 
 
 def kill (g, *throw_args):
-    """Terminates the target greenthread by raising an exception into it.
+    """
+    Terminates the target greenthread by raising an exception into it.
     Whatever that greenthread might be doing; be it waiting for I/O or another
     primitive, it sees an exception right away.
     
