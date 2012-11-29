@@ -65,9 +65,10 @@ def min_buf_size ():
     """
     Return the minimum buffer size that the platform supports.
     """
-    test_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    test_sock.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, 1)
-    return test_sock.getsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF)
+    #test_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    #test_sock.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, 1)
+    #return test_sock.getsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF)
+    return 65535
 
 
 
