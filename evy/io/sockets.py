@@ -24,7 +24,6 @@
 # THE SOFTWARE.
 #
 #
-from ImageChops import add
 
 import errno
 import time
@@ -35,7 +34,6 @@ from socket import socket as _original_socket
 from evy.support import get_errno
 
 from evy.hubs import trampoline, wait_read, wait_write
-from evy.hubs import get_hub
 
 from evy.uv.sockets import TcpSocket
 
