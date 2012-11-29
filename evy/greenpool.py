@@ -145,7 +145,9 @@ class GreenPool(object):
             self.coroutines_running.add(g)
 
     def waitall (self):
-        """Waits until all greenthreads in the pool are finished working."""
+        """
+        Waits until all greenthreads in the pool are finished working.
+        """
         assert greenthread.getcurrent() not in self.coroutines_running,\
         "Calling waitall() from within one of the GreenPool's greenthreads will never terminate."
         if self.running():

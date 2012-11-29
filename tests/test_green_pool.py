@@ -224,9 +224,10 @@ class GreenPool(tests.LimitedTestCase):
         self.assert_pool_has_free(pool, 2)
 
     def test_pool_smash (self):
-        # The premise is that a coroutine in a Pool tries to get a token out
-        # of a token pool but times out before getting the token.  We verify
-        # that neither pool is adversely affected by this situation.
+        """
+        The premise is that a coroutine in a Pool tries to get a token out of a token pool but times out
+        before getting the token.  We verify that neither pool is adversely affected by this situation.
+        """
         from evy import pools
 
         pool = greenpool.GreenPool(1)
@@ -234,14 +235,14 @@ class GreenPool(tests.LimitedTestCase):
         token = tp.get()  # empty out the pool
 
         def do_receive (tp):
-            timer = Timeout(0, RuntimeError())
+            _timer = Timeout(0, RuntimeError())
             try:
                 t = tp.get()
                 self.fail("Shouldn't have recieved anything from the pool")
             except RuntimeError:
                 return 'timed out'
             else:
-                timer.cancel()
+                _timer.cancel()
 
         # the spawn makes the token pool expect that coroutine, but then
         # immediately cuts bait
@@ -329,9 +330,10 @@ class GreenPool(tests.LimitedTestCase):
         self.assertEquals(result_list, list(itertools.izip(xrange(10), xrange(10, 20))))
 
     def test_imap_raises (self):
-        # testing the case where the function raises an exception;
-        # both that the caller sees that exception, and that the iterator
-        # continues to be usable to get the rest of the items
+        """
+        testing the case where the function raises an exception both that the caller sees that exception, and that the iterator
+        continues to be usable to get the rest of the items
+        """
         p = greenpool.GreenPool(4)
 
         def raiser (item):
@@ -496,7 +498,7 @@ class Stress(tests.LimitedTestCase):
             # make sure we got to the end
         self.assertEquals(latest, count - 1)
 
-    @tests.skip_unless(os.environ.get('RUN_STRESS_TESTS') == 'YES')
+    #@tests.skip_unless(os.environ.get('RUN_STRESS_TESTS') == 'YES')
     def test_imap_50 (self):
         self.imap_memory_check(50)
 
