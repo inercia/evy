@@ -310,7 +310,7 @@ class TcpSocket(BaseSocket):
                     del self.uv_recv_buffer_temp
 
                     tot_len = len(self.uv_recv_string)
-                    if  tot_len >= self.uv_recv_string_target:
+                    if  tot_len >= self.uv_recv_string_limit:
                         self.did_read.send(tot_len)
 
             except Exception, e:
@@ -431,7 +431,7 @@ class TcpSocket(BaseSocket):
 
         err = connect_fun(self.uv_connect_req, self.uv_handle, _addr, self.uv_connect_callback)
         if err != 0:    raise last_socket_error(default_str = 'connect error')
-        else:           return self.did_connect.wait()    ## this wait() can raise an exception...
+        else:           return self.did_connect.wait()
 
     def connect(self, address):
         """
@@ -478,14 +478,14 @@ class TcpSocket(BaseSocket):
         """
         tot_read = 0
         with Timeout(self.gettimeout(), socket.timeout("timed out")):
-            self.uv_recv_string_target = buflen
+            self.uv_recv_string_limit = buflen
             res = libuv.uv_read_start(self.uv_stream, self.uv_alloc_callback, self.uv_read_callback)
             if res != 0:
                 raise last_socket_error(default_str = 'recv error')
             else:
                 tot_read = self.did_read.wait()
 
-                if tot_read == BaseSocket.EOF or tot_read >= self.uv_recv_string_target:
+                if tot_read == BaseSocket.EOF or tot_read >= self.uv_recv_string_limit:
                     libuv.uv_read_stop(self.uv_stream)
 
                 ## get the data we want from the read buffer, and keep the rest
