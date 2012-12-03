@@ -34,15 +34,16 @@ import os
 
 from tests import LimitedTestCase
 
-from evy import greenio
+from evy.io.files import GreenFile
 
 class TestGreenPipeWithStatement(LimitedTestCase):
+
     def test_pipe_context (self):
         # ensure using a pipe as a context actually closes it.
         r, w = os.pipe()
 
-        r = greenio.GreenPipe(r)
-        w = greenio.GreenPipe(w, 'w')
+        r = GreenFile(r)
+        w = GreenFile(w, 'w')
 
         with r:
             pass

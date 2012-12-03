@@ -36,7 +36,7 @@ from evy.support import get_errno
 from evy.hubs import trampoline, wait_read, wait_write
 from evy.hubs import get_hub
 
-from evy.uv.interface import libuv, ffi, handle_is_active, cast_to_handle
+from evy.io.utils import set_nonblocking
 
 import errno
 import os

@@ -38,7 +38,7 @@ from evy.green import urllib
 from evy.green import socket
 from evy.green import BaseHTTPServer
 from evy import greenpool
-from evy import greenio
+from evy.io import sockets
 from evy.support import get_errno
 
 DEFAULT_MAX_SIMULTANEOUS_REQUESTS = 1024
@@ -114,7 +114,7 @@ class Input(object):
             return ''
         try:
             read = reader(length)
-        except greenio.SSL.ZeroReturnError:
+        except sockets.SSL.ZeroReturnError:
             read = ''
         self.position += len(read)
         return read
@@ -167,7 +167,7 @@ class Input(object):
                     self.position = 0
                     if self.chunk_length == 0:
                         rfile.readline()
-        except greenio.SSL.ZeroReturnError:
+        except sockets.SSL.ZeroReturnError:
             pass
         return ''.join(response)
 
@@ -254,7 +254,7 @@ class HttpProtocol(BaseHTTPServer.BaseHTTPRequestHandler):
                     "Connection: close\r\nContent-length: 0\r\n\r\n")
                 self.close_connection = 1
                 return
-        except greenio.SSL.ZeroReturnError:
+        except sockets.SSL.ZeroReturnError:
             self.raw_requestline = ''
         except socket.error, e:
             if get_errno(e) not in BAD_SOCK:
@@ -538,7 +538,7 @@ class HttpProtocol(BaseHTTPServer.BaseHTTPRequestHandler):
 
     def finish (self):
         BaseHTTPServer.BaseHTTPRequestHandler.finish(self)
-        greenio.shutdown_safe(self.connection)
+        sockets.shutdown_safe(self.connection)
         self.connection.close()
 
 

@@ -32,7 +32,7 @@ import errno
 import new
 
 import evy
-from evy import greenio
+from evy.io.files import GreenFile
 from evy import patcher
 from evy.green import os
 from evy.green import select
@@ -50,7 +50,7 @@ class Popen(subprocess_orig.Popen):
     # We do not believe that Windows pipes support non-blocking I/O. At least,
     # the Python file objects stored on our base-class object have no
     # setblocking() method, and the Python fcntl module doesn't exist on
-    # Windows. (see evy.greenio.set_nonblocking()) As the sole purpose of
+    # Windows. (see evy.io.sockets.set_nonblocking()) As the sole purpose of
     # this __init__() override is to wrap the pipes for evy-friendly
     # non-blocking I/O, don't even bother overriding it on Windows.
     if not subprocess_orig.mswindows:
@@ -62,7 +62,7 @@ class Popen(subprocess_orig.Popen):
             for attr in "stdin", "stdout", "stderr":
                 pipe = getattr(self, attr)
                 if pipe is not None and not type(pipe) == greenio.GreenPipe:
-                    wrapped_pipe = greenio.GreenPipe(pipe, pipe.mode, bufsize)
+                    wrapped_pipe = GreenFile(pipe, pipe.mode, bufsize)
                     setattr(self, attr, wrapped_pipe)
 
         __init__.__doc__ = subprocess_orig.Popen.__init__.__doc__

@@ -186,7 +186,7 @@ class WebSocket(object):
     def __init__ (self, sock, environ, version = 76):
         """
         :param socket: The evy socket
-        :type socket: :class:`evy.greenio.GreenSocket`
+        :type socket: :class:`evy.io.sockets.GreenSocket`
         :param environ: The wsgi environment
         :param version: The WebSocket spec version to follow (default is 76)
         """

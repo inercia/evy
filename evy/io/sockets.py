@@ -43,6 +43,9 @@ from evy.io.utils import SOCKET_BLOCKING, SOCKET_CLOSED
 from evy.io.utils import _fileobject
 
 
+BUFFER_SIZE = 4096
+
+
 
 __all__ = ['GreenSocket']
 
@@ -369,4 +372,50 @@ class GreenSocket(object):
         attr = getattr(self.delegate, name)
         setattr(self, name, attr)
         return attr
+
+
+
+
+# import SSL module here so we can refer to greenio.SSL.exceptionclass
+try:
+    from OpenSSL import SSL
+except ImportError:
+    # pyOpenSSL not installed, define exceptions anyway for convenience
+    class SSL(object):
+        class WantWriteError(object):
+            pass
+
+        class WantReadError(object):
+            pass
+
+        class ZeroReturnError(object):
+            pass
+
+        class SysCallError(object):
+            pass
+
+
+
+def shutdown_safe (sock):
+    """
+    Shuts down the socket. This is a convenience method for
+    code that wants to gracefully handle regular sockets, SSL.Connection
+    sockets from PyOpenSSL and ssl.SSLSocket objects from Python 2.6
+    interchangeably.  Both types of ssl socket require a shutdown() before
+    close, but they have different arity on their shutdown method.
+
+    Regular sockets don't need a shutdown before close, but it doesn't hurt.
+    """
+    try:
+        try:
+            # socket, ssl.SSLSocket
+            return sock.shutdown(socket.SHUT_RDWR)
+        except TypeError:
+            # SSL.Connection
+            return sock.shutdown()
+    except socket.error, e:
+        # we don't care if the socket is already closed;
+        # this will often be the case in an http server context
+        if get_errno(e) != errno.ENOTCONN:
+            raise
 
