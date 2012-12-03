@@ -39,12 +39,7 @@ from evy.patcher import slurp_properties
 
 slurp_properties(__socket, globals(), srckeys = dir(__socket))
 
-greendns = None
-if os.environ.get("EVENTLET_NO_GREENDNS", '').lower() != "yes":
-    try:
-        from evy.support import greendns
-    except ImportError, ex:
-        pass
+from evy import dns as greendns
 
 if greendns:
     gethostbyname = greendns.gethostbyname
