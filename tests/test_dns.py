@@ -41,7 +41,7 @@ import tempfile, shutil
 
 import unittest
 
-from evy.support.greendns import resolve
+from evy.dns import resolve
 
 
 HOST = 'localhost'
