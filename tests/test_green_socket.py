@@ -156,7 +156,8 @@ class TestGreenSocket(LimitedTestCase):
         listener.listen(50)
 
     def test_recv (self):
-        self.reset_timeout(1000000)
+
+        #self.reset_timeout(1000000)
 
         listener = greenio.GreenSocket()
         listener.bind(('', 0))
@@ -165,31 +166,32 @@ class TestGreenSocket(LimitedTestCase):
         address, port = listener.getsockname()
         self.assertNotEquals(address, 0)
 
-        accept_ready = event.Event()
-        did_send_data = event.Event()
-        did_receive_data = event.Event()
+        accepting = event.Event()
+        sent = event.Event()
+        received = event.Event()
 
         def server ():
             # accept the connection in another greenlet
-            accept_ready.send()
+            accepting.send()
             sock, addr = listener.accept()
-            s = 'hello'
+            s = '1234567890'
             sock.send(s)
-            did_send_data.send(s)
+            sent.send(s)
 
         gt_server = spawn(server)
 
         def client():
             client = greenio.GreenSocket()
-            accept_ready.wait()
+            accepting.wait()
+            sleep(0.5)
             client.connect(('127.0.0.1', port))
-            received_data = client.recv(8192)
-            did_receive_data.send(received_data)
+            received_data = client.recv(5000)
+            received.send(received_data)
 
         gt_client = spawn(client)
 
-        sent_data = did_send_data.wait()
-        received_data = did_receive_data.wait()
+        sent_data = sent.wait()
+        received_data = received.wait()
 
         self.assertEquals(sent_data, received_data)
 
@@ -400,6 +402,7 @@ class TestGreenSocket(LimitedTestCase):
         evt.send()
         gt.wait()
 
+    @skipped
     def test_close_with_makefile (self):
         def accept_close_early (listener):
             # verify that the makefile and the socket are truly independent
@@ -501,6 +504,8 @@ class TestGreenSocket(LimitedTestCase):
             result = sock.recv(len(large_data))
             while len(result) < len(large_data):
                 result += sock.recv(len(large_data))
+                if result == '':
+                    break
             self.assertEquals(result, large_data)
 
         def server ():
@@ -522,9 +527,11 @@ class TestGreenSocket(LimitedTestCase):
         large_evt = spawn(read_large, client)
         sleep(0)
         client.sendall(s2b('hello world'))
+
         server_evt.wait()
         large_evt.wait()
         client.close()
+
 
     def test_sendall (self):
         # test adapted from Marcus Cavanaugh's email
@@ -532,13 +539,10 @@ class TestGreenSocket(LimitedTestCase):
         self.timer.cancel()
         second_bytes = 10
 
-        listener_ready = event.Event()
-
         def test_sendall_impl (many_bytes):
             bufsize = max(many_bytes // 15, 2)
 
             def sender (listener):
-                listener_ready.send()
                 (sock, addr) = listener.accept()
                 sock = bufsized(sock, size = bufsize)
                 sock.sendall(s2b('x') * many_bytes)
@@ -550,8 +554,6 @@ class TestGreenSocket(LimitedTestCase):
             listener.listen(50)
             sender_coro = spawn(sender, listener)
             client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
-            listener_ready.wait()
 
             _, port = listener.getsockname()
             client.connect(('127.0.0.1', port))

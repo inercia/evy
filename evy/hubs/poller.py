@@ -26,9 +26,9 @@
 
 from functools import partial
 
+import pyuv
+
 from evy.hubs import get_hub
-from evy.uv import watchers
-from evy.uv.interface import libuv
 
 
 __all__ = [
@@ -67,7 +67,7 @@ class Poller(object):
         self.read_callback = kw.pop('_read_callback', None)
         self.write_callback = kw.pop('_write_callback', None)
         self.hub = kw.pop('_hub', get_hub())
-        self.impl = watchers.Poll(self.hub, fileno)
+        self.impl = pyuv.Poll(self.hub.uv_loop, fileno)
 
         if _g_debug:
             import traceback, cStringIO
@@ -103,16 +103,17 @@ class Poller(object):
         :return: the underlying watcher
         """
         assert self.impl is not None
-        assert event in [libuv.UV_READABLE, libuv.UV_WRITABLE]
+        #assert event in [pyuv.UV_READABLE, pyuv.UV_WRITABLE]
 
+        self.impl.data = self
         try:
-            self.impl.start(event, hub._poller_triggered, event, self)
+            self.impl.start(event, hub._poller_triggered)
         except:
             pass
         else:
             cb = partial(cb, *args)
-            if event is libuv.UV_READABLE:  self.read_callback  = cb
-            else:                           self.write_callback = cb
+            if event & pyuv.UV_READABLE:   self.read_callback  = cb
+            if event & pyuv.UV_WRITABLE:   self.write_callback = cb
 
         return self.impl
 
@@ -138,9 +139,12 @@ class Poller(object):
         """
         self.read_callback = self.write_callback = None
 
+        def _dummy(*args):
+            pass
+
         if self.impl is not None:
             self.impl.stop()
-            self.impl.destroy()
+            self.impl.close(_dummy)
             self.impl = None
 
     def forget(self):
@@ -163,8 +167,8 @@ class Poller(object):
     ##
 
     def __call__(self, evtype):
-        if self.notify_readable and evtype is libuv.UV_READABLE:   self.read_callback()
-        if self.notify_writable and evtype is libuv.UV_WRITABLE:   self.write_callback()
+        if self.notify_readable and evtype is pyuv.UV_READABLE:   self.read_callback()
+        if self.notify_writable and evtype is pyuv.UV_WRITABLE:   self.write_callback()
 
     # No default ordering in 3.x. heapq uses <
     # FIXME should full set be added?

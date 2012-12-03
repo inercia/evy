@@ -350,43 +350,7 @@ class GeneralModuleTests(unittest.TestCase):
         socket.SOL_SOCKET
         socket.SO_REUSEADDR
 
-    def testHostnameRes(self):
-        # Testing hostname resolution mechanisms
-        hostname = socket.gethostname()
-        try:
-            ip = socket.gethostbyname(hostname)
-        except socket.error:
-            # Probably name lookup wasn't set up right; skip this test
-            return
-        self.assertTrue(ip.find('.') >= 0, "Error resolving host to ip.")
-        try:
-            hname, aliases, ipaddrs = socket.gethostbyaddr(ip)
-        except socket.error:
-            # Probably a similar problem as above; skip this test
-            return
-        all_host_names = [hostname, hname] + aliases
-        fqhn = socket.getfqdn(ip)
-        if not fqhn in all_host_names:
-            self.fail("Error testing host resolution mechanisms. (fqdn: %s, all: %s)" % (fqhn, repr(all_host_names)))
 
-    def testRefCountGetNameInfo(self):
-        # Testing reference count for getnameinfo
-        if hasattr(sys, "getrefcount"):
-            try:
-                # On some versions, this loses a reference
-                orig = sys.getrefcount(__name__)
-                socket.getnameinfo(__name__,0)
-            except TypeError:
-                self.assertEqual(sys.getrefcount(__name__), orig,
-                                 "socket.getnameinfo loses a reference")
-
-    def testInterpreterCrash(self):
-        # Making sure getnameinfo doesn't crash the interpreter
-        try:
-            # On some versions, this crashes the interpreter.
-            socket.getnameinfo(('x', 0, 0, 0), 0)
-        except socket.error:
-            pass
 
     def testNtoH(self):
         # This just checks that htons etc. are their own inverse,
@@ -652,43 +616,6 @@ class GeneralModuleTests(unittest.TestCase):
         self.assertRaises(ValueError, s.ioctl, -1, None)
         s.ioctl(socket.SIO_KEEPALIVE_VALS, (1, 100, 100))
 
-    def testGetaddrinfo(self):
-        try:
-            socket.getaddrinfo('localhost', 80)
-        except socket.gaierror as err:
-            if err.errno == socket.EAI_SERVICE:
-                # see http://bugs.python.org/issue1282647
-                self.skipTest("buggy libc version")
-            raise
-        # len of every sequence is supposed to be == 5
-        for info in socket.getaddrinfo(HOST, None):
-            self.assertEqual(len(info), 5)
-        # host can be a domain name, a string representation of an
-        # IPv4/v6 address or None
-        socket.getaddrinfo('localhost', 80)
-        socket.getaddrinfo('127.0.0.1', 80)
-        socket.getaddrinfo(None, 80)
-        if SUPPORTS_IPV6:
-            socket.getaddrinfo('::1', 80)
-        # port can be a string service name such as "http", a numeric
-        # port number or None
-        socket.getaddrinfo(HOST, "http")
-        socket.getaddrinfo(HOST, 80)
-        socket.getaddrinfo(HOST, None)
-        # test family and socktype filters
-        infos = socket.getaddrinfo(HOST, None, socket.AF_INET)
-        for family, _, _, _, _ in infos:
-            self.assertEqual(family, socket.AF_INET)
-        infos = socket.getaddrinfo(HOST, None, 0, socket.SOCK_STREAM)
-        for _, socktype, _, _, _ in infos:
-            self.assertEqual(socktype, socket.SOCK_STREAM)
-        # test proto and flags arguments
-        socket.getaddrinfo(HOST, None, 0, 0, socket.SOL_TCP)
-        socket.getaddrinfo(HOST, None, 0, 0, 0, socket.AI_PASSIVE)
-        # a server willing to support both IPv4 and IPv6 will
-        # usually do this
-        socket.getaddrinfo(None, 0, socket.AF_UNSPEC, socket.SOCK_STREAM, 0,
-                           socket.AI_PASSIVE)
 
 
     def check_sendall_interrupted(self, with_timeout):
@@ -733,15 +660,6 @@ class GeneralModuleTests(unittest.TestCase):
         srv.listen(0)
         srv.close()
 
-    @unittest.skipUnless(SUPPORTS_IPV6, 'IPv6 required for this test.')
-    def test_flowinfo(self):
-        self.assertRaises(OverflowError, socket.getnameinfo,
-                          ('::1',0, 0xffffffff), 0)
-        s = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
-        try:
-            self.assertRaises(OverflowError, s.bind, ('::1', 0, -10))
-        finally:
-            s.close()
 
 
 @unittest.skipUnless(thread, 'Threading required for this test.')

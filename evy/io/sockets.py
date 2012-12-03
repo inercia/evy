@@ -61,10 +61,8 @@ class GenericSocket(object):
         """
         self.uv_fd = None
 
-        if isinstance(family, (int, long)):
-            fd = _original_socket(family, type, proto, _sock)
-        else:
-            fd = family
+        if isinstance(family, (int, long)): fd = _original_socket(family, type, proto, _sock)
+        else:                               fd = family
 
         # import timeout from other socket, if it was there
         try:

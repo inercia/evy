@@ -1,7 +1,7 @@
 
 # the python interpreter
-PYTHON=python
-#PYTHON=pypy
+#PYTHON=python
+PYTHON=pypy
 
 # the libuv directory
 LIBUV_DIR=libuv

@@ -95,8 +95,10 @@ class Timer(object):
 
         Invoke this method when this timer is no longer used
         """
+        def _dummy(*args): pass
+
         self.impltimer.stop()
-        self.impltimer.destroy()
+        self.impltimer.close(_dummy)
         del self.impltimer
 
     def forget(self):

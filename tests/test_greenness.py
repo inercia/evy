@@ -63,6 +63,7 @@ def start_http_server ():
 
 
 class TestGreenness(unittest.TestCase):
+
     def setUp (self):
         self.gthread, self.server, self.port = start_http_server()
         #print 'Spawned the server'

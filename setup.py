@@ -7,8 +7,6 @@ except ImportError:
     from distutils.core import setup, find_packages
 
 
-from setup_libuv import libuv_build_ext, libuv_sdist, libuv_extension
-
 from os import path
 
 
@@ -26,7 +24,9 @@ setup(
     packages            = find_packages(exclude = ['tests', 'benchmarks']),
 
     install_requires    = ['setuptools',
-                           'dnspython'
+                           'dnspython',
+                           'pyuv',
+                           'pycares',
     ],
     zip_safe            = False,
 
@@ -37,11 +37,7 @@ setup(
         )
     ).read(),
 
-    cmdclass            = {'build_ext': libuv_build_ext,
-                           'sdist'    : libuv_sdist},
-
     ext_package         = 'evy',              # must match the package defined in the CFFI verify()
-    ext_modules         = [libuv_extension],
 
     test_suite          = 'nose.collector',
     tests_require       = 'httplib2',

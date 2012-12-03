@@ -33,9 +33,8 @@ import signal
 import sys
 import os
 
-from evy.uv.interface import libuv, handle_unref
-from evy.uv.interface import ffi
-from evy.uv import watchers
+import pyuv
+
 from evy.support import greenlets as greenlet, clear_sys_exc_info
 from evy.hubs import timer, poller
 from evy import patcher
@@ -70,8 +69,8 @@ time = patcher.original('time')
 
 
 
-READ = libuv.UV_READABLE
-WRITE = libuv.UV_WRITABLE
+READ = pyuv.UV_READABLE
+WRITE = pyuv.UV_WRITABLE
 
 
 
@@ -79,7 +78,7 @@ def alarm_handler (signum, frame):
     import inspect
     raise RuntimeError("Blocking detector ALARMED at" + str(inspect.getframeinfo(frame)))
 
-def _signal_checker(uv_prepare_handle, status):
+def _signal_checker(handle, signum):
     pass  # XXX: how do I check for signals from pure python??
 
 
@@ -128,41 +127,29 @@ class Hub(object):
         self.interrupted = False
 
         if ptr:
-            assert ffi.typeof(ptr) is ffi.typeof("uv_loop_t *")
-            self._uv_ptr = ptr
+            self.uv_loop = ptr
         else:
             if _default_loop_destroyed:
                 default = False
             if default:
-                self._uv_ptr = libuv.uv_default_loop()
-                if not self._uv_ptr:
-                    raise SystemError("uv_default_loop() failed")
+                self.uv_loop = pyuv.Loop.default_loop()
+                if not self.uv_loop:
+                    raise SystemError("default_loop() failed")
 
-                self._signal_checker = ffi.new("uv_prepare_t *")
-                self._signal_checker_cb = ffi.callback("void(*)(uv_prepare_t *, int)", _signal_checker)
-
-                libuv.uv_prepare_init(self._uv_ptr, self._signal_checker)
-                libuv.uv_prepare_start(self._signal_checker, self._signal_checker_cb)
-                handle_unref(self._signal_checker)
-
+                #pyuv.Signal(self.signal_checker)
             else:
-                self._uv_ptr = libuv.uv_loop_new()
-                if not self._uv_ptr:
-                    raise SystemError("uv_loop_new() failed")
+                self.uv_loop = pyuv.Loop.default_loop()
+                if not self.uv_loop:
+                    raise SystemError("default_loop() failed")
 
     def block_detect_pre (self):
         # shortest alarm we can possibly raise is one second
-        tmp = signal.signal(signal.SIGALRM, alarm_handler)
-        if tmp != alarm_handler:
-            self._old_signal_handler = tmp
-
-        arm_alarm(self.debug_blocking_resolution)
+        self.block_detect_handle = pyuv.Signal(self.uv_loop)
+        self.block_detect_handle.start(alarm_handler, signal.SIGALRM)
 
     def block_detect_post (self):
-        if (hasattr(self, "_old_signal_handler") and
-            self._old_signal_handler):
-            signal.signal(signal.SIGALRM, self._old_signal_handler)
-        signal.alarm(0)
+        if hasattr(self, "block_detect_handle"):
+            self.block_detect_handle.stop()
 
     def add (self, evtype, fileno, cb, persistent = False):
         """
@@ -276,8 +263,11 @@ class Hub(object):
         if not seconds:
             seconds = self.default_sleep()
 
+        def empty_callback(handle):
+            pass
+
         ## create a timer for avoiding exiting the loop for *seconds*
-        timer = watchers.Timer(self, seconds * 1000.0)
+        timer = pyuv.Timer(empty_callback, seconds, 0)
         timer.start(None)
 
         try:
@@ -361,9 +351,9 @@ class Hub(object):
         :return: 1 if more events are expected, 0 otherwise (when *once* is False, it always returns 0)
         """
         if once:
-            return libuv.uv_run_once(self._uv_ptr)
+            return self.uv_loop.run_once()
         else:
-            return libuv.uv_run(self._uv_ptr)
+            return self.uv_loop.run()
 
     def abort (self, wait = False):
         """
@@ -390,7 +380,7 @@ class Hub(object):
         :return: None
         """
         global _default_loop_destroyed
-        if self._uv_ptr:
+        if self.uv_loop:
 
             ## destroy all the timers and pollers
             for timer in self.timers:               timer.destroy()
@@ -401,20 +391,21 @@ class Hub(object):
             self._stop_signal_checker()
             #if __SYSERR_CALLBACK == self._handle_syserr:
             #    set_syserr_cb(None)
-            if libuv.uv_is_default_loop(self._uv_ptr):
+
+            if self.uv_loop == pyuv.Loop.default_loop():
                 _default_loop_destroyed = True
-            libuv.uv_loop_destroy(self._uv_ptr)
-            self._uv_ptr = ffi.NULL
+
+            del self.uv_loop
 
 
 
     @property
     def num_active(self):
-        return self._uv_ptr.active_handles
+        return self.uv_loop.active_handles
 
     @property
     def last_error(self):
-        return self._uv_ptr.last_err
+        return self.uv_loop.last_err
 
     ##
     ## timers
@@ -428,9 +419,10 @@ class Hub(object):
         :param unreferenced: if True, we unreference the timer, so the loop does not wait until it is triggered
         :return:
         """
-        eventtimer = watchers.Timer(self, timer.seconds * 1000.0)
+        eventtimer = pyuv.Timer(self.uv_loop)
+        eventtimer.data = timer
         timer.impltimer = eventtimer
-        eventtimer.start(self._timer_triggered, timer)
+        eventtimer.start(self._timer_triggered, float(timer.seconds), 0)
         self.timers.add(timer)
 
     def _timer_canceled (self, timer):
@@ -450,13 +442,14 @@ class Hub(object):
         except KeyError:
             pass
 
-    def _timer_triggered (self, timer):
+    def _timer_triggered (self, handle):
         """
         Performs the timer trigger
 
         :param timer: the timer that has been triggered
         :return: nothing
         """
+        timer = handle.data
         try:
             timer()
         except self.SYSTEM_EXCEPTIONS:
@@ -493,15 +486,16 @@ class Hub(object):
     ##
 
 
-    def _poller_triggered (self, evtype, p):
+    def _poller_triggered (self, handle, events, errno):
         """
         Performs the poller trigger
 
         :param poller: the poller that has been triggered
         :return: nothing
         """
+        p = handle.data
         try:
-            p(evtype)
+            p(events)
         except self.SYSTEM_EXCEPTIONS:
             self.interrupted = True
         except:
@@ -591,7 +585,7 @@ class Hub(object):
 
         :return: a pointer to the corresponding `uv_loop_t*`
         """
-        return self._uv_ptr
+        return self.uv_loop
 
     @property
     def default_loop(self):
@@ -600,41 +594,11 @@ class Hub(object):
 
         :return: the default events loop
         """
-        return libuv.uv_default_loop()
-
-    ##
-    ## references
-    ##
-
-    def ref(self, handle):
-        """
-        The event loop only runs as long as there are active watchers. This system works by having
-        every watcher increase the reference count of the event loop when it is started and decreasing
-        the reference count when stopped. But it is also possible to manually change the reference
-        count of watchers with :method:ref: and :method:unref:
-
-        :return: None
-        """
-        assert ffi.typeof(handle) is ffi.typeof("uv_handle_t *")
-        libuv.uv_ref(handle)
-
-    def unref(self, handle):
-        """
-        This method can be used with interval timers. You might have a garbage collector which runs
-        every X seconds, or your network service might send a heartbeat to others periodically, but
-        you don't want to have to stop them along all clean exit paths or error scenarios. Or you
-        want the program to exit when all your other watchers are done. In that case just unref() the
-        timer immediately after creation so that if it is the only watcher running then uv_run will
-        still exit.
-
-        :return: None
-        """
-        assert ffi.typeof(handle) is ffi.typeof("uv_handle_t *")
-        libuv.uv_unref(handle)
+        return pyuv.Loop.default_loop()
 
 
     def now(self):
-        return libuv.uv_now(self._uv_ptr)
+        return self.uv_loop.now()
 
     def XXX__repr__(self):
         return '<%s at 0x%x %s>' % (self.__class__.__name__, id(self), self._format())
@@ -643,37 +607,6 @@ class Hub(object):
     ## constructors
     ##
 
-    @property
-    def WatcherType(self):
-        from evy.uv.watchers import Watcher
-        return Watcher
-
-    def poller(self, fd, ref=True):
-        return watchers.Poll(self, fd, ref)
-
-    def timer(self, after, repeat=0.0, ref=True):
-        return watchers.Timer(self, after, repeat, ref)
-
-    def signal(self, signum, ref=True):
-        return watchers.Signal(self, signum, ref)
-
-    def idle(self, ref=True):
-        return watchers.Idle(self, ref)
-
-    def prepare(self, ref=True):
-        return watchers.Prepare(self, ref)
-
-    def async(self, ref=True):
-        return watchers.Async(self, ref)
-
-    def callback(self):
-        return watchers.Callback(self)
-
-    def run_callback(self, func, *args, **kw):
-        result = watchers.Callback(self)
-        result.start(func, *args)
-        return result
-
     def _format(self):
         msg = self.backend
         if self.default:
@@ -681,7 +614,7 @@ class Hub(object):
         return msg
 
     def fileno(self):
-        fd = self._uv_ptr.backend_fd
+        fd = self.uv_loop.fileno()
         if fd >= 0:
             return fd
 
@@ -738,10 +671,6 @@ class Hub(object):
     ## signals
     ##
 
-    def _stop_signal_checker(self):
-        if libuv.uv_is_active(self._signal_checker):
-            libuv.uv_ref(self._uv_ptr)
-            libuv.uv_prepare_stop(self._signal_checker)
 
     def signal_received(self, signal):
         # can't do more than set this flag here because the pyevent callback
