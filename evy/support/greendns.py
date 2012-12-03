@@ -41,10 +41,17 @@ Non-blocking DNS support for Evy
 import sys
 import struct
 
+import pyuv
+import pycares
+
 from evy import patcher
+from evy.hubs import get_hub
+
 from evy.green import _socket_nodns
 from evy.green import time
 from evy.green import select
+from evy.event import Event
+from evy.timeout import Timeout
 
 dns = patcher.import_patched('dns',
                              socket = _socket_nodns,
@@ -61,223 +68,13 @@ socket = _socket_nodns
 
 DNS_QUERY_TIMEOUT = 10.0
 
-#
-# Resolver instance used to perfrom DNS lookups.
-#
-class FakeAnswer(list):
-    expiration = 0
 
-
-class FakeRecord(object):
-    pass
-
-
-class ResolverProxy(object):
-    def __init__ (self, *args, **kwargs):
-        self._resolver = None
-        self._filename = kwargs.get('filename', '/etc/resolv.conf')
-        self._hosts = {}
-        if kwargs.pop('dev', False):
-            self._load_etc_hosts()
-
-    def _load_etc_hosts (self):
-        try:
-            fd = open('/etc/hosts', 'r')
-            contents = fd.read()
-            fd.close()
-        except (IOError, OSError):
-            return
-        contents = [line for line in contents.split('\n') if line and not line[0] == '#']
-        for line in contents:
-            line = line.replace('\t', ' ')
-            parts = line.split(' ')
-            parts = [p for p in parts if p]
-            if not len(parts):
-                continue
-            ip = parts[0]
-            for part in parts[1:]:
-                self._hosts[part] = ip
-
-    def clear (self):
-        self._resolver = None
-
-    def query (self, *args, **kwargs):
-        if self._resolver is None:
-            self._resolver = dns.resolver.Resolver(filename = self._filename)
-            self._resolver.cache = dns.resolver.Cache()
-
-        query = args[0]
-        if query is None:
-            args = list(args)
-            query = args[0] = '0.0.0.0'
-        if self._hosts and self._hosts.get(query):
-            answer = FakeAnswer()
-            record = FakeRecord()
-            setattr(record, 'address', self._hosts[query])
-            answer.append(record)
-            return answer
-        return self._resolver.query(*args, **kwargs)
-
-    #
-# cache
-#
-resolver = ResolverProxy(dev = True)
-
-def resolve (name):
-    error = None
-    rrset = None
-
-    if rrset is None or time.time() > rrset.expiration:
-        try:
-            rrset = resolver.query(name)
-        except dns.exception.Timeout, e:
-            error = (socket.EAI_AGAIN, 'Lookup timed out')
-        except dns.exception.DNSException, e:
-            error = (socket.EAI_NODATA, 'No address associated with hostname')
-        else:
-            pass
-            #responses.insert(name, rrset)
-
-    if error:
-        if rrset is None:
-            raise socket.gaierror(error)
-        else:
-            sys.stderr.write('DNS error: %r %r\n' % (name, error))
-    return rrset
-
-#
-# methods
-#
-def getaliases (host):
-    """
-    Checks for aliases of the given hostname (cname records)
-    returns a list of alias targets
-    will return an empty list if no aliases
-    """
-    cnames = []
-    error = None
-
-    try:
-        answers = dns.resolver.query(host, 'cname')
-    except dns.exception.Timeout, e:
-        error = (socket.EAI_AGAIN, 'Lookup timed out')
-    except dns.exception.DNSException, e:
-        error = (socket.EAI_NODATA, 'No address associated with hostname')
-    else:
-        for record in answers:
-            cnames.append(str(answers[0].target))
-
-    if error:
-        sys.stderr.write('DNS error: %r %r\n' % (host, error))
-
-    return cnames
-
-
-def getaddrinfo (host, port, family = 0, socktype = 0, proto = 0, flags = 0):
-    """
-    Replacement for Python's socket.getaddrinfo.
-
-    Currently only supports IPv4.  At present, flags are not
-    implemented.
-    """
-    socktype = socktype or socket.SOCK_STREAM
-
-    if is_ipv4_addr(host):
-        return [(socket.AF_INET, socktype, proto, '', (host, port))]
-
-    rrset = resolve(host)
-    value = []
-
-    for rr in rrset:
-        value.append((socket.AF_INET, socktype, proto, '', (rr.address, port)))
-    return value
-
-
-def gethostbyname (hostname):
-    """
-    Replacement for Python's socket.gethostbyname.
-
-    Currently only supports IPv4.
-    """
-    if is_ipv4_addr(hostname):
-        return hostname
-
-    rrset = resolve(hostname)
-    return rrset[0].address
-
-
-def gethostbyname_ex (hostname):
-    """
-    Replacement for Python's socket.gethostbyname_ex.
-
-    Currently only supports IPv4.
-    """
-    if is_ipv4_addr(hostname):
-        return (hostname, [], [hostname])
-
-    rrset = resolve(hostname)
-    addrs = []
-
-    for rr in rrset:
-        addrs.append(rr.address)
-    return (hostname, [], addrs)
-
-
-def getnameinfo (sockaddr, flags):
-    """
-    Replacement for Python's socket.getnameinfo.
-
-    Currently only supports IPv4.
-    """
-    try:
-        host, port = sockaddr
-    except (ValueError, TypeError):
-        if not isinstance(sockaddr, tuple):
-            del sockaddr  # to pass a stdlib test that is
-            # hyper-careful about reference counts
-            raise TypeError('getnameinfo() argument 1 must be a tuple')
-        else:
-            # must be ipv6 sockaddr, pretending we don't know how to resolve it
-            raise socket.gaierror(-2, 'name or service not known')
-
-    if (flags & socket.NI_NAMEREQD) and (flags & socket.NI_NUMERICHOST):
-        # Conflicting flags.  Punt.
-        raise socket.gaierror(
-            (socket.EAI_NONAME, 'Name or service not known'))
-
-    if is_ipv4_addr(host):
-        try:
-            rrset = resolver.query(
-                dns.reversename.from_address(host), dns.rdatatype.PTR)
-            if len(rrset) > 1:
-                raise socket.error('sockaddr resolved to multiple addresses')
-            host = rrset[0].target.to_text(omit_final_dot = True)
-        except dns.exception.Timeout, e:
-            if flags & socket.NI_NAMEREQD:
-                raise socket.gaierror((socket.EAI_AGAIN, 'Lookup timed out'))
-        except dns.exception.DNSException, e:
-            if flags & socket.NI_NAMEREQD:
-                raise socket.gaierror(
-                    (socket.EAI_NONAME, 'Name or service not known'))
-    else:
-        try:
-            rrset = resolver.query(host)
-            if len(rrset) > 1:
-                raise socket.error('sockaddr resolved to multiple addresses')
-            if flags & socket.NI_NUMERICHOST:
-                host = rrset[0].address
-        except dns.exception.Timeout, e:
-            raise socket.gaierror((socket.EAI_AGAIN, 'Lookup timed out'))
-        except dns.exception.DNSException, e:
-            raise socket.gaierror(
-                (socket.EAI_NODATA, 'No address associated with hostname'))
-
-        if not (flags & socket.NI_NUMERICSERV):
-            proto = (flags & socket.NI_DGRAM) and 'udp' or 'tcp'
-            port = socket.getservbyport(port, proto)
-
-    return (host, port)
-
+ARES_ERR_MAP = {
+    'ARES_EAGAIN' :    socket.EAI_AGAIN,
+    'ARES_EFAIL' :     socket.EAI_FAIL,
+    'ARES_ENONAME' :   socket.EAI_NONAME,
+    'ARES_ENODATA' :   socket.EAI_NODATA
+}
 
 def is_ipv4_addr (host):
     """
@@ -293,204 +90,265 @@ def is_ipv4_addr (host):
     return False
 
 
-def _net_read (sock, count, expiration):
+#
+# Resolver instance used to perfrom DNS lookups.
+#
+class FakeAnswer(list):
+    expiration = 0
+
+
+class FakeRecord(object):
+    pass
+
+
+class CaresResolver(object):
     """
-    Coroutines-friendly replacement for dns.query._net_write
-    Read the specified number of bytes from sock.  Keep trying until we
-    either get the desired amount, or we hit EOF.
-    A Timeout exception will be raised if the operation is not completed
-    by the expiration time.
+    The C-ares DNS resolver
     """
-    s = ''
-    while count > 0:
+
+    def __init__(self, loop):
+        self._channel = pycares.Channel(sock_state_cb=self._sock_state_cb)
+        self.loop = loop
+        self._timer = pyuv.Timer(self.loop)
+        self._fd_map = {}
+
+    def _sock_state_cb(self, fd, readable, writable):
+        if readable or writable:
+            if fd not in self._fd_map:
+                # New socket
+                handle = pyuv.Poll(self.loop, fd)
+                handle.fd = fd
+                self._fd_map[fd] = handle
+            else:
+                handle = self._fd_map[fd]
+            if not self._timer.active:
+                self._timer.start(self._timer_cb, 1.0, 1.0)
+            handle.start(pyuv.UV_READABLE if readable else 0 | pyuv.UV_WRITABLE if writable else 0, self._poll_cb)
+        else:
+            # Socket is now closed
+            handle = self._fd_map.pop(fd)
+            handle.close()
+            if not self._fd_map:
+                self._timer.stop()
+
+    def _timer_cb(self, timer):
+        self._channel.process_fd(pycares.ARES_SOCKET_BAD, pycares.ARES_SOCKET_BAD)
+
+    def _poll_cb(self, handle, events, error):
+        read_fd = handle.fd
+        write_fd = handle.fd
+        if error is not None:
+            # There was an error, pretend the socket is ready
+            self._channel.process_fd(read_fd, write_fd)
+            return
+
+        if not events & pyuv.UV_READABLE:
+            read_fd = pycares.ARES_SOCKET_BAD
+
+        if not events & pyuv.UV_WRITABLE:
+            write_fd = pycares.ARES_SOCKET_BAD
+        self._channel.process_fd(read_fd, write_fd)
+
+    def query(self, query_type, name, cb):
+        self._channel.query(query_type, name, cb)
+
+    def gethostbyname(self, name, cb):
+        self._channel.gethostbyname(name, socket.AF_INET, cb)
+
+    def getnameinfo(self, addr, flags, cb):
+        self._channel.getnameinfo(addr, flags, cb)
+
+
+#
+# cache
+#
+_resolver_hub = get_hub()
+resolver = CaresResolver(_resolver_hub.uv_loop)
+
+
+
+def resolve (name):
+    """
+    Resolve the *name*, returning a list of IP addresses
+
+    :param name: the name we want to resolve
+    :return: a list of IP addresses
+    """
+
+    rrset = None
+    resolved = Event()
+
+    def _resolv_callback(result, errorno):
         try:
-            n = sock.recv(count)
-        except socket.timeout:
-            ## Q: Do we also need to catch coro.CoroutineSocketWake and pass?
-            if expiration - time.time() <= 0.0:
-                raise dns.exception.Timeout
-        if n == '':
-            raise EOFError
-        count = count - len(n)
-        s = s + n
-    return s
+            if errorno:
+                e = pycares.errno.errorcode[errorno]
+                msg = pycares.errno.strerror(errorno)
+                resolved.send_exception(socket.gaierror(e, msg))
+            else:
+                resolved.send(result)
+        except Exception, e:
+            resolved.send_exception(e)
 
-
-def _net_write (sock, data, expiration):
-    """
-    Coroutines-friendly replacement for dns.query._net_write
-    Write the specified data to the socket.
-    A Timeout exception will be raised if the operation is not completed
-    by the expiration time.
-    """
-    current = 0
-    l = len(data)
-    while current < l:
-        try:
-            current += sock.send(data[current:])
-        except socket.timeout:
-            ## Q: Do we also need to catch coro.CoroutineSocketWake and pass?
-            if expiration - time.time() <= 0.0:
-                raise dns.exception.Timeout
-
-
-def udp (q, where, timeout = DNS_QUERY_TIMEOUT, port = 53, af = None, source = None,
-         source_port = 0, ignore_unexpected = False):
-    """
-    Coroutines-friendly replacement for dns.query.udp
-    Return the response obtained after sending a query via UDP.
-
-    @param q: the query
-    @type q: dns.message.Message
-    @param where: where to send the message
-    @type where: string containing an IPv4 or IPv6 address
-    @param timeout: The number of seconds to wait before the query times out.
-    If None, the default, wait forever.
-    @type timeout: float
-    @param port: The port to which to send the message.  The default is 53.
-    @type port: int
-    @param af: the address family to use.  The default is None, which
-    causes the address family to use to be inferred from the form of of where.
-    If the inference attempt fails, AF_INET is used.
-    @type af: int
-    @rtype: dns.message.Message object
-    @param source: source address.  The default is the IPv4 wildcard address.
-    @type source: string
-    @param source_port: The port from which to send the message.
-    The default is 0.
-    @type source_port: int
-    @param ignore_unexpected: If True, ignore responses from unexpected
-    sources.  The default is False.
-    @type ignore_unexpected: bool
-    """
-
-    wire = q.to_wire()
-    if af is None:
-        try:
-            af = dns.inet.af_for_address(where)
-        except:
-            af = dns.inet.AF_INET
-    if af == dns.inet.AF_INET:
-        destination = (where, port)
-        if source is not None:
-            source = (source, source_port)
-    elif af == dns.inet.AF_INET6:
-        destination = (where, port, 0, 0)
-        if source is not None:
-            source = (source, source_port, 0, 0)
-
-    s = socket.socket(af, socket.SOCK_DGRAM)
-    s.settimeout(timeout)
     try:
-        expiration = dns.query._compute_expiration(timeout)
-        if source is not None:
-            s.bind(source)
-        try:
-            s.sendto(wire, destination)
-        except socket.timeout:
-            ## Q: Do we also need to catch coro.CoroutineSocketWake and pass?
-            if expiration - time.time() <= 0.0:
-                raise dns.exception.Timeout
-        while 1:
-            try:
-                (wire, from_address) = s.recvfrom(65535)
-            except socket.timeout:
-                ## Q: Do we also need to catch coro.CoroutineSocketWake and pass?
-                if expiration - time.time() <= 0.0:
-                    raise dns.exception.Timeout
-            if from_address == destination:
-                break
-            if not ignore_unexpected:
-                raise dns.query.UnexpectedSource(
-                    'got a response from %s instead of %s'
-                    % (from_address, destination))
-    finally:
-        s.close()
+        with Timeout(DNS_QUERY_TIMEOUT):
+            resolver.query(name, pycares.QUERY_TYPE_A, _resolv_callback)
+            rrset = resolved.wait()
 
-    r = dns.message.from_wire(wire, keyring = q.keyring, request_mac = q.mac)
-    if not q.is_response(r):
-        raise dns.query.BadResponse()
-    return r
+    except Timeout, e:
+        raise socket.gaierror(socket.EAI_AGAIN, 'Lookup timed out')
+    except dns.exception.DNSException, e:
+        raise socket.gaierror(socket.EAI_NODATA, 'No address associated with hostname')
 
+    return rrset
 
-def tcp (q, where, timeout = DNS_QUERY_TIMEOUT, port = 53,
-         af = None, source = None, source_port = 0):
+#
+# methods
+#
+def getaliases (host):
     """
-    Coroutines-friendly replacement for dns.query.tcp
-    Return the response obtained after sending a query via TCP.
-
-    @param q: the query
-    @type q: dns.message.Message object
-    @param where: where to send the message
-    @type where: string containing an IPv4 or IPv6 address
-    @param timeout: The number of seconds to wait before the query times out.
-    If None, the default, wait forever.
-    @type timeout: float
-    @param port: The port to which to send the message.  The default is 53.
-    @type port: int
-    @param af: the address family to use.  The default is None, which
-    causes the address family to use to be inferred from the form of of where.
-    If the inference attempt fails, AF_INET is used.
-    @type af: int
-    @rtype: dns.message.Message object
-    @param source: source address.  The default is the IPv4 wildcard address.
-    @type source: string
-    @param source_port: The port from which to send the message.
-    The default is 0.
-    @type source_port: int
+    Checks for aliases of the given hostname (cname records)
+    returns a list of alias targets
+    will return an empty list if no aliases
     """
+    aliases = None
+    resolved = Event()
 
-    wire = q.to_wire()
-    if af is None:
+    def _resolv_callback(result, errorno):
         try:
-            af = dns.inet.af_for_address(where)
-        except:
-            af = dns.inet.AF_INET
-    if af == dns.inet.AF_INET:
-        destination = (where, port)
-        if source is not None:
-            source = (source, source_port)
-    elif af == dns.inet.AF_INET6:
-        destination = (where, port, 0, 0)
-        if source is not None:
-            source = (source, source_port, 0, 0)
+            if errorno:
+                e = pycares.errno.errorcode[errorno]
+                msg = pycares.errno.strerror(errorno)
+                resolved.send_exception(socket.gaierror(e, msg))
+            else:
+                resolved.send(result)
+        except Exception, e:
+            resolved.send_exception(e)
 
-    s = socket.socket(af, socket.SOCK_STREAM)
-    s.settimeout(timeout)
     try:
-        expiration = dns.query._compute_expiration(timeout)
-        if source is not None:
-            s.bind(source)
+        with Timeout(DNS_QUERY_TIMEOUT):
+            resolver.query(host, pycares.QUERY_TYPE_CNAME, _resolv_callback)
+            aliases = resolved.wait()
+
+    except Timeout, e:
+        raise socket.gaierror(socket.EAI_AGAIN, 'Lookup timed out')
+    except dns.exception.DNSException, e:
+        raise socket.gaierror(socket.EAI_NODATA, 'No address associated with hostname')
+
+    return aliases
+
+def getaddrinfo (host, port, family = 0, socktype = 0, proto = 0, flags = 0):
+    """
+    Replacement for Python's socket.getaddrinfo.
+    """
+    if not host:
+        host = 'localhost'
+
+    socktype = socktype or socket.SOCK_STREAM
+
+    if is_ipv4_addr(host):
+        return [(socket.AF_INET, socktype, proto, '', (host, port))]
+
+    rrset = resolve(host)
+    value = []
+
+    for rr in rrset:
+        value.append((socket.AF_INET, socktype, proto, '', (rr, port)))
+    return value
+
+
+def gethostbyname (hostname):
+    """
+    Replacement for Python's socket.gethostbyname.
+
+    Currently only supports IPv4.
+    """
+    if is_ipv4_addr(hostname):
+        return hostname
+
+    ips = []
+    resolved = Event()
+
+    def _resolv_callback(result, errorno):
         try:
-            s.connect(destination)
-        except socket.timeout:
-            ## Q: Do we also need to catch coro.CoroutineSocketWake and pass?
-            if expiration - time.time() <= 0.0:
-                raise dns.exception.Timeout
+            if errorno:
+                e = pycares.errno.errorcode[errorno]
+                msg = pycares.errno.strerror(errorno)
+                ee = ARES_ERR_MAP[e]
+                resolved.send_exception(socket.gaierror(ee, msg))
+            else:
+                resolved.send(result)
+        except Exception, e:
+            resolved.send_exception(e)
 
-        l = len(wire)
+    try:
+        with Timeout(DNS_QUERY_TIMEOUT):
+            resolver.query(hostname, pycares.QUERY_TYPE_CNAME, _resolv_callback)
+            ips = resolved.wait()
 
-        # copying the wire into tcpmsg is inefficient, but lets us
-        # avoid writev() or doing a short write that would get pushed
-        # onto the net
-        tcpmsg = struct.pack("!H", l) + wire
-        _net_write(s, tcpmsg, expiration)
-        ldata = _net_read(s, 2, expiration)
-        (l,) = struct.unpack("!H", ldata)
-        wire = _net_read(s, l, expiration)
-    finally:
-        s.close()
+    except Timeout, e:
+        raise socket.gaierror(socket.EAI_AGAIN, 'Lookup timed out')
+    except dns.exception.DNSException, e:
+        raise socket.gaierror(socket.EAI_NODATA, 'No address associated with hostname')
 
-    r = dns.message.from_wire(wire, keyring = q.keyring, request_mac = q.mac)
-    if not q.is_response(r):
-        raise dns.query.BadResponse()
-    return r
+    if len(ips) == 0:
+        raise socket.gaierror(socket.EAI_NODATA, 'No address associated with hostname')
+
+    return ips[0]
 
 
-def reset ():
-    resolver.clear()
+def gethostbyname_ex (hostname):
+    """
+    Replacement for Python's socket.gethostbyname_ex.
 
-# Install our coro-friendly replacements for the tcp and udp query methods.
-dns.query.tcp = tcp
-dns.query.udp = udp
+    Currently only supports IPv4.
+    """
+    if is_ipv4_addr(hostname):
+        return (hostname, [], [hostname])
+
+    rrset = resolve(hostname)
+    addrs = []
+
+    for rr in rrset:
+        addrs.append(rr)
+    return (hostname, [], addrs)
+
+
+def getnameinfo (addr, flags):
+    """
+    Replacement for Python's socket.getnameinfo.
+
+    The flags can be:
+
+    * NI_NAMEREQD If set, then an error is returned if the hostname cannot be determined.
+    * NI_DGRAM: If set, then the service is datagram (UDP) based rather than stream (TCP) based. This is required for the few ports (512-514) that have different services for UDP and TCP.
+    * NI_NOFQDN: If set, return only the hostname part of the fully qualified domain name for local hosts.
+    * NI_NUMERICHOST: If set, then the numeric form of the hostname is returned. (When not set, this will still happen in case the node's name cannot be determined.)
+    * NI_NUMERICSERV: If set, then the numeric form of the service address is returned. (When not set, this will still happen in case the service's name cannot be determined.)
+
+    :param flags: the modifer flags
+    """
+    if (flags & socket.NI_NAMEREQD) and (flags & socket.NI_NUMERICHOST):
+        # Conflicting flags.  Punt.
+        raise socket.gaierror((socket.EAI_NONAME, 'Name or service not known'))
+
+    resolved = Event()
+
+    def _resolve_callback(result, errorno):
+        try:
+            if errorno:
+                e = pycares.errno.errorcode[errorno]
+                msg = pycares.errno.strerror(errorno)
+                resolved.send_exception(socket.gaierror(e, msg))
+            else:
+                resolved.send(result)
+        except Exception, e:
+            resolved.send_exception(e)
+
+    resolver.getnameinfo(addr, flags, _resolve_callback)
+    res = resolved.wait()
+    return res.node, res.service
+
+
+
+
 
