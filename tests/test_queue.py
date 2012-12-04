@@ -49,6 +49,7 @@ def do_bail (q):
 
 
 class TestQueue(LimitedTestCase):
+
     def test_send_first (self):
         q = Queue()
         q.put('hi')
@@ -158,17 +159,19 @@ class TestQueue(LimitedTestCase):
 
         sendings = ['1', '2', '3', '4']
         gts = [spawn(q.get)
-               for x in sendings]
+               for _ in sendings]
 
-        sleep(0.01) # get 'em all waiting
+        #sleep(0.01) # get 'em all waiting
 
         q.put(sendings[0])
         q.put(sendings[1])
         q.put(sendings[2])
         q.put(sendings[3])
+
         results = set()
         for i, gt in enumerate(gts):
             results.add(gt.wait())
+
         self.assertEquals(results, set(sendings))
 
     def test_waiters_that_cancel (self):
@@ -397,7 +400,7 @@ class TestQueue(LimitedTestCase):
         q = Queue()
 
         def waiter (q):
-            timer = Timeout(0.1)
+            timer = Timeout(0.2)
             self.assertEquals(q.join(), 'hi2')
             timer.cancel()
 
