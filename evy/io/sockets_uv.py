@@ -127,6 +127,20 @@ class BaseSocket(object):
         raise RuntimeError('not implemented')
 
     def makefile (self, *args, **kw):
+        """
+        Return a file object associated with the socket.
+        The file object references a dup()ped version of the socket file descriptor, so the file
+        object and socket object may be closed or garbage-collected independently. The socket
+        must be in blocking mode (it can not have a timeout). The optional mode and bufsize
+        arguments are interpreted the same way as by the built-in file() function.
+
+        Note: On Windows, the file-like object created by makefile() cannot be used where a file
+        object with a file descriptor is expected, such as the stream arguments of subprocess.Popen().
+
+        :param args: mode and buffer size
+        :param kw:
+        :return: a file objet
+        """
         return _fileobject(self.dup(), *args, **kw)
 
     def setblocking (self, flag):
@@ -350,25 +364,47 @@ class TcpSocket(BaseSocket):
 
 
     def recvfrom (self, *args):
+        """
+        Receive data from the socket. The return value is a pair (string, address) where string is
+        a string representing the data received and address is the address of the socket sending
+        the data. See the Unix manual page recv(2) for the meaning of the optional argument flags;
+        it defaults to zero.
+        :param args:
+        :return:
+        """
         ## TODO
         raise RuntimeError('not implemented')
 
     def recvfrom_into (self, *args):
+        """
+        Receive data from the socket, writing it into buffer instead of creating a new string.
+        The return value is a pair (nbytes, address) where nbytes is the number of bytes received
+        and address is the address of the socket sending the data. See the Unix manual page recv(2)
+        for the meaning of the optional argument flags; it defaults to zero.
+        :param args:
+        :return:
+        """
         ## TODO
         raise RuntimeError('not implemented')
 
     def recv_into (self, buf, nbytes = None, flags = None):
         if not nbytes:
-            nbytes = len(buffer)
+            nbytes = len(buf)
 
         if nbytes == 0:
             raise ValueError('invalid read length')
 
-        buf = self.recv(nbytes)
+        temp_buf = self.recv(nbytes)
+        v = len(temp_buf)
+        buf[:v] = temp_buf
+        return v
 
     def recv (self, buflen, flags = 0):
         """
-        Receive from the socket
+        Receive data from the socket. The return value is a string representing the data received.
+        The maximum amount of data to be received at once is specified by bufsize. See the Unix
+        manual page recv(2) for the meaning of the optional argument flags; it defaults to zero.
+
         :param buflen: the maximum length we want from to receive from the socket
         :param flags:
         :return:
@@ -392,6 +428,15 @@ class TcpSocket(BaseSocket):
             return res
 
     def send (self, data, flags = 0):
+        """
+        Send data to the socket. The socket must be connected to a remote socket. The optional
+        flags argument has the same meaning as for recv() above. Returns the number of bytes sent.
+        Applications are responsible for checking that all data has been sent; if only some of the
+        data was transmitted, the application needs to attempt delivery of the remaining data.
+        :param data: the data to send
+        :param flags: modifier flags
+        :return: the amount of data written to the socket
+        """
         self.did_write = Event()
         with Timeout(self.gettimeout(), socket.timeout("timed out")):
             self.uv_write_len = len(data)
@@ -404,12 +449,29 @@ class TcpSocket(BaseSocket):
         return write_result
 
     def sendall (self, data, flags = 0):
+        """
+        Send data to the socket. The socket must be connected to a remote socket. The optional
+        flags argument has the same meaning as for recv() above. Unlike send(), this method
+        continues to send data from string until either all data has been sent or an error occurs.
+        None is returned on success. On error, an exception is raised, and there is no way to
+        determine how much data, if any, was successfully sent.
+        :param data:
+        :param flags:
+        :return: None is returned on success
+        """
         tail = self.send(data, flags)
         len_data = len(data)
         while tail < len_data:
             tail += self.send(data[tail:], flags)
 
     def sendto (self, *args):
+        """
+        Send data to the socket. The socket should not be connected to a remote socket, since the
+        destination socket is specified by address. The optional flags argument has the same meaning
+        as for recv() above. Return the number of bytes sent.
+        :param args:
+        :return:
+        """
         ## TODO
         raise RuntimeError('not implemented')
 
@@ -422,8 +484,16 @@ class TcpSocket(BaseSocket):
     def setsockopt(self, *args, **kwargs):
         pass
 
-
     def shutdown(self, *args):
+        """
+        Shut down one or both halves of the connection. If how is SHUT_RD, further receives are
+        disallowed. If how is SHUT_WR, further sends are disallowed. If how is SHUT_RDWR, further
+        sends and receives are disallowed. Depending on the platform, shutting down one half of
+        the connection can also close the opposite half (e.g. on Mac OS X, shutdown(SHUT_WR) does
+        not allow further reads on the other end of the connection).
+        :param args:
+        :return:
+        """
         if not self.uv_handle:
             raise socket.error(errno.EBADFD, 'invalid file descriptor')
 

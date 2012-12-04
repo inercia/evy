@@ -164,7 +164,7 @@ class Hub(object):
             current_events = 0
 
             ## check we do not have another callback on the same descriptor and event
-            if p.notify_readabl and evtype is READ:
+            if p.notify_readable and evtype is READ:
                 raise RuntimeError('there is already %s reading from descriptor %d' % (str(p), fileno))
 
             if p.notify_writable and evtype is WRITE:
