@@ -30,7 +30,7 @@
 
 from tests import LimitedTestCase, main, skip_on_windows
 
-from evy.io.files import GreenFile
+from evy.io.pipes import GreenPipe
 from evy.greenthread import spawn, sleep
 
 import os
@@ -38,7 +38,7 @@ import tempfile, shutil
 
 
 
-class TestGreenFiles(LimitedTestCase):
+class TestGreenPipes(LimitedTestCase):
 
     @skip_on_windows
     def setUp (self):
@@ -51,8 +51,8 @@ class TestGreenFiles(LimitedTestCase):
 
     def test_pipe (self):
         r, w = os.pipe()
-        rf = GreenFile(r, 'r');
-        wf = GreenFile(w, 'w', 0);
+        rf = GreenPipe(r, 'r');
+        wf = GreenPipe(w, 'w', 0);
 
         def sender (f, content):
             for ch in content:
@@ -74,8 +74,8 @@ class TestGreenFiles(LimitedTestCase):
         # also ensures that readline() terminates on '\n' and '\r\n'
         r, w = os.pipe()
 
-        r = GreenFile(r)
-        w = GreenFile(w, 'w')
+        r = GreenPipe(r)
+        w = GreenPipe(w, 'w')
 
         def writer ():
             sleep(.1)
@@ -101,8 +101,8 @@ class TestGreenFiles(LimitedTestCase):
     def test_pipe_writes_large_messages (self):
         r, w = os.pipe()
 
-        r = GreenFile(r)
-        w = GreenFile(w, 'w')
+        r = GreenPipe(r)
+        w = GreenPipe(w, 'w')
 
         large_message = "".join([1024 * chr(i) for i in xrange(65)])
 
@@ -121,7 +121,7 @@ class TestGreenFiles(LimitedTestCase):
         gt.wait()
 
     def test_seek_on_buffered_pipe (self):
-        f = GreenFile(self.tempdir + "/TestFile", 'w+', 1024)
+        f = GreenPipe(self.tempdir + "/TestFile", 'w+', 1024)
         self.assertEquals(f.tell(), 0)
         f.seek(0, 2)
         self.assertEquals(f.tell(), 0)
@@ -143,7 +143,7 @@ class TestGreenFiles(LimitedTestCase):
         self.assertEqual(f.readline(), '')
 
     def test_truncate (self):
-        f = GreenFile(self.tempdir + "/TestFile", 'w+', 1024)
+        f = GreenPipe(self.tempdir + "/TestFile", 'w+', 1024)
         f.write('1234567890')
         f.truncate(9)
         self.assertEquals(f.tell(), 9)

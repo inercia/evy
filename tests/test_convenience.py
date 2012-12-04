@@ -32,7 +32,7 @@ import os
 
 from evy import event
 from evy import convenience
-from evy.green import socket
+from evy.patched import socket
 from evy.greenthread import spawn, sleep
 from evy.timeout import with_timeout
 

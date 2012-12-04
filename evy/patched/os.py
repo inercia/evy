@@ -33,8 +33,9 @@ import errno
 
 socket = __import__("socket")
 
-from evy import greenio
 from evy.support import get_errno
+from evy.io.pipes import GreenPipe
+
 from evy import greenthread
 from evy import hubs
 from evy.patcher import slurp_properties
@@ -46,20 +47,22 @@ slurp_properties(os_orig, globals(),
                  ignore = __patched__, srckeys = dir(os_orig))
 
 def fdopen (fd, *args, **kw):
-    """fdopen(fd [, mode='r' [, bufsize]]) -> file_object
+    """
+    fdopen(fd [, mode='r' [, bufsize]]) -> file_object
     
     Return an open file object connected to a file descriptor."""
     if not isinstance(fd, int):
         raise TypeError('fd should be int, not %r' % fd)
     try:
-        return greenio.GreenPipe(fd, *args, **kw)
+        return GreenPipe(fd, *args, **kw)
     except IOError, e:
         raise OSError(*e.args)
 
 __original_read__ = os_orig.read
 
 def read (fd, n):
-    """read(fd, buffersize) -> string
+    """
+    read(fd, buffersize) -> string
     
     Read a file descriptor."""
     while True:
@@ -77,7 +80,8 @@ def read (fd, n):
 __original_write__ = os_orig.write
 
 def write (fd, st):
-    """write(fd, string) -> byteswritten
+    """
+    write(fd, string) -> byteswritten
     
     Write a string to a file descriptor.
     """
@@ -94,18 +98,22 @@ def write (fd, st):
 
 
 def wait ():
-    """wait() -> (pid, status)
+    """
+    wait() -> (pid, status)
     
-    Wait for completion of a child process."""
+    Wait for completion of a child process.
+    """
     return waitpid(0, 0)
 
 __original_waitpid__ = os_orig.waitpid
 
 def waitpid (pid, options):
-    """waitpid(...)
+    """
+    waitpid(...)
     waitpid(pid, options) -> (pid, status)
     
-    Wait for completion of a given child process."""
+    Wait for completion of a given child process.
+    """
     if options & os_orig.WNOHANG != 0:
         return __original_waitpid__(pid, options)
     else:

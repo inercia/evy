@@ -11,7 +11,7 @@ course).
 """
 from __future__ import with_statement
 
-from evy.green import urllib2
+from evy.patched import urllib2
 import evy
 import re
 

@@ -29,14 +29,19 @@
 
 
 from evy import patcher
-from evy.green import select
-from evy.green import socket
-from evy.green import time
+from evy.patched import ftplib
+from evy.patched import httplib
+from evy.patched import socket
+from evy.patched import time
+from evy.patched import urllib
 
-patcher.inject("asyncore",
+patcher.inject('urllib2',
                globals(),
-    ('select', select),
+    ('httplib', httplib),
     ('socket', socket),
-    ('time', time))
+    ('time', time),
+    ('urllib', urllib))
+
+FTPHandler.ftp_open = patcher.patch_function(FTPHandler.ftp_open, ('ftplib', ftplib))
 
 del patcher

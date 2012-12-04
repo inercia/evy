@@ -29,8 +29,8 @@
 import os
 import sys
 
-__import__('evy.green._socket_nodns')
-__socket = sys.modules['evy.green._socket_nodns']
+__import__('evy.patched._socket_nodns')
+__socket = sys.modules['evy.patched._socket_nodns']
 
 __all__ = __socket.__all__
 __patched__ = __socket.__patched__ + ['gethostbyname', 'getaddrinfo', 'create_connection', ]

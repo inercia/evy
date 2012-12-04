@@ -241,7 +241,7 @@ except Timeout:
 class TestBadFilenos(LimitedTestCase):
 
     def test_repeated_selects (self):
-        from evy.green import select
+        from evy.patched import select
 
         self.assertRaises(ValueError, select.select, [-1], [], [])
         self.assertRaises(ValueError, select.select, [-1], [], [])

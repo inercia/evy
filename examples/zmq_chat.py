@@ -1,5 +1,5 @@
 import evy, sys
-from evy.green import socket, zmq
+from evy.patched import socket, zmq
 from evy.hubs import use_hub
 
 use_hub('zeromq')

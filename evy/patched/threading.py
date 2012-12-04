@@ -34,8 +34,8 @@ Implements the standard threading module, using greenthreads.
 
 
 from evy import patcher
-from evy.green import thread
-from evy.green import time
+from evy.patched import thread
+from evy.patched import time
 from evy.support import greenlets as greenlet
 
 __patched__ = ['_start_new_thread', '_allocate_lock', '_get_ident', '_sleep',

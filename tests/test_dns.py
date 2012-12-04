@@ -30,7 +30,7 @@
 import socket as _orig_sock
 from tests import LimitedTestCase, main, skipped, s2b, skip_on_windows
 
-from evy.green import socket
+from evy.patched import socket
 
 import errno
 

@@ -29,15 +29,20 @@
 
 
 from evy import patcher
+from evy.patched import BaseHTTPServer
+from evy.patched import SimpleHTTPServer
+from evy.patched import urllib
+from evy.patched import select
 
-# *NOTE: there might be some funny business with the "SOCKS" module
-# if it even still exists
-from evy.green import socket
-
-patcher.inject('ftplib', globals(), ('socket', socket))
+test = None # bind prior to patcher.inject to silence pyflakes warning below
+patcher.inject('CGIHTTPServer',
+               globals(),
+    ('BaseHTTPServer', BaseHTTPServer),
+    ('SimpleHTTPServer', SimpleHTTPServer),
+    ('urllib', urllib),
+    ('select', select))
 
 del patcher
 
-# Run test program when run as a script
 if __name__ == '__main__':
-    test()
+    test() # pyflakes false alarm here unless test = None above

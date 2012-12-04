@@ -28,7 +28,7 @@
 #
 
 
-from evy.green import pycurl
+from evy.patched import pycurl
 
 from tests import LimitedTestCase, main
 

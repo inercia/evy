@@ -32,10 +32,10 @@ import errno
 import new
 
 import evy
-from evy.io.files import GreenFile
+from evy.io.pipes import GreenPipe
 from evy import patcher
-from evy.green import os
-from evy.green import select
+from evy.patched import os
+from evy.patched import select
 
 patcher.inject('subprocess', globals(), ('select', select))
 subprocess_orig = __import__("subprocess")
@@ -61,8 +61,8 @@ class Popen(subprocess_orig.Popen):
             # evy.processes.Process.run() method.
             for attr in "stdin", "stdout", "stderr":
                 pipe = getattr(self, attr)
-                if pipe is not None and not type(pipe) == greenio.GreenPipe:
-                    wrapped_pipe = GreenFile(pipe, pipe.mode, bufsize)
+                if pipe is not None and not type(pipe) == GreenPipe:
+                    wrapped_pipe = GreenPipe(pipe, pipe.mode, bufsize)
                     setattr(self, attr, wrapped_pipe)
 
         __init__.__doc__ = subprocess_orig.Popen.__init__.__doc__
@@ -88,7 +88,7 @@ class Popen(subprocess_orig.Popen):
 
     if not subprocess_orig.mswindows:
         # don't want to rewrite the original _communicate() method, we
-        # just want a version that uses evy.green.select.select() 
+        # just want a version that uses evy.patched.select.select()
         # instead of select.select().
         try:
             _communicate = new.function(subprocess_orig.Popen._communicate.im_func.func_code,

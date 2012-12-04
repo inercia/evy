@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 
 from evy import patcher
-from evy.green import SocketServer
-from evy.green import socket
-from evy.green import select
-from evy.green import time
-from evy.green import threading
+from evy.patched import SocketServer
+from evy.patched import socket
+from evy.patched import select
+from evy.patched import time
+from evy.patched import threading
 
 # to get past the silly 'requires' check
 from test import test_support

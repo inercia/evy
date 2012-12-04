@@ -27,17 +27,13 @@
 # THE SOFTWARE.
 #
 
-
 from evy import patcher
-from evy.green import BaseHTTPServer
-from evy.green import urllib
+from evy.patched import asyncore
+from evy.patched import socket
 
-patcher.inject('SimpleHTTPServer',
+patcher.inject('asynchat',
                globals(),
-    ('BaseHTTPServer', BaseHTTPServer),
-    ('urllib', urllib))
+    ('asyncore', asyncore),
+    ('socket', socket))
 
 del patcher
-
-if __name__ == '__main__':
-    test()

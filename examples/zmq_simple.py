@@ -1,4 +1,4 @@
-from evy.green import zmq
+from evy.patched import zmq
 import evy
 
 CTX = zmq.Context(1)

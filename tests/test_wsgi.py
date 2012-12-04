@@ -38,15 +38,22 @@ import sys
 from tests import skipped, LimitedTestCase, skip_with_pyevent, skip_if_no_ssl
 from unittest import main
 
-from evy import greenio
 from evy import event
-from evy.green import socket as greensocket
-from evy import wsgi
+from evy.io.sockets import shutdown_safe
+from evy.io.convenience import connect, listen
+from evy.greenthread import spawn_n
+
+from evy.patched import socket as greensocket
+from evy.web import wsgi
+from evy.greenthread import sleep
+from evy.timeout import Timeout
 from evy.support import get_errno
+from evy.patcher import import_patched
 
 from tests import find_command
 
-httplib = evy.import_patched('httplib')
+
+httplib = import_patched('httplib')
 
 certificate_file = os.path.join(os.path.dirname(__file__), 'server.crt')
 private_key_file = os.path.join(os.path.dirname(__file__), 'server.key')
@@ -215,7 +222,7 @@ class _TestBase(LimitedTestCase):
         new_kwargs.update(kwargs)
 
         if 'sock' not in new_kwargs:
-            new_kwargs['sock'] = listen(('localhost', 0))
+            new_kwargs['sock'] = listen(('127.0.0.1', 0))
 
         self.port = new_kwargs['sock'].getsockname()[1]
         self.killer = spawn_n(
@@ -232,7 +239,7 @@ class TestHttpd(_TestBase):
 
     def test_001_server (self):
         sock = connect(
-            ('localhost', self.port))
+            ('127.0.0.1', self.port))
 
         fd = sock.makefile('rw')
         fd.write('GET / HTTP/1.0\r\nHost: localhost\r\n\r\n')
@@ -245,7 +252,7 @@ class TestHttpd(_TestBase):
 
     def test_002_keepalive (self):
         sock = connect(
-            ('localhost', self.port))
+            ('127.0.0.1', self.port))
 
         fd = sock.makefile('w')
         fd.write('GET / HTTP/1.1\r\nHost: localhost\r\n\r\n')
@@ -259,7 +266,7 @@ class TestHttpd(_TestBase):
     def test_003_passing_non_int_to_read (self):
         # This should go in greenio_test
         sock = connect(
-            ('localhost', self.port))
+            ('127.0.0.1', self.port))
 
         fd = sock.makefile('rw')
         fd.write('GET / HTTP/1.1\r\nHost: localhost\r\n\r\n')
@@ -271,7 +278,7 @@ class TestHttpd(_TestBase):
 
     def test_004_close_keepalive (self):
         sock = connect(
-            ('localhost', self.port))
+            ('127.0.0.1', self.port))
 
         fd = sock.makefile('w')
         fd.write('GET / HTTP/1.1\r\nHost: localhost\r\n\r\n')
@@ -287,9 +294,9 @@ class TestHttpd(_TestBase):
 
     @skipped
     def test_005_run_apachebench (self):
-        url = 'http://localhost:12346/'
+        url = 'http://127.0.0.1:12346/'
         # ab is apachebench
-        from evy.green import subprocess
+        from evy.patched import subprocess
 
         subprocess.call([find_command('ab'),
                          '-c', '64', '-n', '1024', '-k', url],
@@ -297,7 +304,7 @@ class TestHttpd(_TestBase):
 
     def test_006_reject_long_urls (self):
         sock = connect(
-            ('localhost', self.port))
+            ('127.0.0.1', self.port))
         path_parts = []
         for ii in range(3000):
             path_parts.append('path')
@@ -324,7 +331,7 @@ class TestHttpd(_TestBase):
 
         self.site.application = new_app
         sock = connect(
-            ('localhost', self.port))
+            ('127.0.0.1', self.port))
         request = '\r\n'.join((
             'POST / HTTP/1.0',
             'Host: localhost',
@@ -343,7 +350,7 @@ class TestHttpd(_TestBase):
 
     def test_008_correctresponse (self):
         sock = connect(
-            ('localhost', self.port))
+            ('127.0.0.1', self.port))
 
         fd = sock.makefile('w')
         fd.write('GET / HTTP/1.1\r\nHost: localhost\r\n\r\n')
@@ -361,7 +368,7 @@ class TestHttpd(_TestBase):
     def test_009_chunked_response (self):
         self.site.application = chunked_app
         sock = connect(
-            ('localhost', self.port))
+            ('127.0.0.1', self.port))
 
         fd = sock.makefile('rw')
         fd.write('GET / HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n')
@@ -371,7 +378,7 @@ class TestHttpd(_TestBase):
     def test_010_no_chunked_http_1_0 (self):
         self.site.application = chunked_app
         sock = connect(
-            ('localhost', self.port))
+            ('127.0.0.1', self.port))
 
         fd = sock.makefile('rw')
         fd.write('GET / HTTP/1.0\r\nHost: localhost\r\nConnection: close\r\n\r\n')
@@ -381,7 +388,7 @@ class TestHttpd(_TestBase):
     def test_011_multiple_chunks (self):
         self.site.application = big_chunks
         sock = connect(
-            ('localhost', self.port))
+            ('127.0.0.1', self.port))
 
         fd = sock.makefile('rw')
         fd.write('GET / HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n')
@@ -415,13 +422,13 @@ class TestHttpd(_TestBase):
         certificate_file = os.path.join(os.path.dirname(__file__), 'server.crt')
         private_key_file = os.path.join(os.path.dirname(__file__), 'server.key')
 
-        server_sock = evy.wrap_ssl(listen(('localhost', 0)),
+        server_sock = evy.wrap_ssl(listen(('127.0.0.1', 0)),
                                         certfile = certificate_file,
                                         keyfile = private_key_file,
                                         server_side = True)
         self.spawn_server(sock = server_sock, site = wsgi_app)
 
-        sock = connect(('localhost', self.port))
+        sock = connect(('127.0.0.1', self.port))
         sock = evy.wrap_ssl(sock)
         sock.write(
             'POST /foo HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\nContent-length:3\r\n\r\nabc')
@@ -436,13 +443,13 @@ class TestHttpd(_TestBase):
 
         certificate_file = os.path.join(os.path.dirname(__file__), 'server.crt')
         private_key_file = os.path.join(os.path.dirname(__file__), 'server.key')
-        server_sock = evy.wrap_ssl(listen(('localhost', 0)),
+        server_sock = evy.wrap_ssl(listen(('127.0.0.1', 0)),
                                         certfile = certificate_file,
                                         keyfile = private_key_file,
                                         server_side = True)
         self.spawn_server(sock = server_sock, site = wsgi_app)
 
-        sock = connect(('localhost', server_sock.getsockname()[1]))
+        sock = connect(('127.0.0.1', server_sock.getsockname()[1]))
         sock = evy.wrap_ssl(sock)
         sock.write('GET /foo HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n')
         result = sock.read(8192)
@@ -450,7 +457,7 @@ class TestHttpd(_TestBase):
 
     def test_014_chunked_post (self):
         self.site.application = chunked_post
-        sock = connect(('localhost', self.port))
+        sock = connect(('127.0.0.1', self.port))
         fd = sock.makefile('rw')
         fd.write('PUT /a HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n'
                  'Transfer-Encoding: chunked\r\n\r\n'
@@ -462,7 +469,7 @@ class TestHttpd(_TestBase):
         response = fd.read()
         self.assert_(response == 'oh hai', 'invalid response %s' % response)
 
-        sock = connect(('localhost', self.port))
+        sock = connect(('127.0.0.1', self.port))
         fd = sock.makefile('rw')
         fd.write('PUT /b HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n'
                  'Transfer-Encoding: chunked\r\n\r\n'
@@ -474,7 +481,7 @@ class TestHttpd(_TestBase):
         response = fd.read()
         self.assert_(response == 'oh hai', 'invalid response %s' % response)
 
-        sock = connect(('localhost', self.port))
+        sock = connect(('127.0.0.1', self.port))
         fd = sock.makefile('rw')
         fd.write('PUT /c HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n'
                  'Transfer-Encoding: chunked\r\n\r\n'
@@ -488,14 +495,14 @@ class TestHttpd(_TestBase):
 
     def test_015_write (self):
         self.site.application = use_write
-        sock = connect(('localhost', self.port))
+        sock = connect(('127.0.0.1', self.port))
         fd = sock.makefile('w')
         fd.write('GET /a HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n')
         fd.flush()
         response_line, headers, body = read_http(sock)
         self.assert_('content-length' in headers)
 
-        sock = connect(('localhost', self.port))
+        sock = connect(('127.0.0.1', self.port))
         fd = sock.makefile('w')
         fd.write('GET /b HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n')
         fd.flush()
@@ -514,7 +521,7 @@ class TestHttpd(_TestBase):
             return ['testing']
 
         self.site.application = wsgi_app
-        sock = connect(('localhost', self.port))
+        sock = connect(('127.0.0.1', self.port))
         fd = sock.makefile('rw')
         fd.write('GET /a HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n')
         fd.flush()
@@ -549,16 +556,16 @@ class TestHttpd(_TestBase):
         certificate_file = os.path.join(os.path.dirname(__file__), 'server.crt')
         private_key_file = os.path.join(os.path.dirname(__file__), 'server.key')
 
-        sock = evy.wrap_ssl(listen(('localhost', 0)),
+        sock = evy.wrap_ssl(listen(('127.0.0.1', 0)),
                                  certfile = certificate_file,
                                  keyfile = private_key_file,
                                  server_side = True)
         server_coro = evy.spawn(server, sock, wsgi_app, self.logfile)
 
-        client = connect(('localhost', sock.getsockname()[1]))
+        client = connect(('127.0.0.1', sock.getsockname()[1]))
         client = evy.wrap_ssl(client)
         client.write('X') # non-empty payload so that SSL handshake occurs
-        greenio.shutdown_safe(client)
+        shutdown_safe(client)
         client.close()
 
         success = server_coro.wait()
@@ -568,7 +575,7 @@ class TestHttpd(_TestBase):
         # verify that if an http/1.0 client sends connection: keep-alive
         # that we don't close the connection
         sock = connect(
-            ('localhost', self.port))
+            ('127.0.0.1', self.port))
 
         fd = sock.makefile('w')
         fd.write('GET / HTTP/1.0\r\nHost: localhost\r\nConnection: keep-alive\r\n\r\n')
@@ -595,7 +602,7 @@ class TestHttpd(_TestBase):
 
         self.site.application = use_fieldstorage
         sock = connect(
-            ('localhost', self.port))
+            ('127.0.0.1', self.port))
 
         fd = sock.makefile('rw')
         fd.write('POST / HTTP/1.1\r\n'
@@ -608,7 +615,7 @@ class TestHttpd(_TestBase):
         self.assert_('hello!' in fd.read())
 
     def test_020_x_forwarded_for (self):
-        sock = connect(('localhost', self.port))
+        sock = connect(('127.0.0.1', self.port))
         sock.sendall(
             'GET / HTTP/1.1\r\nHost: localhost\r\nX-Forwarded-For: 1.2.3.4, 5.6.7.8\r\n\r\n')
         sock.recv(1024)
@@ -619,7 +626,7 @@ class TestHttpd(_TestBase):
         self.logfile = StringIO()
         self.spawn_server(log_x_forwarded_for = False)
 
-        sock = connect(('localhost', self.port))
+        sock = connect(('127.0.0.1', self.port))
         sock.sendall(
             'GET / HTTP/1.1\r\nHost: localhost\r\nX-Forwarded-For: 1.2.3.4, 5.6.7.8\r\n\r\n')
         sock.recv(1024)
@@ -630,11 +637,11 @@ class TestHttpd(_TestBase):
 
     def test_socket_remains_open (self):
         greenthread.kill(self.killer)
-        server_sock = listen(('localhost', 0))
+        server_sock = listen(('127.0.0.1', 0))
         server_sock_2 = server_sock.dup()
         self.spawn_server(sock = server_sock_2)
         # do a single req/response to verify it's up
-        sock = connect(('localhost', self.port))
+        sock = connect(('127.0.0.1', self.port))
         fd = sock.makefile('rw')
         fd.write('GET / HTTP/1.0\r\nHost: localhost\r\n\r\n')
         fd.flush()
@@ -653,7 +660,7 @@ class TestHttpd(_TestBase):
         except socket.error, exc:
             self.assertEqual(get_errno(exc), errno.EBADF)
         self.spawn_server(sock = server_sock)
-        sock = connect(('localhost', self.port))
+        sock = connect(('127.0.0.1', self.port))
         fd = sock.makefile('rw')
         fd.write('GET / HTTP/1.0\r\nHost: localhost\r\n\r\n')
         fd.flush()
@@ -675,7 +682,7 @@ class TestHttpd(_TestBase):
             return []
 
         self.site.application = clobberin_time
-        sock = connect(('localhost', self.port))
+        sock = connect(('127.0.0.1', self.port))
         fd = sock.makefile('rw')
         fd.write('GET / HTTP/1.1\r\n'
                  'Host: localhost\r\n'
@@ -695,7 +702,7 @@ class TestHttpd(_TestBase):
 
         # this stuff is copied from test_001_server, could be better factored
         sock = connect(
-            ('localhost', self.port))
+            ('127.0.0.1', self.port))
         fd = sock.makefile('rw')
         fd.write('GET / HTTP/1.0\r\nHost: localhost\r\n\r\n')
         fd.flush()
@@ -706,7 +713,7 @@ class TestHttpd(_TestBase):
 
     def test_023_bad_content_length (self):
         sock = connect(
-            ('localhost', self.port))
+            ('127.0.0.1', self.port))
         fd = sock.makefile('rw')
         fd.write('GET / HTTP/1.0\r\nHost: localhost\r\nContent-length: argh\r\n\r\n')
         fd.flush()
@@ -727,7 +734,7 @@ class TestHttpd(_TestBase):
                 return [text]
 
         self.site.application = wsgi_app
-        sock = connect(('localhost', self.port))
+        sock = connect(('127.0.0.1', self.port))
         fd = sock.makefile('rw')
         fd.write(
             'PUT / HTTP/1.1\r\nHost: localhost\r\nContent-length: 1025\r\nExpect: 100-continue\r\n\r\n')
@@ -762,7 +769,7 @@ class TestHttpd(_TestBase):
 
         debug.hub_exceptions(True)
         listener = greensocket.socket()
-        listener.bind(('localhost', 0))
+        listener.bind(('127.0.0.1', 0))
         # NOT calling listen, to trigger the error
         self.logfile = StringIO()
         self.spawn_server(sock = listener)
@@ -771,7 +778,7 @@ class TestHttpd(_TestBase):
             sys.stderr = self.logfile
             sleep(0) # need to enter server loop
             try:
-                connect(('localhost', self.port))
+                connect(('127.0.0.1', self.port))
                 self.fail("Didn't expect to connect")
             except socket.error, exc:
                 self.assertEquals(get_errno(exc), errno.ECONNREFUSED)
@@ -784,7 +791,7 @@ class TestHttpd(_TestBase):
 
     def test_026_log_format (self):
         self.spawn_server(log_format = "HI %(request_line)s HI")
-        sock = connect(('localhost', self.port))
+        sock = connect(('127.0.0.1', self.port))
         sock.sendall('GET /yo! HTTP/1.1\r\nHost: localhost\r\n\r\n')
         sock.recv(1024)
         sock.close()
@@ -796,7 +803,7 @@ class TestHttpd(_TestBase):
         # and we're not speaking with a 1.1 client, that we 
         # close the connection
         self.site.application = chunked_app
-        sock = connect(('localhost', self.port))
+        sock = connect(('127.0.0.1', self.port))
 
         sock.sendall('GET / HTTP/1.0\r\nHost: localhost\r\nConnection: keep-alive\r\n\r\n')
 
@@ -810,7 +817,7 @@ class TestHttpd(_TestBase):
         # and the server doesn't accept keep-alives, we close the connection
         self.spawn_server(keepalive = False)
         sock = connect(
-            ('localhost', self.port))
+            ('127.0.0.1', self.port))
 
         sock.sendall('GET / HTTP/1.0\r\nHost: localhost\r\nConnection: keep-alive\r\n\r\n')
         response_line, headers, body = read_http(sock)
@@ -818,7 +825,7 @@ class TestHttpd(_TestBase):
 
     def test_027_keepalive_chunked (self):
         self.site.application = chunked_post
-        sock = connect(('localhost', self.port))
+        sock = connect(('127.0.0.1', self.port))
         fd = sock.makefile('w')
         fd.write(
             'PUT /a HTTP/1.1\r\nHost: localhost\r\nTransfer-Encoding: chunked\r\n\r\n10\r\n0123456789abcdef\r\n0\r\n\r\n')
@@ -851,13 +858,13 @@ class TestHttpd(_TestBase):
                 errored[0] = 'SSL handshake error raised exception %s.' % e
 
         for data in ('', 'GET /non-ssl-request HTTP/1.0\r\n\r\n'):
-            srv_sock = evy.wrap_ssl(listen(('localhost', 0)),
+            srv_sock = evy.wrap_ssl(listen(('127.0.0.1', 0)),
                                          certfile = certificate_file,
                                          keyfile = private_key_file,
                                          server_side = True)
             port = srv_sock.getsockname()[1]
             g = spawn_n(server, srv_sock)
-            client = connect(('localhost', port))
+            client = connect(('127.0.0.1', port))
             if data: # send non-ssl request
                 client.sendall(data)
             else: # close sock prematurely
@@ -866,9 +873,9 @@ class TestHttpd(_TestBase):
             self.assert_(not errored[0], errored[0])
             # make another request to ensure the server's still alive
             try:
-                from evy.green import ssl
+                from evy.patched import ssl
 
-                client = ssl.wrap_socket(connect(('localhost', port)))
+                client = ssl.wrap_socket(connect(('127.0.0.1', port)))
                 client.write('GET / HTTP/1.0\r\nHost: localhost\r\n\r\n')
                 result = client.read()
                 self.assert_(result.startswith('HTTP'), result)
@@ -901,7 +908,7 @@ class TestHttpd(_TestBase):
             yield ''
 
         self.site.application = one_posthook_app
-        sock = connect(('localhost', self.port))
+        sock = connect(('127.0.0.1', self.port))
         fp = sock.makefile('rw')
         fp.write('GET / HTTP/1.1\r\nHost: localhost\r\n\r\n')
         fp.flush()
@@ -925,7 +932,7 @@ class TestHttpd(_TestBase):
             yield ''
 
         self.site.application = two_posthook_app
-        sock = connect(('localhost', self.port))
+        sock = connect(('127.0.0.1', self.port))
         fp = sock.makefile('rw')
         fp.write('GET / HTTP/1.1\r\nHost: localhost\r\n\r\n')
         fp.flush()
@@ -936,7 +943,7 @@ class TestHttpd(_TestBase):
         self.assertEquals(posthook2_count[0], 25)
 
     def test_030_reject_long_header_lines (self):
-        sock = connect(('localhost', self.port))
+        sock = connect(('127.0.0.1', self.port))
         request = 'GET / HTTP/1.0\r\nHost: localhost\r\nLong: %s\r\n\r\n' %\
                   ('a' * 10000)
         fd = sock.makefile('rw')
@@ -948,7 +955,7 @@ class TestHttpd(_TestBase):
         fd.close()
 
     def test_031_reject_large_headers (self):
-        sock = connect(('localhost', self.port))
+        sock = connect(('127.0.0.1', self.port))
         headers = 'Name: Value\r\n' * 5050
         request = 'GET / HTTP/1.0\r\nHost: localhost\r\n%s\r\n\r\n' % headers
         fd = sock.makefile('rw')
@@ -966,7 +973,7 @@ class TestHttpd(_TestBase):
 
         self.site.application = zero_chunked_app
         sock = connect(
-            ('localhost', self.port))
+            ('127.0.0.1', self.port))
 
         fd = sock.makefile('rw')
         fd.write('GET / HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n')
@@ -986,7 +993,7 @@ class TestHttpd(_TestBase):
     def test_configurable_url_length_limit (self):
         self.spawn_server(url_length_limit = 20000)
         sock = connect(
-            ('localhost', self.port))
+            ('127.0.0.1', self.port))
         path = 'x' * 15000
         request = 'GET /%s HTTP/1.0\r\nHost: localhost\r\n\r\n' % path
         fd = sock.makefile('rw')
@@ -1035,7 +1042,7 @@ class TestHttpd(_TestBase):
             raise RuntimeError("intentional error")
 
         self.site.application = wsgi_app
-        sock = connect(('localhost', self.port))
+        sock = connect(('127.0.0.1', self.port))
         fd = sock.makefile('rw')
         fd.write('GET / HTTP/1.1\r\nHost: localhost\r\n\r\n')
         fd.flush()
@@ -1051,7 +1058,7 @@ class TestHttpd(_TestBase):
             yield u"non-encodable unicode: \u0230"
 
         self.site.application = wsgi_app
-        sock = connect(('localhost', self.port))
+        sock = connect(('127.0.0.1', self.port))
         fd = sock.makefile('rw')
         fd.write('GET / HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n')
         fd.flush()
@@ -1067,7 +1074,7 @@ class TestHttpd(_TestBase):
             yield "raw: %s" % environ['RAW_PATH_INFO']
 
         self.site.application = wsgi_app
-        sock = connect(('localhost', self.port))
+        sock = connect(('127.0.0.1', self.port))
         fd = sock.makefile('rw')
         fd.write('GET /a*b@%40%233 HTTP/1.1\r\nHost: localhost\r\nConnection: '\
                  'close\r\n\r\n')
@@ -1106,7 +1113,7 @@ class TestHttpd(_TestBase):
 
         self.site.application = crasher
 
-        sock = connect(('localhost', self.port))
+        sock = connect(('127.0.0.1', self.port))
         fd = sock.makefile('w')
         fd.write('GET / HTTP/1.1\r\nHost: localhost\r\n\r\n')
         fd.flush()
@@ -1119,7 +1126,7 @@ class TestHttpd(_TestBase):
         # verify traceback when debugging enabled
         self.spawn_server(debug = True)
         self.site.application = crasher
-        sock = connect(('localhost', self.port))
+        sock = connect(('127.0.0.1', self.port))
         fd = sock.makefile('w')
         fd.write('GET / HTTP/1.1\r\nHost: localhost\r\n\r\n')
         fd.flush()
@@ -1171,7 +1178,7 @@ class IterableAlreadyHandledTest(_TestBase):
     def test_iterable_app_keeps_socket_open_unless_connection_close_sent (self):
         self.site.application = self.get_app()
         sock = connect(
-            ('localhost', self.port))
+            ('127.0.0.1', self.port))
 
         fd = sock.makefile('rw')
         fd.write('GET / HTTP/1.1\r\nHost: localhost\r\n\r\n')
@@ -1230,7 +1237,7 @@ class TestChunkedInput(_TestBase):
         return response
 
     def connect (self):
-        return connect(('localhost', self.port))
+        return connect(('127.0.0.1', self.port))
 
     def set_site (self):
         self.site = Site()

@@ -34,7 +34,7 @@ import os
 
 from tests import LimitedTestCase
 
-from evy.io.files import GreenFile
+from evy.io.pipes import GreenPipe
 
 class TestGreenPipeWithStatement(LimitedTestCase):
 
@@ -42,8 +42,8 @@ class TestGreenPipeWithStatement(LimitedTestCase):
         # ensure using a pipe as a context actually closes it.
         r, w = os.pipe()
 
-        r = GreenFile(r)
-        w = GreenFile(w, 'w')
+        r = GreenPipe(r)
+        w = GreenPipe(w, 'w')
 
         with r:
             pass

@@ -35,9 +35,9 @@ import sys
 import unittest
 from pprint import pformat
 from evy.support import clear_sys_exc_info
-from evy.green import socket
-from evy.green.thread import start_new_thread
-from evy.green.time import sleep
+from evy.patched import socket
+from evy.patched.thread import start_new_thread
+from evy.patched.time import sleep
 import weakref
 import gc
 

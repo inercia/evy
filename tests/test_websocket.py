@@ -31,11 +31,13 @@ import socket
 import errno
 
 import evy
-from evy.green import urllib2
-from evy.green import httplib
-from evy.websocket import WebSocket, WebSocketWSGI
+from evy.patched import urllib2
+from evy.patched import httplib
+from evy.web.websocket import WebSocket, WebSocketWSGI
 from evy import event
-from evy import greenio
+from evy.greenthread import sleep
+from evy.io.sockets import shutdown_safe
+from evy.io.convenience import connect, listen
 
 from tests import mock, LimitedTestCase, certificate_file, private_key_file
 from tests import skip_if_no_ssl
@@ -594,7 +596,7 @@ class TestWebSocketSSL(_TestBase):
         sock.sendall(' end\xff')
         result = sock.recv(1024)
         self.assertEqual(result, '\x00start end\xff')
-        greenio.shutdown_safe(sock)
+        shutdown_safe(sock)
         sock.close()
         sleep(0.01)
 

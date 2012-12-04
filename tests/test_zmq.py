@@ -44,7 +44,7 @@ from threading import Thread
 
 
 try:
-    from evy.green import zmq
+    from evy.patched import zmq
 except ImportError:
     zmq = {}    # for systems lacking zmq, skips tests instead of barfing
 

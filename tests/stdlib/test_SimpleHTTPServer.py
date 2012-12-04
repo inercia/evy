@@ -1,5 +1,5 @@
 from evy import patcher
-from evy.green import SimpleHTTPServer
+from evy.patched import SimpleHTTPServer
 
 patcher.inject('test.test_SimpleHTTPServer',
                globals(),

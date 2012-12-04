@@ -49,10 +49,12 @@ import os
 import sys
 
 from evy import event
-from evy import greenio
 from evy import greenthread
 from evy import patcher
 from evy import timeout
+from evy.io.sockets import GreenSocket
+from evy.io.pipes import GreenPipe
+
 
 threading = patcher.original('threading')
 Queue_module = patcher.original('Queue')
@@ -186,7 +188,7 @@ def proxy_call (autowrap, f, *args, **kwargs):
 
 class Proxy(object):
     """
-    a simple proxy-wrapper of any object that comes with a
+    A simple proxy-wrapper of any object that comes with a
     methods-only interface, in order to forward every method
     invocation onto a thread in the native-thread pool.  A key
     restriction is that the object's methods should not switch
@@ -285,6 +287,7 @@ _threads = []
 _coro = None
 _setup_already = False
 
+
 def setup ():
     global _rfile, _wfile, _threads, _coro, _setup_already, _rspq
     if _setup_already:
@@ -293,8 +296,8 @@ def setup ():
         _setup_already = True
     try:
         _rpipe, _wpipe = os.pipe()
-        _wfile = greenio.GreenPipe(_wpipe, 'wb', 0)
-        _rfile = greenio.GreenPipe(_rpipe, 'rb', 0)
+        _wfile = GreenPipe(_wpipe, 'wb', 0)
+        _rfile = GreenPipe(_rpipe, 'rb', 0)
     except (ImportError, NotImplementedError):
         # This is Windows compatibility -- use a socket instead of a pipe because
         # pipes don't really exist on Windows.
@@ -307,7 +310,7 @@ def setup ():
         csock = util.__original_socket__(socket.AF_INET, socket.SOCK_STREAM)
         csock.connect(('localhost', sock.getsockname()[1]))
         nsock, addr = sock.accept()
-        _rfile = greenio.GreenSocket(csock).makefile('rb', 0)
+        _rfile = GreenSocket(csock).makefile('rb', 0)
         _wfile = nsock.makefile('wb', 0)
 
     _rspq = Queue(maxsize = -1)

@@ -306,6 +306,8 @@ class TcpSocket(BaseSocket):
         """
         self.backlog = backlog
         assert self.backlog is not None
+        if not self.uv_handle:
+            raise socket.error(errno.EBADFD, 'invalid file descriptor')
         self.uv_handle.listen(self._uv_accept_callback)
 
 
@@ -404,3 +406,14 @@ class TcpSocket(BaseSocket):
     def setsockopt(self, *args, **kwargs):
         pass
 
+
+    def shutdown(self, *args):
+        if not self.uv_handle:
+            raise socket.error(errno.EBADFD, 'invalid file descriptor')
+
+        shudown_event = Event()
+        def _shutdown_callback(tcp_handle, error):
+            shudown_event.send()
+
+        self.uv_handle.shutdown(_shutdown_callback)
+        shudown_event.wait()

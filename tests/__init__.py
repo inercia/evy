@@ -120,10 +120,10 @@ def skip_if_no_itimer (func):
 def skip_if_no_ssl (func):
     """ Decorator that skips a test if SSL is not available."""
     try:
-        import evy.green.ssl
+        import evy.patched.ssl
     except ImportError:
         try:
-            import evy.green.OpenSSL
+            import evy.patched.OpenSSL
         except ImportError:
             skipped(func)
 

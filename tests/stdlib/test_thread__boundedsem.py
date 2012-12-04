@@ -1,6 +1,6 @@
 """Test that BoundedSemaphore with a very high bound is as good as unbounded one"""
 from evy import coros
-from evy.green import thread
+from evy.patched import thread
 
 def allocate_lock ():
     return coros.semaphore(1, 9999)

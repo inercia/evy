@@ -27,16 +27,17 @@
 # THE SOFTWARE.
 #
 
+
 from evy import patcher
+from evy.patched import BaseHTTPServer
+from evy.patched import urllib
 
-from evy.green import socket
-from evy.green import select
-from evy.green import threading
-
-patcher.inject('SocketServer',
+patcher.inject('SimpleHTTPServer',
                globals(),
-    ('socket', socket),
-    ('select', select),
-    ('threading', threading))
+    ('BaseHTTPServer', BaseHTTPServer),
+    ('urllib', urllib))
 
-# QQQ ForkingMixIn should be fixed to use green waitpid?
+del patcher
+
+if __name__ == '__main__':
+    test()

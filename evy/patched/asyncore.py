@@ -27,13 +27,16 @@
 # THE SOFTWARE.
 #
 
-from evy import patcher
-from evy.green import asyncore
-from evy.green import socket
 
-patcher.inject('asynchat',
+from evy import patcher
+from evy.patched import select
+from evy.patched import socket
+from evy.patched import time
+
+patcher.inject("asyncore",
                globals(),
-    ('asyncore', asyncore),
-    ('socket', socket))
+    ('select', select),
+    ('socket', socket),
+    ('time', time))
 
 del patcher

@@ -185,7 +185,7 @@ class SocketSSLTest(LimitedTestCase):
 
         listener = listen_ssl_socket(('', 0))
         killer = evy.spawn(serve, listener)
-        from evy.green.socket import ssl
+        from evy.patched.socket import ssl
 
         client = ssl(connect(('localhost', listener.getsockname()[1])))
         self.assertEquals(client.read(1024), 'content')

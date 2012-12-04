@@ -43,15 +43,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import itertools
 import random
-from sys import stdout
 import time
 import re
 import gc
-from tests import skipped, skip_with_pyevent, LimitedTestCase, main
+from tests import skipped, LimitedTestCase, main
 
-from evy import tpool, debug
+from evy import tpool
 from evy.greenthread import spawn, sleep, TimeoutError
 from evy.greenpool import GreenPile
 from evy.timeout import Timeout

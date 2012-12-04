@@ -1,5 +1,5 @@
 import evy
-from evy.green import socket
+from evy.patched import socket
 
 PORT = 3001
 participants = set()

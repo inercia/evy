@@ -1,7 +1,7 @@
 from evy import patcher
-from evy.green import threading
-from evy.green import thread
-from evy.green import time
+from evy.patched import threading
+from evy.patched import thread
+from evy.patched import time
 
 # *NOTE: doesn't test as much of the threading api as we'd like because many of
 # the tests are launched via subprocess and therefore don't get patched

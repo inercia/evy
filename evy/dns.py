@@ -47,9 +47,9 @@ import pycares
 from evy import patcher
 from evy.hubs import get_hub
 
-from evy.green import _socket_nodns
-from evy.green import time
-from evy.green import select
+from evy.patched import _socket_nodns
+from evy.patched import time
+from evy.patched import select
 from evy.event import Event
 from evy.timeout import Timeout
 

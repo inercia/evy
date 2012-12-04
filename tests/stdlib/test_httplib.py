@@ -1,6 +1,6 @@
 from evy import patcher
-from evy.green import httplib
-from evy.green import socket
+from evy.patched import httplib
+from evy.patched import socket
 
 patcher.inject('test.test_httplib',
                globals(),

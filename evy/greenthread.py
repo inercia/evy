@@ -32,14 +32,24 @@ import sys
 from evy import event
 from evy import hubs
 from evy import timeout
-from evy.hubs import timer
+
 from evy.support import greenlets as greenlet
-import warnings
+
+
+
 
 __all__ = ['getcurrent', 'sleep', 'spawn', 'spawn_n', 'spawn_after', 'spawn_after_local',
            'GreenThread']
 
+
 getcurrent = greenlet.getcurrent
+
+def switch (coro, result = None, exc = None):
+    if exc is not None:
+        return coro.throw(exc)
+    return coro.switch(result)
+
+
 
 def sleep (seconds = 0):
     """
@@ -281,3 +291,5 @@ def kill (g, *throw_args):
         hub.ensure_greenlet()
         hub.schedule_call_global(0, current.switch)
     g.throw(*throw_args)
+
+

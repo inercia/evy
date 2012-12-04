@@ -331,22 +331,22 @@ def is_monkey_patched (module):
 
 
 def _green_os_modules ():
-    from evy.green import os
+    from evy.patched import os
 
     return [('os', os)]
 
 
 def _green_select_modules ():
-    from evy.green import select
+    from evy.patched import select
 
     return [('select', select)]
 
 
 def _green_socket_modules ():
-    from evy.green import socket
+    from evy.patched import socket
 
     try:
-        from evy.green import ssl
+        from evy.patched import ssl
 
         return [('socket', socket), ('ssl', ssl)]
     except ImportError:
@@ -354,22 +354,22 @@ def _green_socket_modules ():
 
 
 def _green_thread_modules ():
-    from evy.green import Queue
-    from evy.green import thread
-    from evy.green import threading
+    from evy.patched import Queue
+    from evy.patched import thread
+    from evy.patched import threading
 
     return [('Queue', Queue), ('thread', thread), ('threading', threading)]
 
 
 def _green_time_modules ():
-    from evy.green import time
+    from evy.patched import time
 
     return [('time', time)]
 
 
 def _green_MySQLdb ():
     try:
-        from evy.green import MySQLdb
+        from evy.patched import MySQLdb
 
         return [('MySQLdb', MySQLdb)]
     except ImportError:

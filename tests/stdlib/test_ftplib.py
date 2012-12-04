@@ -1,8 +1,8 @@
 from evy import patcher
-from evy.green import asyncore
-from evy.green import ftplib
-from evy.green import threading
-from evy.green import socket
+from evy.patched import asyncore
+from evy.patched import ftplib
+from evy.patched import threading
+from evy.patched import socket
 
 patcher.inject('test.test_ftplib', globals())
 

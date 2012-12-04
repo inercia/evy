@@ -1,6 +1,6 @@
 from evy import patcher
-from evy.green import thread
-from evy.green import time
+from evy.patched import thread
+from evy.patched import time
 
 # necessary to initialize the hub before running on 2.5
 from evy import hubs

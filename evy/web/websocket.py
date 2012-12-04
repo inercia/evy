@@ -39,7 +39,7 @@ except ImportError: #pragma NO COVER
     from md5 import md5
 
 from evy import semaphore
-from evy import wsgi
+from evy.web import wsgi
 from evy.green import socket
 from evy.support import get_errno
 

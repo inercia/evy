@@ -38,7 +38,7 @@ from evy.greenthread import spawn, sleep
 
 
 try:
-    from evy.green import MySQLdb
+    from evy.patched import MySQLdb
 except ImportError:
     MySQLdb = False
 
@@ -261,7 +261,7 @@ class TestMySQLMonkeyPatch(test_patcher.ProcessBase):
         output, lines = self.run_script("""
 from evy import patcher
 import MySQLdb as m
-from evy.green import MySQLdb as gm
+from evy.patched import MySQLdb as gm
 patcher.monkey_patch(all=True, MySQLdb=True)
 print "mysqltest", ",".join(sorted(patcher.already_patched.keys()))
 print "connect", m.connect == gm.connect

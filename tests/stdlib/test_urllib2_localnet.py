@@ -1,9 +1,9 @@
 from evy import patcher
 
-from evy.green import BaseHTTPServer
-from evy.green import threading
-from evy.green import socket
-from evy.green import urllib2
+from evy.patched import BaseHTTPServer
+from evy.patched import threading
+from evy.patched import socket
+from evy.patched import urllib2
 
 patcher.inject('test.test_urllib2_localnet',
                globals(),

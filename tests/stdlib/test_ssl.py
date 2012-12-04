@@ -1,13 +1,13 @@
 from evy import patcher
-from evy.green import asyncore
-from evy.green import BaseHTTPServer
-from evy.green import select
-from evy.green import socket
-from evy.green import SocketServer
-from evy.green import SimpleHTTPServer
-from evy.green import ssl
-from evy.green import threading
-from evy.green import urllib
+from evy.patched import asyncore
+from evy.patched import BaseHTTPServer
+from evy.patched import select
+from evy.patched import socket
+from evy.patched import SocketServer
+from evy.patched import SimpleHTTPServer
+from evy.patched import ssl
+from evy.patched import threading
+from evy.patched import urllib
 
 # stupid test_support messing with our mojo
 import test.test_support

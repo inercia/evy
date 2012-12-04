@@ -1,9 +1,9 @@
 """Spawn multiple workers and collect their results.
 
-Demonstrates how to use the evy.green.socket module.
+Demonstrates how to use the evy.patched.socket module.
 """
 import evy
-from evy.green import socket
+from evy.patched import socket
 
 def geturl (url):
     c = socket.socket()

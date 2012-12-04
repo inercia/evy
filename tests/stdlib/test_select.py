@@ -1,5 +1,5 @@
 from evy import patcher
-from evy.green import select
+from evy.patched import select
 
 patcher.inject('test.test_select',
                globals(),

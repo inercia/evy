@@ -35,8 +35,8 @@ from evy import event
 from evy.io import sockets
 from evy import convenience
 from evy.support import get_errno
-from evy.green import socket
-from evy.green import time
+from evy.patched import socket
+from evy.patched import time
 from evy.greenthread import spawn, spawn_n, sleep
 from evy.timeout import Timeout
 from evy.greenthread import TimeoutError

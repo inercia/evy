@@ -57,7 +57,7 @@ __all__ = []
 
 
 
-class _UvSocketDuckForFd(object):
+class _SocketDuckForFd(object):
     """
     Class implementing all socket method used by _fileobject in cooperative manner
     using low level os I/O calls.
@@ -121,9 +121,9 @@ def _operationOnClosedFile (*args, **kwargs):
 
 
 
-class UvFile(_fileobject):
+class GreenPipe(_fileobject):
     """
-    UvFile is a cooperative replacement for file class.
+    GreenPipe is a cooperative replacement for file class.
     It will cooperate on pipes. It will block on regular file.
 
     Differences from file class:
@@ -154,7 +154,7 @@ class UvFile(_fileobject):
             self._name = f.name
             f.close()
 
-        super(UvFile, self).__init__(_UvSocketDuckForFd(fileno), mode, bufsize)
+        super(GreenPipe, self).__init__(_SocketDuckForFd(fileno), mode, bufsize)
         set_nonblocking(self)
         self.softspace = 0
 
@@ -175,7 +175,7 @@ class UvFile(_fileobject):
 
         :return: nothing
         """
-        super(UvFile, self).close()
+        super(GreenPipe, self).close()
         for method in ['fileno', 'flush', 'isatty', 'next', 'read', 'readinto',
                        'readline', 'readlines', 'seek', 'tell', 'truncate',
                        'write', 'xreadlines', '__iter__', 'writelines']:

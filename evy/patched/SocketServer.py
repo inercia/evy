@@ -27,22 +27,16 @@
 # THE SOFTWARE.
 #
 
-
 from evy import patcher
-from evy.green import socket
 
-to_patch = [('socket', socket)]
+from evy.patched import socket
+from evy.patched import select
+from evy.patched import threading
 
-try:
-    from evy.green import ssl
-
-    to_patch.append(('ssl', ssl))
-except ImportError:
-    pass
-
-patcher.inject('httplib',
+patcher.inject('SocketServer',
                globals(),
-               *to_patch)
+    ('socket', socket),
+    ('select', select),
+    ('threading', threading))
 
-if __name__ == '__main__':
-    test()
+# QQQ ForkingMixIn should be fixed to use green waitpid?

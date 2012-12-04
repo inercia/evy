@@ -1,7 +1,7 @@
 from evy import patcher
-from evy.green import thread
-from evy.green import threading
-from evy.green import time
+from evy.patched import thread
+from evy.patched import threading
+from evy.patched import time
 
 # hub requires initialization before test can run
 from evy import hubs

@@ -1,6 +1,6 @@
 from evy import patcher
-from evy.green import socket
-from evy.green import time
+from evy.patched import socket
+from evy.patched import time
 
 patcher.inject('test.test_timeout',
                globals(),

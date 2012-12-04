@@ -35,7 +35,7 @@ from evy.support import get_errno
 
 from evy.hubs import trampoline, wait_read, wait_write
 
-from evy.uv.sockets import TcpSocket
+from evy.io.sockets_uv import TcpSocket
 
 from evy.io.utils import set_nonblocking, socket_accept, socket_connect, socket_checkerr
 from evy.io.utils import _GLOBAL_DEFAULT_TIMEOUT
@@ -304,7 +304,9 @@ _DELEGATE_METHODS = (
     "recvfrom_into",
     "send",
     "sendto",
-    "setsockopt")
+    "shutdown",
+    "setsockopt"
+    )
 
 
 class GreenSocket(object):
@@ -376,23 +378,6 @@ class GreenSocket(object):
 
 
 
-# import SSL module here so we can refer to greenio.SSL.exceptionclass
-try:
-    from OpenSSL import SSL
-except ImportError:
-    # pyOpenSSL not installed, define exceptions anyway for convenience
-    class SSL(object):
-        class WantWriteError(object):
-            pass
-
-        class WantReadError(object):
-            pass
-
-        class ZeroReturnError(object):
-            pass
-
-        class SysCallError(object):
-            pass
 
 
 

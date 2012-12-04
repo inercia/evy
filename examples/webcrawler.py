@@ -13,7 +13,7 @@ urls = ["http://www.google.com/intl/en_ALL/images/logo.gif",
         "http://us.i1.yimg.com/us.yimg.com/i/ww/beta/y3.gif"]
 
 import evy
-from evy.green import urllib2
+from evy.patched import urllib2
 
 def fetch (url):
     print "opening", url

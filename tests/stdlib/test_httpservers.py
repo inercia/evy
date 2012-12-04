@@ -1,11 +1,11 @@
 from evy import patcher
 
-from evy.green import BaseHTTPServer
-from evy.green import SimpleHTTPServer
-from evy.green import CGIHTTPServer
-from evy.green import urllib
-from evy.green import httplib
-from evy.green import threading
+from evy.patched import BaseHTTPServer
+from evy.patched import SimpleHTTPServer
+from evy.patched import CGIHTTPServer
+from evy.patched import urllib
+from evy.patched import httplib
+from evy.patched import threading
 
 patcher.inject('test.test_httpservers',
                globals(),

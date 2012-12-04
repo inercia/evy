@@ -32,7 +32,7 @@ import os
 
 from tests import patcher_test, skip_unless
 from tests import get_database_auth
-from tests.db_pool_test import postgres_requirement
+from tests.test_db_pool import postgres_requirement
 
 psycopg_test_file = """
 import os

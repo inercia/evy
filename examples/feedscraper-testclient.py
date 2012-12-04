@@ -1,4 +1,4 @@
-from evy.green import urllib2
+from evy.patched import urllib2
 
 big_list_of_feeds = """
 http://blog.evy.net/feed/

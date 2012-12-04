@@ -1,9 +1,9 @@
 from evy import patcher
-from evy.green import asyncore
-from evy.green import select
-from evy.green import socket
-from evy.green import threading
-from evy.green import time
+from evy.patched import asyncore
+from evy.patched import select
+from evy.patched import socket
+from evy.patched import threading
+from evy.patched import time
 
 patcher.inject("test.test_asyncore", globals())
 

@@ -41,13 +41,14 @@ time = __import__('time')
 
 from evy.support import get_errno
 from evy.hubs import trampoline
-from evy.greenio import set_nonblocking, GreenSocket, SOCKET_CLOSED, CONNECT_ERR, CONNECT_SUCCESS
+from evy.io.utils import set_nonblocking, CONNECT_ERR, CONNECT_SUCCESS
+from evy.io.sockets import GreenSocket, SOCKET_CLOSED
 
 orig_socket = __import__('socket')
 socket = orig_socket.socket
 if sys.version_info >= (2, 7):
     has_ciphers = True
-    timeout_exc = SSLError
+    timeout_exc = __ssl.SSLError
 else:
     has_ciphers = False
     timeout_exc = orig_socket.timeout
@@ -110,13 +111,13 @@ class GreenSSLSocket(__ssl.SSLSocket):
             while True:
                 try:
                     return func(*a, **kw)
-                except SSLError, exc:
-                    if get_errno(exc) == SSL_ERROR_WANT_READ:
+                except __ssl.SSLError, exc:
+                    if get_errno(exc) == __ssl.SSL_ERROR_WANT_READ:
                         trampoline(self,
                                    read = True,
                                    timeout = self.gettimeout(),
                                    timeout_exc = timeout_exc('timed out'))
-                    elif get_errno(exc) == SSL_ERROR_WANT_WRITE:
+                    elif get_errno(exc) == __ssl.SSL_ERROR_WANT_WRITE:
                         trampoline(self,
                                    write = True,
                                    timeout = self.gettimeout(),
@@ -270,7 +271,8 @@ class GreenSSLSocket(__ssl.SSLSocket):
 
 
     def connect (self, addr):
-        """Connects to remote ADDR, and then wraps the connection in
+        """
+        Connects to remote ADDR, and then wraps the connection in
         an SSL channel."""
         # *NOTE: grrrrr copied this code from ssl.py because of the reference
         # to socket.connect which we don't want to call directly
@@ -278,13 +280,13 @@ class GreenSSLSocket(__ssl.SSLSocket):
             raise ValueError("attempt to connect already-connected SSLSocket!")
         self._socket_connect(addr)
         if has_ciphers:
-            self._sslobj = _ssl.sslwrap(self._sock, False, self.keyfile, self.certfile,
-                                        self.cert_reqs, self.ssl_version,
-                                        self.ca_certs, self.ciphers)
+            self._sslobj = __ssl.sslwrap(self._sock, False, self.keyfile, self.certfile,
+                                         self.cert_reqs, self.ssl_version,
+                                         self.ca_certs, self.ciphers)
         else:
-            self._sslobj = _ssl.sslwrap(self._sock, False, self.keyfile, self.certfile,
-                                        self.cert_reqs, self.ssl_version,
-                                        self.ca_certs)
+            self._sslobj = __ssl.sslwrap(self._sock, False, self.keyfile, self.certfile,
+                                         self.cert_reqs, self.ssl_version,
+                                         self.ca_certs)
         if self.do_handshake_on_connect:
             self.do_handshake()
 

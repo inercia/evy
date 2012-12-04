@@ -117,7 +117,8 @@ class Pool(object):
     """
 
     def __init__ (self, min_size = 0, max_size = 4, order_as_stack = False, create = None):
-        """*order_as_stack* governs the ordering of the items in the free pool.
+        """
+        *order_as_stack* governs the ordering of the items in the free pool.
         If ``False`` (the default), the free items collection (of items that
         were created and were put back in the pool) acts as a round-robin,
         giving each item approximately equal utilization.  If ``True``, the
@@ -138,7 +139,8 @@ class Pool(object):
             self.free_items.append(self.create())
 
     def get (self):
-        """Return an item from the pool, when one is available.  This may
+        """
+        Return an item from the pool, when one is available.  This may
         cause the calling greenthread to block.
         """
         if self.free_items:
@@ -158,7 +160,8 @@ class Pool(object):
         item = item_impl
 
     def put (self, item):
-        """Put an item back into the pool, when done.  This may
+        """
+        Put an item back into the pool, when done.  This may
         cause the putting greenthread to block.
         """
         if self.current_size > self.max_size:
@@ -174,7 +177,8 @@ class Pool(object):
                 self.free_items.append(item)
 
     def resize (self, new_size):
-        """Resize the pool to *new_size*.
+        """
+        Resize the pool to *new_size*.
 
         Adjusting this number does not affect existing items checked out of
         the pool, nor on any greenthreads who are waiting for an item to free
@@ -185,18 +189,21 @@ class Pool(object):
         self.max_size = new_size
 
     def free (self):
-        """Return the number of free items in the pool.  This corresponds
+        """
+        Return the number of free items in the pool.  This corresponds
         to the number of :meth:`get` calls needed to empty the pool.
         """
         return len(self.free_items) + self.max_size - self.current_size
 
     def waiting (self):
-        """Return the number of routines waiting for a pool item.
+        """
+        Return the number of routines waiting for a pool item.
         """
         return max(0, self.channel.getting() - self.channel.putting())
 
     def create (self):
-        """Generate a new pool item.  In order for the pool to
+        """
+        Generate a new pool item.  In order for the pool to
         function, either this method must be overriden in a subclass
         or the pool must be constructed with the `create` argument.
         It accepts no arguments and returns a single instance of
@@ -218,7 +225,8 @@ class Token(object):
 
 
 class TokenPool(Pool):
-    """A pool which gives out tokens (opaque unique objects), which indicate
+    """
+    A pool which gives out tokens (opaque unique objects), which indicate
     that the coroutine which holds the token has a right to consume some
     limited resource.
     """

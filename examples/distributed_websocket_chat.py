@@ -19,7 +19,7 @@ from collections import defaultdict
 from evy import spawn_n, sleep
 from evy import wsgi
 from evy import websocket
-from evy.green import zmq
+from evy.patched import zmq
 from evy.hubs import get_hub, use_hub
 from uuid import uuid1
 

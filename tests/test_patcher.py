@@ -45,8 +45,8 @@ print "base", socket, urllib
 """
 
 patching_module_contents = """
-from evy.green import socket
-from evy.green import urllib
+from evy.patched import socket
+from evy.patched import urllib
 from evy import patcher
 print 'patcher', socket, urllib
 patcher.inject('base', globals(), ('socket', socket), ('urllib', urllib))
@@ -107,11 +107,11 @@ class TestImportPatched(ProcessBase):
         self.assert_(lines[0].startswith('patcher'), repr(output))
         self.assert_(lines[1].startswith('base'), repr(output))
         self.assert_(lines[2].startswith('importing'), repr(output))
-        self.assert_('evy.green.socket' in lines[1], repr(output))
-        self.assert_('evy.green.urllib' in lines[1], repr(output))
-        self.assert_('evy.green.socket' in lines[2], repr(output))
-        self.assert_('evy.green.urllib' in lines[2], repr(output))
-        self.assert_('evy.green.httplib' not in lines[2], repr(output))
+        self.assert_('evy.patched.socket' in lines[1], repr(output))
+        self.assert_('evy.patched.urllib' in lines[1], repr(output))
+        self.assert_('evy.patched.socket' in lines[2], repr(output))
+        self.assert_('evy.patched.urllib' in lines[2], repr(output))
+        self.assert_('evy.patched.httplib' not in lines[2], repr(output))
 
     def test_import_patched_defaults (self):
         self.write_to_tempfile("base", base_module_contents)
@@ -124,7 +124,7 @@ print "newmod", base, base.socket, base.urllib.socket.socket
         output, lines = self.launch_subprocess('newmod.py')
         self.assert_(lines[0].startswith('base'), repr(output))
         self.assert_(lines[1].startswith('newmod'), repr(output))
-        self.assert_('evy.green.socket' in lines[1], repr(output))
+        self.assert_('evy.patched.socket' in lines[1], repr(output))
         self.assert_('GreenSocket' in lines[1], repr(output))
 
 
@@ -317,7 +317,7 @@ class TestSubprocess(ProcessBase):
     def test_monkeypatched_subprocess (self):
         new_mod = """import evy
 evy.monkey_patch()
-from evy.green import subprocess
+from evy.patched import subprocess
 
 subprocess.Popen(['/bin/true'], stdin=subprocess.PIPE)
 print "done"

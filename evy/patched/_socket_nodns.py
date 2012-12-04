@@ -42,10 +42,10 @@ os = __import__('os')
 import sys
 import warnings
 from evy.hubs import get_hub
-from evy.greenio import GreenSocket as socket
-from evy.greenio import SSL as _SSL  # for exceptions
-from evy.greenio import _GLOBAL_DEFAULT_TIMEOUT
-from evy.greenio import _fileobject
+from evy.io.sockets import GreenSocket as socket
+from evy.io.ssl import SSL as _SSL  # for exceptions
+from evy.io.sockets import _GLOBAL_DEFAULT_TIMEOUT
+from evy.io.pipes import _fileobject
 
 try:
     __original_fromfd__ = __socket.fromfd
@@ -126,7 +126,7 @@ class GreenSSLObject(object):
 try:
     try:
         # >= Python 2.6
-        from evy.green import ssl as ssl_module
+        from evy.patched import ssl as ssl_module
 
         sslerror = __socket.sslerror
         __socket.ssl

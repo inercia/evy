@@ -1,7 +1,7 @@
 from evy import patcher
-from evy.green import Queue
-from evy.green import threading
-from evy.green import time
+from evy.patched import Queue
+from evy.patched import threading
+from evy.patched import time
 
 patcher.inject('test.test_queue',
                globals(),
