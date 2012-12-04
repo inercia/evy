@@ -34,9 +34,9 @@ import time
 import traceback
 import warnings
 
-from evy.green import urllib
-from evy.green import socket
-from evy.green import BaseHTTPServer
+from evy.patched import urllib
+from evy.patched import socket
+from evy.patched import BaseHTTPServer
 from evy import greenpool
 from evy.io import sockets
 from evy.support import get_errno

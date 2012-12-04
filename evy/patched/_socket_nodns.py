@@ -39,13 +39,10 @@ slurp_properties(__socket, globals(),
                  ignore = __patched__, srckeys = dir(__socket))
 
 os = __import__('os')
-import sys
+
 import warnings
-from evy.hubs import get_hub
 from evy.io.sockets import GreenSocket as socket
 from evy.io.ssl import SSL as _SSL  # for exceptions
-from evy.io.sockets import _GLOBAL_DEFAULT_TIMEOUT
-from evy.io.pipes import _fileobject
 
 try:
     __original_fromfd__ = __socket.fromfd
@@ -93,7 +90,8 @@ class GreenSSLObject(object):
                 raise _convert_to_sslerror(e)
 
     def read (self, n = 1024):
-        """If n is provided, read n bytes from the SSL connection, otherwise read
+        """
+        If n is provided, read n bytes from the SSL connection, otherwise read
         until EOF. The return value is a string of the bytes read."""
         try:
             return self.connection.read(n)
@@ -103,23 +101,29 @@ class GreenSSLObject(object):
             raise _convert_to_sslerror(e)
 
     def write (self, s):
-        """Writes the string s to the on the object's SSL connection.
-        The return value is the number of bytes written. """
+        """
+        Writes the string s to the on the object's SSL connection.
+        The return value is the number of bytes written
+        """
         try:
             return self.connection.write(s)
         except _SSL.SysCallError, e:
             raise _convert_to_sslerror(e)
 
     def server (self):
-        """ Returns a string describing the server's certificate. Useful for debugging
+        """
+        Returns a string describing the server's certificate. Useful for debugging
         purposes; do not parse the content of this string because its format can't be
-        parsed unambiguously. """
+        parsed unambiguously
+        """
         return str(self.connection.get_peer_certificate().get_subject())
 
     def issuer (self):
-        """Returns a string describing the issuer of the server's certificate. Useful
+        """
+        Returns a string describing the issuer of the server's certificate. Useful
         for debugging purposes; do not parse the content of this string because its
-        format can't be parsed unambiguously."""
+        format can't be parsed unambiguously
+        """
         return str(self.connection.get_peer_certificate().get_issuer())
 
 

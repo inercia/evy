@@ -28,9 +28,9 @@
 
 import sys
 
-from evy import greenthread
-from evy import greenpool
-from evy.green import socket
+from evy.green.pools import GreenPool
+from evy.green.threads import kill, getcurrent
+from evy.patched import socket
 from evy.support import greenlets as greenlet
 
 
@@ -85,7 +85,7 @@ def _stop_checker (t, server_gt, conn):
     except greenlet.GreenletExit:
         pass
     except Exception:
-        greenthread.kill(server_gt, *sys.exc_info())
+        kill(server_gt, *sys.exc_info())
 
 
 def serve (sock, handle, concurrency = 1000):
@@ -119,8 +119,8 @@ def serve (sock, handle, concurrency = 1000):
     the server hits the concurrency limit, it stops accepting new
     connections until the existing ones complete.
     """
-    pool = greenpool.GreenPool(concurrency)
-    server_gt = greenthread.getcurrent()
+    pool = GreenPool(concurrency)
+    server_gt = getcurrent()
 
     while True:
         try:

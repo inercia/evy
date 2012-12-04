@@ -31,10 +31,10 @@
 import os
 import time
 import traceback
-from tests import skipped, skip_unless, using_pyevent, get_database_auth, LimitedTestCase
+from tests import skip_unless, get_database_auth, LimitedTestCase
 
 from evy import event
-from evy.greenthread import spawn, sleep
+from evy.green.threads import spawn, sleep
 
 
 try:

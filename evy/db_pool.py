@@ -37,7 +37,7 @@ from evy.pools import Pool
 from evy import timeout
 from evy import hubs
 from evy.hubs.timer import Timer
-from evy.greenthread import GreenThread
+from evy.green.threads import GreenThread
 
 
 class ConnectTimeout(Exception):

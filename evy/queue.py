@@ -59,7 +59,7 @@ from Queue import Full, Empty
 
 _NONE = object()
 from evy.hubs import get_hub
-from evy.greenthread import getcurrent
+from evy.green.threads import getcurrent
 from evy.event import Event
 from evy.timeout import Timeout
 

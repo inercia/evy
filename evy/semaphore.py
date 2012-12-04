@@ -27,7 +27,7 @@
 # THE SOFTWARE.
 #
 
-from evy import greenthread
+from evy.green import threads as greenthread
 from evy import hubs
 
 class Semaphore(object):

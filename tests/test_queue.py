@@ -32,10 +32,12 @@ from unittest import main
 from tests import LimitedTestCase, main, silence_warnings
 
 from evy import event
-from evy.greenthread import spawn, sleep
-from evy.queue import Queue, LifoQueue
+from evy.green.threads import spawn, sleep
+from evy.queue import Queue
 from evy.event import Event
 from evy.timeout import Timeout, with_timeout
+
+
 
 def do_bail (q):
     Timeout(0, RuntimeError())

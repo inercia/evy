@@ -276,7 +276,8 @@ class GenericSocket(object):
     def gettimeout (self):
         return self._timeout
 
-
+    def ioctl(self, *args):
+        pass
 
 
 

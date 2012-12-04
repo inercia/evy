@@ -34,7 +34,7 @@ import subprocess
 import sys
 import tempfile
 
-from tests import LimitedTestCase, main, skip_with_pyevent
+from tests import LimitedTestCase, main
 
 
 

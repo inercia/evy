@@ -38,8 +38,6 @@ __all__ = ['Timeout',
 
 _NONE = object()
 
-# deriving from BaseException so that "except Exception, e" doesn't catch
-# Timeout exceptions.
 class Timeout(BaseException):
     """
     Raises *exception* in the current greenthread after *timeout* seconds.
@@ -52,6 +50,9 @@ class Timeout(BaseException):
     When used in a with statement, if *exception* is ``False``, the timeout is
     still raised, but the context manager suppresses it, so the code outside the
     with-block won't see it.
+
+    Timeout() derives from BaseException so that "except Exception, e" doesn't catch
+    Timeout exceptions.
     """
 
     __slots__ = [

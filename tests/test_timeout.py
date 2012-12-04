@@ -33,7 +33,7 @@ import unittest
 from tests import LimitedTestCase
 
 from evy import timeout
-from evy import greenthread
+from evy.green import threads as greenthread
 
 DELAY = 0.01
 

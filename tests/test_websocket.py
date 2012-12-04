@@ -31,13 +31,14 @@ import socket
 import errno
 
 import evy
+from evy import event
+
 from evy.patched import urllib2
 from evy.patched import httplib
-from evy.web.websocket import WebSocket, WebSocketWSGI
-from evy import event
-from evy.greenthread import sleep
 from evy.io.sockets import shutdown_safe
-from evy.io.convenience import connect, listen
+from evy.io.convenience import listen
+from evy.green.threads import sleep
+from evy.web.websocket import WebSocket, WebSocketWSGI
 
 from tests import mock, LimitedTestCase, certificate_file, private_key_file
 from tests import skip_if_no_ssl

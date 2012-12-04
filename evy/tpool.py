@@ -49,7 +49,7 @@ import os
 import sys
 
 from evy import event
-from evy import greenthread
+from evy.green import threads as greenthread
 from evy import patcher
 from evy import timeout
 from evy.io.sockets import GreenSocket

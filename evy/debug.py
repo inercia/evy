@@ -161,7 +161,7 @@ def hub_exceptions (state = True):
     from evy import hubs
 
     hubs.get_hub().set_timer_exceptions(state)
-    from evy import greenpool
+    from evy.green import pools as greenpool
 
     greenpool.DEBUG = state
 

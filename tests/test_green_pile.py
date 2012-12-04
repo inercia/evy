@@ -30,8 +30,8 @@
 
 
 
-from evy import greenpool
-from evy.greenthread import spawn, sleep
+from evy.green.pools import GreenPool, GreenPile
+from evy.green.threads import spawn, sleep
 from evy.timeout import Timeout
 
 import tests
@@ -53,14 +53,14 @@ def raiser (exc):
 
 class TestGreenPile(tests.LimitedTestCase):
     def test_pile (self):
-        p = greenpool.GreenPile(4)
+        p = GreenPile(4)
         for i in xrange(10):
             p.spawn(passthru, i)
         result_list = list(p)
         self.assertEquals(result_list, list(xrange(10)))
 
     def test_pile_spawn_times_out (self):
-        p = greenpool.GreenPile(4)
+        p = GreenPile(4)
         for i in xrange(4):
             p.spawn(passthru, i)
             # now it should be full and this should time out
@@ -73,9 +73,9 @@ class TestGreenPile(tests.LimitedTestCase):
         self.assertEquals(list(p), list(xrange(10)))
 
     def test_constructing_from_pool (self):
-        pool = greenpool.GreenPool(2)
-        pile1 = greenpool.GreenPile(pool)
-        pile2 = greenpool.GreenPile(pool)
+        pool = GreenPool(2)
+        pile1 = GreenPile(pool)
+        pile2 = GreenPile(pool)
 
         def bunch_of_work (pile, unique):
             for i in xrange(10):

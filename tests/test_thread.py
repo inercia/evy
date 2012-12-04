@@ -32,10 +32,11 @@ import weakref
 
 import evy
 
-from evy.patched import thread
-from evy import greenthread
 from evy import event
 from evy import corolocal
+
+from evy.patched import thread
+from evy.green.threads import sleep, getcurrent
 
 from tests import LimitedTestCase, skipped
 
@@ -59,7 +60,7 @@ class Locals(LimitedTestCase):
         evt = event.Event()
 
         def setter (tls, v):
-            g_id = id(greenthread.getcurrent())
+            g_id = id(getcurrent())
             g_ids.append(g_id)
             tls.value = v
             evt.wait()

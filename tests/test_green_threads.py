@@ -32,14 +32,14 @@ from unittest import TestCase, main
 import warnings
 
 from tests import LimitedTestCase
-from tests import skip_if_no_ssl
 
-from evy import greenthread
 from evy import hubs
 
+from evy.green import threads as greenthread
+
 from evy.support import greenlets as greenlet
-from evy.greenthread import spawn
-from evy.convenience import listen, connect
+from evy.green.threads import spawn
+from evy.io.convenience import listen, connect
 
 
 

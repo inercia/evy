@@ -28,7 +28,7 @@
 
 import weakref
 
-from evy import greenthread
+from evy.green import threads as greenthread
 
 __all__ = ['get_ident', 'local']
 

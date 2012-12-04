@@ -36,7 +36,7 @@ socket = __import__("socket")
 from evy.support import get_errno
 from evy.io.pipes import GreenPipe
 
-from evy import greenthread
+from evy.green import threads as greenthread
 from evy import hubs
 from evy.patcher import slurp_properties
 

@@ -40,7 +40,7 @@ except ImportError: #pragma NO COVER
 
 from evy import semaphore
 from evy.web import wsgi
-from evy.green import socket
+from evy.patched import socket
 from evy.support import get_errno
 
 ACCEPTABLE_CLIENT_ERRORS = set((errno.ECONNRESET, errno.EPIPE))

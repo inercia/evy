@@ -30,7 +30,7 @@
 try:
     from evy import version_info, __version__
 
-    from evy import greenthread
+    from evy.green import threads as greenthread
     from evy import greenpool
     from evy import queue
     from evy import timeout

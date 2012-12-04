@@ -131,16 +131,14 @@ class Hub(object):
         else:
             if _default_loop_destroyed:
                 default = False
-            if default:
-                self.uv_loop = pyuv.Loop.default_loop()
-                if not self.uv_loop:
-                    raise SystemError("default_loop() failed")
 
+            self.uv_loop = pyuv.Loop.default_loop()
+            if default:
                 #pyuv.Signal(self.signal_checker)
-            else:
-                self.uv_loop = pyuv.Loop.default_loop()
-                if not self.uv_loop:
-                    raise SystemError("default_loop() failed")
+                pass
+
+        if not self.uv_loop:
+            raise SystemError("default_loop() failed")
 
     def block_detect_pre (self):
         # shortest alarm we can possibly raise is one second
@@ -150,6 +148,7 @@ class Hub(object):
     def block_detect_post (self):
         if hasattr(self, "block_detect_handle"):
             self.block_detect_handle.stop()
+            del self.block_detect_handle
 
     def add (self, evtype, fileno, cb, persistent = False):
         """
@@ -162,13 +161,16 @@ class Hub(object):
         if fileno in self.pollers:
             p = self.pollers[fileno]
 
-            ## check we do not have another callback on the same descriptor and event
-            if p.notify_readable and evtype is READ:
-                raise RuntimeError('there is already %s reading from descriptor %d' % (str(p), fileno))
-            if p.notify_writable and evtype is WRITE:
-                raise RuntimeError('there is already %s writing to descriptor %d' % (str(p), fileno))
+            current_events = 0
 
-            p.start(self, evtype, cb, fileno)
+            ## check we do not have another callback on the same descriptor and event
+            if p.notify_readabl and evtype is READ:
+                raise RuntimeError('there is already %s reading from descriptor %d' % (str(p), fileno))
+
+            if p.notify_writable and evtype is WRITE:
+                    raise RuntimeError('there is already %s writing to descriptor %d' % (str(p), fileno))
+
+            p.start(self, current_events | evtype, cb, fileno)
         else:
             p = poller.Poller(fileno, persistent = persistent)
             p.start(self, evtype, cb, fileno)
@@ -331,6 +333,7 @@ class Hub(object):
                 ## if there are no active events, just get out of here...
                 if not more_events:
                     self.stopping = True
+
             else:
                 ## remove all the timers and pollers
                 for timer in self.timers:               timer.destroy()
@@ -467,16 +470,6 @@ class Hub(object):
         except KeyError:
             pass
 
-    def forget_timer(self, timer):
-        """
-        Let the hub forget about a timer, so we do not keep the loop running forever until
-        this timer triggers...
-        """
-        try:
-            self.unref(timer.impltimer.handle)
-        except (AttributeError, TypeError):
-            pass
-
     @property
     def timers_count(self):
         return len(self.timers)
@@ -486,7 +479,7 @@ class Hub(object):
     ##
 
 
-    def _poller_triggered (self, handle, events, errno):
+    def _poller_triggered (self, handle, events, errorno):
         """
         Performs the poller trigger
 
@@ -494,8 +487,12 @@ class Hub(object):
         :return: nothing
         """
         p = handle.data
+
         try:
-            p(events)
+            if errorno > 0:
+                raise IOError(pyuv.errno.strerror(errorno))
+            else:
+                p(events)
         except self.SYSTEM_EXCEPTIONS:
             self.interrupted = True
         except:
@@ -507,7 +504,6 @@ class Hub(object):
     def _poller_canceled (self, p):
         """
         A poller has been canceled
-
         :param poller: the poller that has been canceled
         :return: nothing
         """
@@ -526,15 +522,6 @@ class Hub(object):
         assert fileno not in self.pollers
 
 
-    def forget_poller(self, poller):
-        """
-        Let the hub forget about a poller, so we do not keep the loop running forever until
-        this poller triggers...
-        """
-        try:
-            self.unref(poller.impltimer.handle)
-        except (AttributeError, TypeError):
-            pass
 
     @property
     def poller_count(self):

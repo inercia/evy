@@ -32,16 +32,12 @@ from tests import LimitedTestCase, main, skipped, s2b, skip_on_windows
 
 from evy.patched import socket
 
-import errno
 
-import os
 import sys
-import array
-import tempfile, shutil
 
 import unittest
 
-from evy.dns import resolve
+from evy.green.dns import resolve
 
 
 HOST = 'localhost'
@@ -56,7 +52,7 @@ class TestDnsResolution(unittest.TestCase):
     def test_resolve_with_wrong_name(self):
         self.assertRaises(socket.gaierror, resolve('mipuroch.coocoo'))
 
-    def testHostnameRes(self):
+    def test_hostname_resolution(self):
 
         # Testing hostname resolution mechanisms
         hostname = socket.gethostname()
@@ -85,13 +81,6 @@ class TestDnsResolution(unittest.TestCase):
             except TypeError:
                 self.assertEqual(sys.getrefcount(__name__), orig, "socket.getnameinfo loses a reference")
 
-    def test_interpreter_crash(self):
-        # Making sure getnameinfo doesn't crash the interpreter
-        try:
-            # On some versions, this crashes the interpreter.
-            socket.getnameinfo(('x', 0, 0, 0), 0)
-        except socket.error:
-            pass
 
     def test_gethostbyname(self):
         socket.gethostbyname('www.google.com')

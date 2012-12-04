@@ -29,11 +29,10 @@
 
 
 import gc
-import os
 import random
 
-from evy import greenpool
-from evy.greenthread import spawn, sleep
+from evy.green.pools import GreenPile, GreenPool
+from evy.green.threads import spawn, sleep
 
 import tests
 
@@ -68,7 +67,7 @@ class Stress(tests.LimitedTestCase):
 
     def spawn_order_check (self, concurrency):
         # checks that piles are strictly ordered
-        p = greenpool.GreenPile(concurrency)
+        p = GreenPile(concurrency)
 
         def makework (count, unique):
             for i in xrange(count):
@@ -108,7 +107,7 @@ class Stress(tests.LimitedTestCase):
     def imap_memory_check (self, concurrency):
         # checks that imap is strictly
         # ordered and consumes a constant amount of memory
-        p = greenpool.GreenPool(concurrency)
+        p = GreenPool(concurrency)
         count = 1000
         it = p.imap(passthru, xrange(count))
         latest = -1
@@ -155,7 +154,7 @@ class Stress(tests.LimitedTestCase):
                 return token
 
             int_pool = IntPool(max_size = intpool_size)
-            pool = greenpool.GreenPool(pool_size)
+            pool = GreenPool(pool_size)
             for ix in xrange(num_executes):
                 pool.spawn(run, int_pool)
             pool.waitall()

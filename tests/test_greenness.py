@@ -37,7 +37,7 @@ If either operation blocked the whole script would block and timeout.
 import unittest
 
 from evy.patched import urllib2, BaseHTTPServer
-from evy.greenthread import spawn, kill
+from evy.green.threads import spawn, kill
 
 class QuietHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     protocol_version = "HTTP/1.0"

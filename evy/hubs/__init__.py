@@ -92,11 +92,10 @@ def get_hub ():
     return hub
 
 
-from evy import timeout
 
+from evy.timeout import Timeout
 
-def trampoline (fd, read = None, write = None, timeout = None,
-                timeout_exc = timeout.Timeout):
+def trampoline (fd, read = None, write = None, timeout = None, timeout_exc = Timeout):
     """
     Suspend the current coroutine until the given socket object or file descriptor is ready to *read*,
     ready to *write*, or the specified *timeout* elapses, depending on arguments specified.
@@ -136,8 +135,8 @@ def trampoline (fd, read = None, write = None, timeout = None,
         if t is not None:
             t.cancel()
 
-def wait_read(fd, timeout = None, timeout_exc = timeout.Timeout):
+def wait_read(fd, timeout = None, timeout_exc = Timeout):
     trampoline (fd, read = True, timeout = timeout, timeout_exc = timeout_exc)
 
-def wait_write(fd, timeout = None, timeout_exc = timeout.Timeout):
+def wait_write(fd, timeout = None, timeout_exc = Timeout):
     trampoline (fd, write = True, timeout = timeout, timeout_exc = timeout_exc)

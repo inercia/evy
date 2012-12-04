@@ -38,33 +38,17 @@ Non-blocking DNS support for Evy
 
 
 
-import sys
-import struct
 
 import pyuv
 import pycares
 
-from evy import patcher
 from evy.hubs import get_hub
 
-from evy.patched import _socket_nodns
-from evy.patched import time
-from evy.patched import select
 from evy.event import Event
 from evy.timeout import Timeout
 
-dns = patcher.import_patched('dns',
-                             socket = _socket_nodns,
-                             time = time,
-                             select = select)
-for pkg in ('dns.query', 'dns.exception', 'dns.inet', 'dns.message',
-            'dns.rdatatype', 'dns.resolver', 'dns.reversename'):
-    setattr(dns, pkg.split('.')[1], patcher.import_patched(pkg,
-                                                           socket = _socket_nodns,
-                                                           time = time,
-                                                           select = select))
+import socket
 
-socket = _socket_nodns
 
 DNS_QUERY_TIMEOUT = 10.0
 
@@ -174,8 +158,10 @@ def resolve (name):
     :param name: the name we want to resolve
     :return: a list of IP addresses
     """
+    if is_ipv4_addr(name):
+        return [name]
 
-    rrset = None
+    rrset = []
     resolved = Event()
 
     def _resolv_callback(result, errorno):
@@ -196,8 +182,11 @@ def resolve (name):
 
     except Timeout, e:
         raise socket.gaierror(socket.EAI_AGAIN, 'Lookup timed out')
-    except dns.exception.DNSException, e:
-        raise socket.gaierror(socket.EAI_NODATA, 'No address associated with hostname')
+    except Exception, e:
+        raise socket.gaierror(socket.EAI_NODATA, 'No address associated with hostname "%s"' % name)
+
+    if len(rrset) == 0:
+        raise socket.gaierror(socket.EAI_NODATA, 'No address associated with hostname "%s"' % name)
 
     return rrset
 
@@ -231,7 +220,7 @@ def getaliases (host):
 
     except Timeout, e:
         raise socket.gaierror(socket.EAI_AGAIN, 'Lookup timed out')
-    except dns.exception.DNSException, e:
+    except Exception, e:
         raise socket.gaierror(socket.EAI_NODATA, 'No address associated with hostname')
 
     return aliases
@@ -287,7 +276,7 @@ def gethostbyname (hostname):
 
     except Timeout, e:
         raise socket.gaierror(socket.EAI_AGAIN, 'Lookup timed out')
-    except dns.exception.DNSException, e:
+    except Exception, e:
         raise socket.gaierror(socket.EAI_NODATA, 'No address associated with hostname')
 
     if len(ips) == 0:
@@ -352,3 +341,19 @@ def getnameinfo (addr, flags):
 
 
 
+def resolve_address(address):
+    """
+    Resolve an address (as a tuple) to a valid IP and port
+    :param address: a tuple with a hostname or IP and port
+    :return: a valid IP and port tuple
+    """
+    hostname, port = address
+    if len(hostname) == 0:
+        ip = '0.0.0.0'
+    else:
+        ip = resolve(hostname)[0]
+
+    assert isinstance(ip, str)
+    assert isinstance(port, int)
+
+    return ip, port

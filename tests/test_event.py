@@ -31,7 +31,7 @@
 import unittest
 
 from evy.event import Event
-from evy.greenthread import spawn, spawn_n, sleep, with_timeout
+from evy.green.threads import spawn, spawn_n, sleep, with_timeout
 from evy.timeout import Timeout
 
 import evy

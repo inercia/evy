@@ -29,7 +29,7 @@
 
 
 import cgi
-from evy import greenthread
+from evy.green import threads as greenthread
 import evy
 import errno
 import os
@@ -41,11 +41,11 @@ from unittest import main
 from evy import event
 from evy.io.sockets import shutdown_safe
 from evy.io.convenience import connect, listen
-from evy.greenthread import spawn_n
+from evy.green.threads import spawn_n
 
 from evy.patched import socket as greensocket
 from evy.web import wsgi
-from evy.greenthread import sleep
+from evy.green.threads import sleep
 from evy.timeout import Timeout
 from evy.support import get_errno
 from evy.patcher import import_patched

@@ -31,13 +31,13 @@
 import itertools
 
 from evy import hubs
-from evy.greenthread import spawn, sleep
+
 from evy.timeout import Timeout
 from evy.support import greenlets as greenlet
 from evy.event import Event
-from evy.greenpool import GreenPool
-from evy.greenthread import spawn
-from evy.greenthread import TimeoutError
+from evy.green.pools import GreenPool
+from evy.green.threads import spawn, sleep
+
 
 import tests
 

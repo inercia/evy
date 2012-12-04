@@ -33,13 +33,13 @@ from tests import LimitedTestCase, main, skipped, s2b, skip_on_windows
 
 from evy import event
 from evy.io import sockets
-from evy import convenience
+from evy.io import convenience
 from evy.support import get_errno
 from evy.patched import socket
 from evy.patched import time
-from evy.greenthread import spawn, spawn_n, sleep
+from evy.green.threads import spawn, spawn_n, sleep
 from evy.timeout import Timeout
-from evy.greenthread import TimeoutError
+from evy.green.threads import TimeoutError
 
 import errno
 
@@ -360,6 +360,33 @@ class TestGreenSocket(LimitedTestCase):
             self.assertEqual(e.args[0], 'timed out')
         except:
             self.fail('unknown exception')
+
+    def test_recv_into (self):
+        buf = ''
+
+        evt = event.Event()
+
+        listener = sockets.GreenSocket()
+        listener.bind(('', 0))
+        listener.listen(50)
+        addr = listener.getsockname()
+
+        def server ():
+            # accept the connection in another greenlet
+            sock, addr = listener.accept()
+            sock.send('hello')
+            evt.send()
+        gt = spawn(server)
+
+        client = sockets.GreenSocket()
+        client.connect(addr)
+        client.recv_into(buf, 100)
+
+        self.assertEquals(buf, 'hello')
+
+        #evt.send()
+        gt.wait()
+        evt.wait()
 
     def test_recv_into_timeout (self):
         buf = buffer(array.array('B'))

@@ -31,7 +31,7 @@ import itertools
 import traceback
 
 from evy import event
-from evy import greenthread
+from evy.green import threads as greenthread
 from evy import queue
 from evy import semaphore
 from evy.support import greenlets as greenlet

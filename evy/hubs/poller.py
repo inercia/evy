@@ -105,9 +105,14 @@ class Poller(object):
         assert self.impl is not None
         #assert event in [pyuv.UV_READABLE, pyuv.UV_WRITABLE]
 
+        ## check we do not have another callback on the same descriptor and event
+        curr = 0
+        if self.notify_readable:    curr |= pyuv.UV_READABLE
+        if self.notify_writable:    curr |= pyuv.UV_WRITABLE
+
         self.impl.data = self
         try:
-            self.impl.start(event, hub._poller_triggered)
+            self.impl.start(curr | event, hub._poller_triggered)
         except:
             pass
         else:
@@ -124,8 +129,8 @@ class Poller(object):
         been called or canceled, has no effect.
         """
         try:
-            if self.notify_readable:   self.read_callback = None
-            if self.notify_writable:   self.write_callback = None
+            self.read_callback = None
+            self.write_callback = None
         except AttributeError:
             pass
 

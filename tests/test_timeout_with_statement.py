@@ -41,7 +41,7 @@ import time
 
 from tests import LimitedTestCase
 
-from evy.greenthread import sleep
+from evy.green.threads import sleep
 from evy.timeout import Timeout
 
 DELAY = 0.01

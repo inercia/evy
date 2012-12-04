@@ -30,12 +30,11 @@
 
 from __future__ import with_statement
 
-from tests import LimitedTestCase, main, skip_with_pyevent, skip_if_no_itimer
+from tests import LimitedTestCase, main, skip_if_no_itimer
 import time
 
-import evy
 from evy import hubs
-from evy.greenthread import spawn, sleep
+from evy.green.threads import spawn, sleep
 
 DELAY = 0.001
 
@@ -257,7 +256,7 @@ class TestFork(ProcessBase):
         new_mod = """
 import os
 import evy
-from evy.convenience import listen
+from evy.io.convenience import listen
 from evy.timeout import Timeout
 
 server = listen(('localhost', 12345))

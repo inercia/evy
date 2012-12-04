@@ -32,7 +32,7 @@ __select = __import__('select')
 error = __select.error
 
 
-from evy.greenthread import getcurrent
+from evy.green.threads import getcurrent
 from evy.hubs import get_hub
 
 __patched__ = ['select']

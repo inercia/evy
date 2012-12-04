@@ -66,7 +66,7 @@ def wrap_ssl (sock, *a, **kw):
     return wrap_ssl_impl(sock, *a, **kw)
 
 try:
-    from evy.green import ssl
+    from evy.patched import ssl
     wrap_ssl_impl = ssl.wrap_socket
 except ImportError:
     # < 2.6, trying PyOpenSSL

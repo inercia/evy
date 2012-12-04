@@ -33,6 +33,8 @@ from socket import socket as _original_socket
 from evy.hubs import get_hub
 from evy.timeout import Timeout
 from evy.event import Event
+from evy.green.dns import resolve_address
+
 
 import pyuv
 
@@ -201,8 +203,6 @@ class TcpSocket(BaseSocket):
         self.did_accept = Event()
         self.did_connect = Event()
         self.did_read = Event()
-        self.did_write = Event()
-
 
         # buffer allocations
         self.uv_recv_string = ''
@@ -218,19 +218,15 @@ class TcpSocket(BaseSocket):
                     self.did_read.send(BaseSocket.EOF)
                 else:
                     self.did_read.send_exception(last_socket_error(error, msg = 'read error'))
-            elif data is None:
+            elif data is None or len(data) == 0:
                 self.did_read.send(BaseSocket.EOF)
             else:
-                nread = len(data)
-                if nread > 0:
-                    ## append the data to the buffer and, maybe, stop reading...
-                    self.uv_recv_string += data
+                ## append the data to the buffer and, maybe, stop reading...
+                self.uv_recv_string += data
 
-                    tot_len = len(self.uv_recv_string)
-                    if  tot_len >= self.uv_recv_string_limit:
-                        self.did_read.send(tot_len)
-                else:
-                    self.did_read.send(BaseSocket.EOF)
+                tot_len = len(self.uv_recv_string)
+                if  tot_len >= self.uv_recv_string_limit:
+                    self.did_read.send(tot_len)
 
         except Exception, e:
             self.did_read.send_exception(e)
@@ -241,11 +237,14 @@ class TcpSocket(BaseSocket):
         The callback invoked when we are done writting to the socket
         """
         try:
+            assert hasattr(self, 'did_write')
+            assert hasattr(self, 'uv_write_len')
+
             ## free the write request and the temporal buffer used for sending
             l = self.uv_write_len
             del self.uv_write_len
 
-            if error:   self.did_read.send_exception(last_socket_error(error, msg = 'write error'))
+            if error:   self.did_write.send_exception(last_socket_error(error, msg = 'write error'))
             else:       self.did_write.send(l)
 
         except Exception, e:
@@ -293,9 +292,7 @@ class TcpSocket(BaseSocket):
         :param address: the address
         """
         assert self.uv_handle
-        if len(address[0]) == 0:
-            address = ('0.0.0.0', address[1])
-        res = self.uv_handle.bind(address)
+        res = self.uv_handle.bind(resolve_address(address))
 
 
     def listen(self, backlog):
@@ -308,7 +305,12 @@ class TcpSocket(BaseSocket):
         assert self.backlog is not None
         if not self.uv_handle:
             raise socket.error(errno.EBADFD, 'invalid file descriptor')
-        self.uv_handle.listen(self._uv_accept_callback)
+
+        try:
+            self.uv_handle.listen(self._uv_accept_callback)
+        except pyuv.error.TCPError, e:
+            print dir(e)
+            raise socket.error(last_socket_error(0, msg = 'listen error'))
 
 
     def accept (self):
@@ -325,8 +327,11 @@ class TcpSocket(BaseSocket):
         """
         self.uv_connect_req_addr = address
         with Timeout(self.gettimeout(), socket.timeout("timed out")):
-            self.uv_handle.connect(address, self._uv_connect_callback)
-            self.did_connect.wait()
+            try:
+                self.uv_handle.connect(resolve_address(address), self._uv_connect_callback)
+                self.did_connect.wait()
+            finally:
+                self.did_connect = Event()
 
     def connect_ex (self, address):
         """
@@ -352,9 +357,14 @@ class TcpSocket(BaseSocket):
         ## TODO
         raise RuntimeError('not implemented')
 
-    def recv_into (self, *args):
-        ## TODO
-        raise RuntimeError('not implemented')
+    def recv_into (self, buf, nbytes = None, flags = None):
+        if not nbytes:
+            nbytes = len(buffer)
+
+        if nbytes == 0:
+            raise ValueError('invalid read length')
+
+        buf = self.recv(nbytes)
 
     def recv (self, buflen, flags = 0):
         """
@@ -365,25 +375,31 @@ class TcpSocket(BaseSocket):
         """
         tot_read = 0
         with Timeout(self.gettimeout(), socket.timeout("timed out")):
-            self.uv_recv_string_limit = buflen
-            res = self.uv_handle.start_read(self._uv_read_callback)
-            tot_read = self.did_read.wait()
+            try:
+                self.uv_recv_string_limit = buflen
+                res = self.uv_handle.start_read(self._uv_read_callback)
+                tot_read = self.did_read.wait()
 
-            if tot_read == BaseSocket.EOF or tot_read >= self.uv_recv_string_limit:
-                self.uv_handle.stop_read()
+                if tot_read == BaseSocket.EOF or tot_read >= self.uv_recv_string_limit:
+                    self.uv_handle.stop_read()
 
-            ## get the data we want from the read buffer, and keep the rest
-            res = self.uv_recv_string[:buflen]
-            self.uv_recv_string = self.uv_recv_string[buflen:]
+                ## get the data we want from the read buffer, and keep the rest
+                res = self.uv_recv_string[:buflen]
+                self.uv_recv_string = self.uv_recv_string[buflen:]
+            finally:
+                self.did_read = Event()
 
             return res
 
     def send (self, data, flags = 0):
+        self.did_write = Event()
         with Timeout(self.gettimeout(), socket.timeout("timed out")):
             self.uv_write_len = len(data)
             self.uv_handle.write(data, self._uv_write_callback)
             write_result = self.did_write.wait()
             ## TODO: check if the connection has been broken, etc...
+
+        del self.did_write
 
         return write_result
 

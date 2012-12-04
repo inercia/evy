@@ -31,7 +31,7 @@
 from tests import LimitedTestCase, main, skip_on_windows
 
 from evy.io.pipes import GreenPipe
-from evy.greenthread import spawn, sleep
+from evy.green.threads import spawn, sleep
 
 import os
 import tempfile, shutil

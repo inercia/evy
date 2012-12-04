@@ -40,7 +40,7 @@ import sys
 import traceback
 import functools
 
-from evy import greenthread
+from evy.green import threads as greenthread
 from evy import patcher
 
 thread = patcher.original('thread')  # non-monkeypatched module needed

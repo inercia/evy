@@ -32,7 +32,7 @@ import evy
 
 from evy import backdoor
 from evy.patched import socket
-from evy.greenthread import sleep
+from evy.green.threads import sleep
 
 from tests import LimitedTestCase, main
 

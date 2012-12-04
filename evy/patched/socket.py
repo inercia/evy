@@ -39,7 +39,7 @@ from evy.patcher import slurp_properties
 
 slurp_properties(__socket, globals(), srckeys = dir(__socket))
 
-from evy import dns as greendns
+from evy.green import dns as greendns
 
 if greendns:
     gethostbyname = greendns.gethostbyname

@@ -31,7 +31,7 @@
 import unittest
 
 from evy import semaphore
-from evy.greenthread import spawn
+from evy.green.threads import spawn
 
 from tests import LimitedTestCase
 

@@ -34,8 +34,8 @@ from unittest import TestCase, main
 from evy import pools
 from evy.timeout import Timeout
 from evy.queue import Queue
-from evy.greenthread import spawn, sleep, kill
-from evy.greenpool import GreenPool
+from evy.green.threads import spawn, sleep, kill
+from evy.green.pools import GreenPool
 
 class IntPool(pools.Pool):
     def create (self):

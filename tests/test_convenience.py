@@ -31,9 +31,9 @@
 import os
 
 from evy import event
-from evy import convenience
+from evy.io import convenience
 from evy.patched import socket
-from evy.greenthread import spawn, sleep
+from evy.green.threads import spawn, sleep
 from evy.timeout import with_timeout
 
 from tests import LimitedTestCase, s2b, skip_if_no_ssl
@@ -41,15 +41,18 @@ from tests import LimitedTestCase, s2b, skip_if_no_ssl
 certificate_file = os.path.join(os.path.dirname(__file__), 'server.crt')
 private_key_file = os.path.join(os.path.dirname(__file__), 'server.key')
 
-class TestServe(LimitedTestCase):
+
+
+class TestConvenience(LimitedTestCase):
+
     def setUp (self):
-        super(TestServe, self).setUp()
+        super(TestConvenience, self).setUp()
         from evy import debug
 
         debug.hub_exceptions(False)
 
     def tearDown (self):
-        super(TestServe, self).tearDown()
+        super(TestConvenience, self).tearDown()
         from evy import debug
 
         debug.hub_exceptions(True)
@@ -75,7 +78,8 @@ class TestServe(LimitedTestCase):
 
         l = convenience.listen(('localhost', 0))
         gt = spawn(convenience.serve, l, crasher)
-        client = convenience.connect(('localhost', l.getsockname()[1]))
+        _, port = l.getsockname()
+        client = convenience.connect(('localhost', port))
         client.sendall(s2b('a'))
         self.assertRaises(ZeroDivisionError, gt.wait)
         self.assertFalse(client.recv(100))
@@ -102,9 +106,12 @@ class TestServe(LimitedTestCase):
 
         l = convenience.listen(('localhost', 0))
         gt = spawn(convenience.serve, l, counter)
+        _, port = l.getsockname()
+
         for i in xrange(100):
-            client = convenience.connect(('localhost', l.getsockname()[1]))
+            client = convenience.connect(('localhost', port))
             self.assertFalse(client.recv(100))
+
         gt.kill()
         self.assertEqual(100, hits[0])
 

@@ -32,12 +32,16 @@ from tests.test_patcher import ProcessBase
 
 
 class ForkTest(ProcessBase):
+
     def test_simple (self):
         newmod = '''
 import evy
 import os
 import sys
 import signal
+
+from evy.timeout import Timeout
+
 mydir = %r
 signal_file = os.path.join(mydir, "output.txt")
 pid = os.fork()

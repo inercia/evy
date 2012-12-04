@@ -50,8 +50,8 @@ import gc
 from tests import skipped, LimitedTestCase, main
 
 from evy import tpool
-from evy.greenthread import spawn, sleep, TimeoutError
-from evy.greenpool import GreenPile
+from evy.green.threads import spawn, sleep, TimeoutError
+from evy.green.pools import GreenPile
 from evy.timeout import Timeout
 
 one = 1

@@ -36,8 +36,11 @@ from tests import skip_if_no_ssl
 from unittest import main
 
 import evy
-from evy import api, util, greenio
-from evy import greenthread
+from evy import util
+from evy.io.convenience import connect, listen
+from evy.io.sockets import shutdown_safe
+from evy.io.ssl import SSL, ssl_listener
+from evy.green import threads as greenthread
 
 
 
@@ -80,7 +83,7 @@ class SSLTest(LimitedTestCase):
             stuff = sock.read(8192)
             try:
                 self.assertEquals("", sock.read(8192))
-            except greenio.SSL.ZeroReturnError:
+            except SSL.ZeroReturnError:
                 pass
 
         sock = listen_ssl_socket()
@@ -90,7 +93,7 @@ class SSLTest(LimitedTestCase):
         raw_client = connect(('127.0.0.1', sock.getsockname()[1]))
         client = util.wrap_ssl(raw_client)
         client.write('X')
-        greenio.shutdown_safe(client)
+        shutdown_safe(client)
         client.close()
         server_coro.wait()
 
@@ -107,7 +110,7 @@ class SSLTest(LimitedTestCase):
         ssl_client = util.wrap_ssl(raw_client)
         ssl_client.connect(('127.0.0.1', sock.getsockname()[1]))
         ssl_client.write('abc')
-        greenio.shutdown_safe(ssl_client)
+        shutdown_safe(ssl_client)
         ssl_client.close()
         server_coro.wait()
 
@@ -117,15 +120,15 @@ class SSLTest(LimitedTestCase):
             try:
                 conn, addr = listenfd.accept()
                 conn.write('hello\r\n')
-                greenio.shutdown_safe(conn)
+                shutdown_safe(conn)
                 conn.close()
             finally:
-                greenio.shutdown_safe(listenfd)
+                shutdown_safe(listenfd)
                 listenfd.close()
 
-        server = api.ssl_listener(('0.0.0.0', 0),
-                                  self.certificate_file,
-                                  self.private_key_file)
+        server = ssl_listener(('0.0.0.0', 0),
+                              self.certificate_file,
+                              self.private_key_file)
         greenthread.spawn(accept_once, server)
 
         raw_client = connect(('127.0.0.1', server.getsockname()[1]))
@@ -135,10 +138,10 @@ class SSLTest(LimitedTestCase):
         assert fd.readline() == 'hello\r\n'
         try:
             self.assertEquals('', fd.read(10))
-        except greenio.SSL.ZeroReturnError:
+        except SSL.ZeroReturnError:
             # if it's a GreenSSL object it'll do this
             pass
-        greenio.shutdown_safe(client)
+        shutdown_safe(client)
         client.close()
 
     @skip_if_no_ssl
@@ -180,7 +183,7 @@ class SocketSSLTest(LimitedTestCase):
         def serve (listener):
             sock, addr = listener.accept()
             sock.write('content')
-            greenio.shutdown_safe(sock)
+            shutdown_safe(sock)
             sock.close()
 
         listener = listen_ssl_socket(('', 0))

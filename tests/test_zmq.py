@@ -31,16 +31,11 @@
 from __future__ import with_statement
 
 from evy import event, patcher, semaphore
-from evy.greenthread import spawn, sleep
+from evy.green.threads import spawn, sleep
 
-from evy.hubs import get_hub, _threadlocal, use_hub
-from nose.tools import *
 
-from tests import mock, LimitedTestCase, using_pyevent, skip_unless
+from tests import LimitedTestCase, using_pyevent, skip_unless
 
-from unittest import TestCase
-
-from threading import Thread
 
 
 try:

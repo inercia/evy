@@ -36,7 +36,7 @@ Implements the standard thread module, using greenthreads.
 __thread = __import__('thread')
 
 from evy.support import greenlets as greenlet
-from evy import greenthread
+from evy.green import threads as greenthread
 from evy.semaphore import Semaphore as LockType
 
 __patched__ = ['get_ident', 'start_new_thread', 'start_new', 'allocate_lock',

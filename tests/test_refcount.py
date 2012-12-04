@@ -31,15 +31,18 @@
 """This test checks that socket instances (not GreenSockets but underlying sockets)
 are not leaked by the hub.
 """
-import sys
+
 import unittest
+import weakref
+import gc
+
 from pprint import pformat
+
 from evy.support import clear_sys_exc_info
 from evy.patched import socket
 from evy.patched.thread import start_new_thread
 from evy.patched.time import sleep
-import weakref
-import gc
+
 
 SOCKET_TIMEOUT = 0.1
 
