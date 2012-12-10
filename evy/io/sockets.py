@@ -35,8 +35,6 @@ from evy.support import get_errno
 
 from evy.hubs import trampoline, wait_read, wait_write
 
-from evy.io.sockets_uv import TcpSocket
-
 from evy.io.utils import set_nonblocking, socket_accept, socket_connect, socket_checkerr
 from evy.io.utils import _GLOBAL_DEFAULT_TIMEOUT
 from evy.io.utils import SOCKET_BLOCKING, SOCKET_CLOSED
@@ -54,7 +52,7 @@ __all__ = ['GreenSocket']
 
 
 
-class GenericSocket(object):
+class GreenSocket(object):
 
     def __init__ (self, family = socket.AF_INET, type = socket.SOCK_STREAM, proto = 0, _sock = None):
         """
@@ -280,81 +278,6 @@ class GenericSocket(object):
         pass
 
 
-
-
-####################################################################################################
-
-
-_DELEGATE_METHODS = (
-    "accept",
-    "bind",
-    "connect",
-    "connect_ex",
-    "close",
-    "fileno",
-    "gettimeout",
-    "getpeername",
-    "getsockname",
-    "getsockopt",
-    "ioctl",
-    "makefile",
-    "listen",
-    "recv",
-    "recvfrom",
-    "recv_into",
-    "recvfrom_into",
-    "send",
-    "sendto",
-    "shutdown",
-    "setsockopt"
-    )
-
-
-class GreenSocket(object):
-    """
-    libUV version of socket.socket class, that is intended to be 100% API-compatible.
-    """
-
-    def __init__ (self, family = socket.AF_INET, type = socket.SOCK_STREAM, proto = 0, _sock = None):
-        """
-        Initialize the UV socket
-
-        :param family_or_realsock: a socket descriptor or a socket family
-        """
-        self.delegate = None
-
-        if isinstance(family, (int, long)):
-            if type == socket.SOCK_STREAM:
-                self.delegate = TcpSocket(family, type, proto, _sock)
-
-        elif isinstance(family, _original_socket):
-            _sock = family
-
-            family = _sock .family
-            type = _sock.type
-            proto = _sock.proto
-
-            if type == socket.SOCK_STREAM:
-                self.delegate = TcpSocket(family, type, proto, _sock)
-
-        if not self.delegate:
-            self.delegate = GenericSocket(family, type, proto, _sock)
-
-        for method in _DELEGATE_METHODS :
-            setattr(self, method, getattr(self.delegate, method))
-
-        # import timeout from other socket, if it was there
-        try:
-            self._timeout = self.delegate.gettimeout() or socket.getdefaulttimeout()
-        except AttributeError:
-            self._timeout = socket.getdefaulttimeout()
-
-        ##set_nonblocking(self.delegate)
-
-        # when client calls setblocking(0) or settimeout(0) the socket must act non-blocking
-        self.act_non_blocking = False
-
-
     @property
     def _sock (self):
         return self
@@ -372,7 +295,7 @@ class GreenSocket(object):
         # If we find such attributes - only attributes having __get__ might be cahed.
         # For now - I do not want to complicate it.
 
-        attr = getattr(self.delegate, name)
+        attr = getattr(self.fd, name)
         setattr(self, name, attr)
         return attr
 
