@@ -95,6 +95,7 @@ class Hub(object):
     """
 
     SYSTEM_EXCEPTIONS = (KeyboardInterrupt, SystemExit)
+    SYSTEM_EXCEPTIONS_SIGNUMS = (signal.SIGINT, signal.SIGTERM)
     READ = READ
     WRITE = WRITE
 
@@ -132,10 +133,19 @@ class Hub(object):
             if _default_loop_destroyed:
                 default = False
 
+            self.uv_sighandlers = set()
+
             self.uv_loop = pyuv.Loop.default_loop()
             if default:
-                #pyuv.Signal(self.signal_checker)
-                pass
+                self.uv_signal_checker = pyuv.SignalChecker(self.uv_loop)
+                self.uv_signal_checker.start()
+
+                for signum in self.SYSTEM_EXCEPTIONS_SIGNUMS:
+                    handler = pyuv.Signal(self.uv_loop)
+                    handler.start(self.signal_received, int(signum))
+                    self.uv_sighandlers.add(handler)
+            else:
+                self.uv_signal_checker = None
 
         if not self.uv_loop:
             raise SystemError("default_loop() failed")
@@ -395,6 +405,9 @@ class Hub(object):
             #if __SYSERR_CALLBACK == self._handle_syserr:
             #    set_syserr_cb(None)
 
+            if self.uv_signal_checker:
+                self.uv_signal_checker.stop()
+
             if self.uv_loop == pyuv.Loop.default_loop():
                 _default_loop_destroyed = True
 
@@ -422,10 +435,28 @@ class Hub(object):
         :param unreferenced: if True, we unreference the timer, so the loop does not wait until it is triggered
         :return:
         """
-        eventtimer = pyuv.Timer(self.uv_loop)
+        if timer.seconds == 0:
+            self.add_idle_timer(timer)
+        else:
+            eventtimer = pyuv.Timer(self.uv_loop)
+            eventtimer.data = timer
+            timer.impltimer = eventtimer
+            eventtimer.start(self._timer_triggered, float(timer.seconds), 0)
+            self.timers.add(timer)
+
+
+    def add_idle_timer (self, timer):
+        """
+        Add a timer in the hub
+
+        :param timer:
+        :param unreferenced: if True, we unreference the timer, so the loop does not wait until it is triggered
+        :return:
+        """
+        eventtimer = pyuv.Idle(self.uv_loop)
         eventtimer.data = timer
         timer.impltimer = eventtimer
-        eventtimer.start(self._timer_triggered, float(timer.seconds), 0)
+        eventtimer.start(self._timer_triggered)
         self.timers.add(timer)
 
     def _timer_canceled (self, timer):
@@ -659,10 +690,7 @@ class Hub(object):
     ##
 
 
-    def signal_received(self, signal):
-        # can't do more than set this flag here because the pyevent callback
-        # mechanism swallows exceptions raised here, so we have to raise in
-        # the 'main' greenlet (in wait()) to kill the program
+    def signal_received(self, handler, signal):
         self.interrupted = True
         print "signal_received(): TODO"
 
