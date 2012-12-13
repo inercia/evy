@@ -89,7 +89,7 @@ class _QueueLock(object):
             self._holder = None
             if self._waiters:
                 # wake next
-                self._hub.schedule_call_global(0, self._waiters[0].switch)
+                self._hub.run_callback(self._waiters[0].switch)
 
 
 class _BlockedThread(object):
@@ -128,7 +128,7 @@ class _BlockedThread(object):
         blocked thread, then this call has no effect and returns
         False."""
         if self._blocked_thread is not None and self._wakeupper is None:
-            self._wakeupper = self._hub.schedule_call_global(0, self._blocked_thread.switch)
+            self._wakeupper = self._hub.run_callback(self._blocked_thread.switch)
             return True
         return False
 
