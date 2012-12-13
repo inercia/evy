@@ -32,12 +32,15 @@ import traceback
 import signal
 import sys
 import os
+import socket
 
 import pyuv
 
 from evy.support import greenlets as greenlet, clear_sys_exc_info
 from evy.hubs import timer, poller
 from evy import patcher
+
+from evy.hubs.callback import Callback
 
 
 __all__ = ["Hub",
@@ -120,6 +123,7 @@ class Hub(object):
 
         self.timers = set()
         self.pollers = {}
+        self.callbacks = set()
 
         self.debug_exceptions = True
         self.debug_blocking = False
@@ -138,7 +142,6 @@ class Hub(object):
             self.uv_loop = pyuv.Loop.default_loop()
             if default:
                 self.uv_signal_checker = pyuv.SignalChecker(self.uv_loop)
-                self.uv_signal_checker.start()
 
                 for signum in self.SYSTEM_EXCEPTIONS_SIGNUMS:
                     handler = pyuv.Signal(self.uv_loop)
@@ -178,7 +181,7 @@ class Hub(object):
                 raise RuntimeError('there is already %s reading from descriptor %d' % (str(p), fileno))
 
             if p.notify_writable and evtype is WRITE:
-                    raise RuntimeError('there is already %s writing to descriptor %d' % (str(p), fileno))
+                raise RuntimeError('there is already %s writing to descriptor %d' % (str(p), fileno))
 
             p.start(self, current_events | evtype, cb, fileno)
         else:
@@ -193,7 +196,6 @@ class Hub(object):
     def remove (self, p):
         """
         Remove a listener
-
         :param listener: the listener to remove
         """
         self._poller_canceled(p)
@@ -203,10 +205,8 @@ class Hub(object):
         """
         Completely remove all watchers for this *fileno*. For internal use only.
         """
-        try:
-            p = self.pollers[fileno]
-        except KeyError:
-            return
+        try:                p = self.pollers[fileno]
+        except KeyError:    return
 
         try:
             if not skip_callbacks:
@@ -216,7 +216,7 @@ class Hub(object):
         except self.SYSTEM_EXCEPTIONS:
             self.interrupted = True
         except:
-            self.squelch_exception(fileno, sys.exc_info())
+            self.squelch_io_exception(fileno, sys.exc_info())
         finally:
             self._poller_canceled(p)
 
@@ -264,6 +264,15 @@ class Hub(object):
         clear_sys_exc_info()
         return self.greenlet.switch()
 
+    def cede(self):
+        """
+        Switch temporarily to any other greenlet, and then return to the current greenlet
+        :return: the greenlet that takes control
+        """
+        current = greenlet.getcurrent()
+        self.run_callback(current.switch)
+        return self.switch()
+
     def wait (self, seconds = None):
         """
         This timeout will cause us to return from the dispatch() call when we want to
@@ -287,7 +296,7 @@ class Hub(object):
         except self.SYSTEM_EXCEPTIONS:
             self.interrupted = True
         except:
-            self.squelch_exception(-1, sys.exc_info())
+            self.squelch_io_exception(-1, sys.exc_info())
 
         # we are explicitly ignoring the status because in our experience it's
         # harmless and there's nothing meaningful we could do with it anyway
@@ -335,7 +344,7 @@ class Hub(object):
                 except self.SYSTEM_EXCEPTIONS:
                     self.interrupted = True
                 except:
-                    self.squelch_exception(-1, sys.exc_info())
+                    self.squelch_io_exception(-1, sys.exc_info())
 
                 if self.debug_blocking:
                     self.block_detect_post()
@@ -346,10 +355,12 @@ class Hub(object):
 
             else:
                 ## remove all the timers and pollers
-                for timer in self.timers:               timer.destroy()
-                for poller in self.pollers.values():    poller.destroy()
-                self.timers = set()
-                self.pollers = {}
+                #for timer in self.timers:               timer.destroy()
+                #for poller in self.pollers.values():    poller.destroy()
+                #self.timers = set()
+                #self.pollers = {}
+
+                self.destroy()
 
         finally:
             self.running = False
@@ -363,6 +374,9 @@ class Hub(object):
         :param once: if True, polls for new events once (and it blocks if there are no pending events)
         :return: 1 if more events are expected, 0 otherwise (when *once* is False, it always returns 0)
         """
+        if self.uv_signal_checker:
+            self.uv_signal_checker.start()
+
         if once:
             return self.uv_loop.run_once()
         else:
@@ -378,10 +392,11 @@ class Hub(object):
         """
         if self.running:
             self.stopping = True
+
         if wait:
             assert self.greenlet is not greenlet.getcurrent(), "Can't abort with wait from inside the hub's greenlet."
             # schedule an immediate timer just so the hub doesn't sleep
-            self.schedule_call_global(0, lambda: None)
+            self.run_callback(lambda: None)
             # switch to it; when done the hub will switch back to its parent,
             # the main greenlet
             self.switch()
@@ -393,19 +408,20 @@ class Hub(object):
         :return: None
         """
         global _default_loop_destroyed
+
         if self.uv_loop:
 
             ## destroy all the timers and pollers
-            for timer in self.timers:               timer.destroy()
-            for poller in self.pollers.values():    poller.destroy()
-            self.timers = set()
-            self.pollers = {}
+            for timer in self.timers:                   timer.destroy()
+            for poller in self.pollers.values():        poller.destroy()
+            for callback in self.callbacks.values():    callback.destroy()
+            del self.timers
+            del self.pollers
+            del self.callbacks
 
-            self._stop_signal_checker()
-            #if __SYSERR_CALLBACK == self._handle_syserr:
-            #    set_syserr_cb(None)
-
+            ## destroy all the signals stuff
             if self.uv_signal_checker:
+                for handler in self.uv_sighandlers: handler.stop()
                 self.uv_signal_checker.stop()
 
             if self.uv_loop == pyuv.Loop.default_loop():
@@ -417,11 +433,24 @@ class Hub(object):
 
     @property
     def num_active(self):
-        return self.uv_loop.active_handles
+        try:
+            return self.uv_loop.active_handles
+        except AttributeError:
+            return 0
+
+    @property
+    def counters(self):
+        try:
+            return self.uv_loop.counters
+        except AttributeError:
+            return 0
 
     @property
     def last_error(self):
-        return self.uv_loop.last_err
+        try:
+            return self.uv_loop.last_err
+        except AttributeError:
+            return 0
 
     ##
     ## timers
@@ -435,29 +464,12 @@ class Hub(object):
         :param unreferenced: if True, we unreference the timer, so the loop does not wait until it is triggered
         :return:
         """
-        if timer.seconds == 0:
-            self.add_idle_timer(timer)
-        else:
-            eventtimer = pyuv.Timer(self.uv_loop)
-            eventtimer.data = timer
-            timer.impltimer = eventtimer
-            eventtimer.start(self._timer_triggered, float(timer.seconds), 0)
-            self.timers.add(timer)
-
-
-    def add_idle_timer (self, timer):
-        """
-        Add a timer in the hub
-
-        :param timer:
-        :param unreferenced: if True, we unreference the timer, so the loop does not wait until it is triggered
-        :return:
-        """
-        eventtimer = pyuv.Idle(self.uv_loop)
+        eventtimer = pyuv.Timer(self.uv_loop)
         eventtimer.data = timer
         timer.impltimer = eventtimer
-        eventtimer.start(self._timer_triggered)
+        eventtimer.start(self._timer_triggered, float(timer.seconds), 0)
         self.timers.add(timer)
+
 
     def _timer_canceled (self, timer):
         """
@@ -489,7 +501,7 @@ class Hub(object):
         except self.SYSTEM_EXCEPTIONS:
             self.interrupted = True
         except Exception, e:
-            self.squelch_timer_exception(timer, sys.exc_info())
+            self.squelch_exception(sys.exc_info())
 
         try:
             timer.destroy()
@@ -503,7 +515,75 @@ class Hub(object):
 
     @property
     def timers_count(self):
-        return len(self.timers)
+        try:
+            return len(self.timers)
+        except AttributeError:
+            return 0
+
+
+    ##
+    ## callbacks
+    ##
+
+    def add_callback(self, callback):
+        """
+        Add a callback in the hub
+        :param timer:
+        :return:
+        """
+        eventcallback = pyuv.Idle(self.uv_loop)
+        eventcallback.data = callback
+        callback.implcallback = eventcallback
+        eventcallback.start(self._callback_triggered)
+        self.callbacks.add(callback)
+
+
+    def _callback_canceled (self, callback):
+        """
+        A callback has been canceled
+        :param callback: the callback that has been canceled
+        :return: nothing
+        """
+        try:
+            callback.destroy()
+        except (AttributeError, TypeError):
+            pass
+
+        try:
+            self.callbacks.remove(callback)
+        except KeyError:
+            pass
+
+    def _callback_triggered (self, handle):
+        """
+        Performs the callback trigger
+        :return: nothing
+        """
+        callback = handle.data
+        try:
+            callback()
+        except self.SYSTEM_EXCEPTIONS:
+            self.interrupted = True
+        except Exception, e:
+            self.squelch_exception(sys.exc_info())
+
+        try:
+            callback.destroy()
+        except (AttributeError, TypeError):
+            pass
+
+        try:
+            self.callbacks.remove(timer)
+        except KeyError:
+            pass
+
+    @property
+    def callback_count(self):
+        try:
+            return len(self.callbacks)
+        except AttributeError:
+            return 0
+
 
     ##
     ## pollers
@@ -521,13 +601,15 @@ class Hub(object):
 
         try:
             if errorno > 0:
-                raise IOError(pyuv.errno.strerror(errorno))
+                try:    self._poller_canceled(p)
+                except: pass
+                raise socket.error((errorno, pyuv.errno.strerror(errorno)))
             else:
                 p(events)
         except self.SYSTEM_EXCEPTIONS:
             self.interrupted = True
         except:
-            self.squelch_exception(p.fileno, sys.exc_info())
+            self.squelch_io_exception(p.fileno, sys.exc_info())
 
         if not p.persistent:
             self._poller_canceled(p)
@@ -542,25 +624,29 @@ class Hub(object):
 
         fileno = p.fileno
 
-        p.destroy()
-
         ## remove all references to the poller...
-        try:
-            del self.pollers[fileno]
-        except KeyError:
-            pass
+        try:                del self.pollers[fileno]
+        except KeyError:    pass
 
-        assert fileno not in self.pollers
-
+        p.destroy()
 
 
     @property
     def poller_count(self):
-        return len(self.pollers)
+        try:
+            return len(self.pollers)
+        except AttributeError:
+            return 0
+
+
 
     ##
     ## global and local calls
     ##
+
+    def run_callback(self, func, *args, **kw):
+        cb = Callback(func, *args, **kw)
+        return self.add_callback(cb)
 
     def schedule_call_local (self, seconds, cb, *args, **kw):
         """
@@ -586,7 +672,6 @@ class Hub(object):
         :param cb: the callable to call after the given time.
         :param args: arguments to pass to the callable when called.
         :param kw: keyword arguments to pass to the callable when called.
-
         """
         t = timer.Timer(seconds, cb, *args, **kw)
         self.add_timer(t)
@@ -669,7 +754,7 @@ class Hub(object):
             sys.stderr.flush()
             clear_sys_exc_info()
 
-    def squelch_exception (self, fileno, exc_info):
+    def squelch_io_exception (self, fileno, exc_info):
         traceback.print_exception(*exc_info)
 
         if fileno > 0:
@@ -679,7 +764,7 @@ class Hub(object):
                 sys.stderr.write("Exception while removing descriptor! %r\n" % (e,))
                 sys.stderr.flush()
 
-    def squelch_timer_exception (self, timer, exc_info):
+    def squelch_exception (self, exc_info):
         if self.debug_exceptions:
             traceback.print_exception(*exc_info)
             sys.stderr.flush()
@@ -688,7 +773,6 @@ class Hub(object):
     ##
     ## signals
     ##
-
 
     def signal_received(self, handler, signal):
         self.interrupted = True
@@ -705,5 +789,6 @@ class Hub(object):
         return [x for x in self.pollers.values() if x.notify_writable]
 
     def __repr__(self):
-        retval =  "Hub(%d pollers, %d timers, %d active)" % (self.poller_count, self.timers_count, self.num_active)
+        retval =  "Hub(%d pollers, %d timers, %d active, %s counters)" % \
+                  (self.poller_count, self.timers_count, self.num_active, str(self.counters))
         return retval
