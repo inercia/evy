@@ -50,6 +50,15 @@ def switch (coro, result = None, exc = None):
     return coro.switch(result)
 
 
+def cede():
+    """
+    Yield control to another eligible coroutine. It is a cooperative yield.
+    For example, if one is looping over a large list performing an expensive
+    calculation without calling any socket methods, it's a good idea to call ``cede()``
+    occasionally; otherwise nothing else will run.
+    """
+    hub = hubs.get_hub()
+    hub.cede()
 
 def sleep (seconds = 0):
     """
@@ -57,20 +66,21 @@ def sleep (seconds = 0):
     elapsed.
 
     *seconds* may be specified as an integer, or a float if fractional seconds
-    are desired. Calling :func:`~greenthread.sleep` with *seconds* of 0 is the
-    canonical way of expressing a cooperative yield. For example, if one is
-    looping over a large list performing an expensive calculation without
-    calling any socket methods, it's a good idea to call ``sleep(0)``
-    occasionally; otherwise nothing else will run.
+    are desired. Calling :func:`~threads.sleep` with *seconds* of 0 is equivalent
+    to invoking :func:`~threads.cede`
     """
-    hub = hubs.get_hub()
-    current = getcurrent()
-    assert hub.greenlet is not current, 'do not call blocking functions from the mainloop'
-    timer = hub.schedule_call_global(seconds, current.switch)
-    try:
-        hub.switch()
-    finally:
-        timer.cancel()
+    if seconds == 0:
+        cede()
+    else:
+        hub = hubs.get_hub()
+        current = getcurrent()
+        assert hub.greenlet is not current, 'do not call blocking functions from the mainloop'
+        timer = hub.schedule_call_global(seconds, current.switch)
+        try:
+            hub.switch()
+        finally:
+            timer.cancel()
+
 
 
 def spawn (func, *args, **kwargs):
@@ -85,7 +95,7 @@ def spawn (func, *args, **kwargs):
     """
     hub = hubs.get_hub()
     g = GreenThread(hub.greenlet)
-    hub.schedule_call_global(0, g.switch, func, args, kwargs)
+    hub.run_callback(g.switch, func, args, kwargs)
     return g
 
 
@@ -98,7 +108,13 @@ def spawn_n (func, *args, **kwargs):
     If an exception is raised in the function, spawn_n prints a stack trace; the print can be
     disabled by calling :func:`evy.debug.hub_exceptions` with False.
     """
-    return _spawn_n(0, func, args, kwargs)[1]
+
+    def _run_callback (func, args, kwargs):
+        hub = hubs.get_hub()
+        g = greenlet.greenlet(func, parent = hub.greenlet)
+        t = hub.run_callback(g.switch, *args, **kwargs)
+        return g
+    return _run_callback(func, args, kwargs)
 
 
 def spawn_after (seconds, func, *args, **kwargs):
@@ -155,12 +171,6 @@ def spawn_after_local (seconds, func, *args, **kwargs):
 # deprecate, remove
 TimeoutError = timeout.Timeout
 with_timeout = timeout.with_timeout
-
-def _spawn_n (seconds, func, args, kwargs):
-    hub = hubs.get_hub()
-    g = greenlet.greenlet(func, parent = hub.greenlet)
-    t = hub.schedule_call_global(seconds, g.switch, *args, **kwargs)
-    return t, g
 
 
 class GreenThread(greenlet.greenlet):
@@ -289,7 +299,16 @@ def kill (g, *throw_args):
     if current is not hub.greenlet:
         # arrange to wake the caller back up immediately
         hub.ensure_greenlet()
-        hub.schedule_call_global(0, current.switch)
+        hub.run_callback(current.switch)
     g.throw(*throw_args)
 
+
+def waitall (*args):
+    """
+    Waits for ne ore more GreenThreads
+    """
+    res = []
+    for t in args:
+        res.append(t.wait())
+    return res
 
