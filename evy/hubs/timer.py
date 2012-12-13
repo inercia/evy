@@ -56,10 +56,12 @@ class Timer(object):
         calling timer.schedule() or runloop.add_timer(timer).
         """
         self.seconds = seconds
-        if '_callback' in kw:       self.callback = kw.pop('_callback')
-        else:                       self.callback = partial(cb, *args, **kw)
-
         self.called = False
+
+        if '_callback' in kw:
+            self.callback = kw.pop('_callback')
+        else:
+            self.callback = partial(cb, *args, **kw)
 
         if _g_debug:
             import traceback, cStringIO
@@ -102,11 +104,10 @@ class Timer(object):
         del self.impltimer
 
     def forget(self):
-        """
-        Let the hub forget about this timer, so we do not keep the loop running forever until
-        the timer triggers.
-        """
-        get_hub().forget_timer(self)
+        try:
+            self.impltimer.unref()
+        except AttributeError:
+            pass
 
     def __call__(self, *args):
         if not self.called:
