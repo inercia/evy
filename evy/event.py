@@ -195,8 +195,7 @@ class Event(object):
         self._exc = exc
         hub = hubs.get_hub()
         for waiter in self._waiters:
-            hub.schedule_call_global(
-                0, self._do_send, self._result, self._exc, waiter)
+            hub.run_callback(self._do_send, self._result, self._exc, waiter)
 
     def _do_send (self, result, exc, waiter):
         if waiter in self._waiters:
@@ -208,12 +207,11 @@ class Event(object):
     def send_exception (self, *args):
         """
         Same as :meth:`send`, but sends an exception to waiters.
-        
         The arguments to send_exception are the same as the arguments
         to ``raise``.  If a single exception object is passed in, it
         will be re-raised when :meth:`wait` is called, generating a
-        new stacktrace.  
-        
+        new stacktrace.
+
            >>> from evy import event
            >>> evt = event.Event()
            >>> evt.send_exception(RuntimeError())
@@ -223,7 +221,7 @@ class Event(object):
              File "evy/event.py", line 120, in wait
                current.throw(*self._exc)
            RuntimeError
-        
+
         If it's important to preserve the entire original stack trace,
         you must pass in the entire :func:`sys.exc_info` tuple.
 
@@ -233,7 +231,7 @@ class Event(object):
            ...     raise RuntimeError()
            ... except RuntimeError:
            ...     evt.send_exception(*sys.exc_info())
-           ... 
+           ...
            >>> evt.wait()
            Traceback (most recent call last):
              File "<stdin>", line 1, in <module>
@@ -241,7 +239,7 @@ class Event(object):
                current.throw(*self._exc)
              File "<stdin>", line 2, in <module>
            RuntimeError
-           
+
         Note that doing so stores a traceback object directly on the
         Event object, which may cause reference cycles. See the
         :func:`sys.exc_info` documentation.
