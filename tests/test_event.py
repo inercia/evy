@@ -44,20 +44,20 @@ class TestEvent(LimitedTestCase):
     def test_send_exc (self):
         log = []
         e = Event()
-
-        def waiter ():
+        d = Event()
+        def waiter():
             try:
                 result = e.wait()
                 log.append(('received', result))
             except Exception, ex:
                 log.append(('catched', ex))
+            d.send()
 
         spawn(waiter)
         sleep(0) # let waiter to block on e.wait()
         obj = Exception()
         e.send(exc = obj)
-        sleep(0)
-        sleep(0)
+        d.wait()
         assert log == [('catched', obj)], log
 
     def test_send (self):

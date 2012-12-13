@@ -63,7 +63,6 @@ class TestGreenSocketErrors(LimitedTestCase):
         gs.settimeout(0.5)
         try:
             gs.connect(('192.0.2.2', 80))
-            self.fail("socket.timeout not raised")
         except socket.timeout, e:
             self.assert_(hasattr(e, 'args'))
             self.assertEqual(e.args[0], 'timed out')
@@ -71,6 +70,10 @@ class TestGreenSocketErrors(LimitedTestCase):
             # unreachable is also a valid outcome
             if not get_errno(e) in (errno.EHOSTUNREACH, errno.ENETUNREACH):
                 raise
+        except Exception, e:
+            self.fail("unexpected exception '%s' %s" % (str(e), str(*e.args)))
+
+        self.fail("socket.timeout not raised")
 
     def test_connect_invalid_ip (self):
         gs = sockets.GreenSocket(socket.AF_INET, socket.SOCK_STREAM)
@@ -99,15 +102,11 @@ class TestGreenSocketErrors(LimitedTestCase):
         gs.settimeout(0.1)
         #e = gs.connect_ex(('192.0.2.1', 80))
         e = gs.connect_ex(('255.255.0.1', 80))
-        self.assertIn(e, (errno.EHOSTUNREACH, errno.ECONNREFUSED, errno.ENETUNREACH))
-        #if not e in (errno.EHOSTUNREACH, errno.ECONNREFUSED, errno.ENETUNREACH):
-        #    self.assertEquals(e, errno.EAGAIN)
+        self.assertIn(e, (errno.EHOSTUNREACH, errno.ECONNREFUSED, errno.ENETUNREACH, errno.ETIME, errno.EAGAIN))
 
     def test_connection_refused (self):
-        self.reset_timeout(1000000)
-
         # open and close a dummy server to find an unused port
-        server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        server = sockets.GreenSocket(socket.AF_INET, socket.SOCK_STREAM)
         server.bind(('127.0.0.1', 0))
         server.listen(1)
         _, port = server.getsockname()
@@ -115,7 +114,7 @@ class TestGreenSocketErrors(LimitedTestCase):
         server.close()
         del server
 
-        s = socket.socket()
+        s = sockets.GreenSocket()
         try:
             s.connect(('127.0.0.1', port))
             self.fail("Shouldn't have connected")
@@ -137,10 +136,10 @@ class TestGreenSocketErrors(LimitedTestCase):
         """
         Test that the socket timeout exception works correctly.
         """
-        server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        server = sockets.GreenSocket(socket.AF_INET, socket.SOCK_STREAM)
         server.bind(('127.0.0.1', 0))
         server.listen(1)
-        port = server.getsockname()[1]
+        _, port = server.getsockname()
         self.assertNotEqual(port, 0)
 
         s = socket.socket()
@@ -194,11 +193,13 @@ class TestGreenSocketErrors(LimitedTestCase):
 
         listener = convenience.listen(('127.0.0.1', 0))
         server = spawn(convenience.serve, listener, handle)
+        _, port = listener.getsockname()
 
         def reader (s):
             s.recv(1)
 
-        s = convenience.connect(('127.0.0.1', listener.getsockname()[1]))
+        sleep(0)
+        s = convenience.connect(('127.0.0.1', port))
         a = spawn(reader, s)
         sleep(0)
         self.assertRaises(RuntimeError, s.recv, 1)

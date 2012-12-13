@@ -31,16 +31,15 @@
 from unittest import TestCase, main
 import warnings
 
-from tests import LimitedTestCase
-
 from evy import hubs
-
+from evy.event import Event
 from evy.green import threads as greenthread
-
 from evy.support import greenlets as greenlet
 from evy.green.threads import spawn
 from evy.io.convenience import listen, connect
 
+from tests import LimitedTestCase
+from test_hub import check_hub
 
 
 warnings.simplefilter('ignore', DeprecationWarning)
@@ -58,19 +57,6 @@ def passthru (*args, **kw):
 def waiter (a):
     greenthread.sleep(0.1)
     return a
-
-def check_hub ():
-    # Clear through the descriptor queue
-    greenthread.sleep(0)
-    greenthread.sleep(0)
-    hub = hubs.get_hub()
-    for nm in 'get_readers', 'get_writers':
-        dct = getattr(hub, nm)()
-        assert not dct, "hub.%s not empty: %s" % (nm, dct)
-        # Stop the runloop (unless it's twistedhub which does not support that)
-    if not getattr(hub, 'uses_twisted_reactor', None):
-        hub.abort(True)
-        assert not hub.running
 
 
 
@@ -216,36 +202,6 @@ class TestSpawnAfterLocal(LimitedTestCase, Asserts):
 class TestGreenHub(TestCase):
 
 
-    def test_tcp_listener (self):
-        socket = listen(('0.0.0.0', 0))
-        assert socket.getsockname()[0] == '0.0.0.0'
-        socket.close()
-
-        check_hub()
-
-    def test_connect_tcp (self):
-        def accept_once (listenfd):
-            try:
-                conn, addr = listenfd.accept()
-                fd = conn.makefile(mode = 'w')
-                conn.close()
-                fd.write('hello\n')
-                fd.close()
-            finally:
-                listenfd.close()
-
-        server = listen(('0.0.0.0', 0))
-        greenthread.spawn(accept_once, server)
-
-        client = connect(('127.0.0.1', server.getsockname()[1]))
-        fd = client.makefile()
-        client.close()
-        assert fd.readline() == 'hello\n'
-
-        assert fd.read() == ''
-        fd.close()
-
-        check_hub()
 
     def test_001_trampoline_timeout (self):
         server_sock = listen(('127.0.0.1', 0))
@@ -270,9 +226,9 @@ class TestGreenHub(TestCase):
 
     def test_timeout_cancel (self):
         server = listen(('0.0.0.0', 0))
-        bound_port = server.getsockname()[1]
+        _, bound_port = server.getsockname()
 
-        done = [False]
+        done = Event()
 
         def client_closer (sock):
             while True:
@@ -288,13 +244,12 @@ class TestGreenHub(TestCase):
 
             server.close()
             desc.close()
-            done[0] = True
+            done.send()
 
         greenthread.spawn_after_local(0, go)
 
         server_coro = greenthread.spawn(client_closer, server)
-        while not done[0]:
-            greenthread.sleep(0)
+        done.wait()
         greenthread.kill(server_coro)
 
         check_hub()

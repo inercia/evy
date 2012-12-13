@@ -29,24 +29,22 @@
 
 
 import socket as _orig_sock
-from tests import LimitedTestCase, main, skipped, s2b, skip_on_windows
+from tests import LimitedTestCase, main, skipped, s2b
 
-from evy import event
 from evy.io import sockets
 from evy.io import convenience
 from evy.support import get_errno
 from evy.patched import socket
 from evy.patched import time
 from evy.green.threads import spawn, spawn_n, sleep
-from evy.timeout import Timeout
-from evy.green.threads import TimeoutError
 
 import errno
-
 import os
 import sys
-import array
-import tempfile, shutil
+
+from test_hub import check_hub
+
+
 
 def bufsized (sock, size = 1):
     """
@@ -88,6 +86,36 @@ class TestGreenSocket(LimitedTestCase):
             # 3.x poll write to closed file-like pbject raises ValueError
             self.assertRaises(ValueError, fd.write, 'a')
 
+
+    def test_tcp_listener (self):
+        socket = convenience.listen(('0.0.0.0', 0))
+        assert socket.getsockname()[0] == '0.0.0.0'
+        socket.close()
+        check_hub()
+
+    def test_connect_tcp (self):
+        def accept_once (listenfd):
+            try:
+                conn, addr = listenfd.accept()
+                fd = conn.makefile(mode = 'w')
+                conn.close()
+                fd.write('hello\n')
+                fd.close()
+            finally:
+                listenfd.close()
+
+        server = convenience.listen(('0.0.0.0', 0))
+        spawn(accept_once, server)
+
+        client = convenience.connect(('127.0.0.1', server.getsockname()[1]))
+        fd = client.makefile()
+        client.close()
+        assert fd.readline() == 'hello\n'
+
+        assert fd.read() == ''
+        fd.close()
+
+        check_hub()
 
     def test_getsockname (self):
         listener = sockets.GreenSocket()

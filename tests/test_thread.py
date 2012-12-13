@@ -30,13 +30,12 @@
 
 import weakref
 
-import evy
-
 from evy import event
 from evy import corolocal
 
 from evy.patched import thread
-from evy.green.threads import sleep, getcurrent
+from evy.green.threads import spawn, sleep, getcurrent
+from evy.green.pools import GreenPool
 
 from tests import LimitedTestCase, skipped
 
@@ -53,29 +52,6 @@ class Locals(LimitedTestCase):
         self.results = []
         super(Locals, self).tearDown()
 
-    @skipped  # cause it relies on internal details of corolocal that are no longer true
-    def test_simple (self):
-        tls = thread._local()
-        g_ids = []
-        evt = event.Event()
-
-        def setter (tls, v):
-            g_id = id(getcurrent())
-            g_ids.append(g_id)
-            tls.value = v
-            evt.wait()
-
-        thread.start_new_thread(setter, args = (tls, 1))
-        thread.start_new_thread(setter, args = (tls, 2))
-        sleep()
-        objs = object.__getattribute__(tls, "__objs")
-        self.failUnlessEqual(sorted(g_ids), sorted(objs.keys()))
-        self.failUnlessEqual(objs[g_ids[0]]['value'], 1)
-        self.failUnlessEqual(objs[g_ids[1]]['value'], 2)
-        self.failUnlessRaises(AttributeError, lambda: tls.value)
-        evt.send("done")
-        sleep()
-
     def test_assignment (self):
         my_local = corolocal.local()
         my_local.a = 1
@@ -89,7 +65,7 @@ class Locals(LimitedTestCase):
             except AttributeError:
                 pass
 
-        evy.spawn(do_something).wait()
+        spawn(do_something).wait()
         self.assertEqual(my_local.a, 1)
 
     def test_calls_init (self):
@@ -97,19 +73,19 @@ class Locals(LimitedTestCase):
 
         class Init(corolocal.local):
             def __init__ (self, *args):
-                init_args.append((args, evy.getcurrent()))
+                init_args.append((args, getcurrent()))
 
         my_local = Init(1, 2, 3)
         self.assertEqual(init_args[0][0], (1, 2, 3))
-        self.assertEqual(init_args[0][1], evy.getcurrent())
+        self.assertEqual(init_args[0][1], getcurrent())
 
         def do_something ():
             my_local.foo = 'bar'
             self.assertEqual(len(init_args), 2, init_args)
             self.assertEqual(init_args[1][0], (1, 2, 3))
-            self.assertEqual(init_args[1][1], evy.getcurrent())
+            self.assertEqual(init_args[1][1], getcurrent())
 
-        evy.spawn(do_something).wait()
+        spawn(do_something).wait()
 
     def test_calling_methods (self):
         class Caller(corolocal.local):
@@ -124,7 +100,7 @@ class Locals(LimitedTestCase):
             my_local.foo = "foo2"
             self.assertEquals("foo2", my_local.callme())
 
-        evy.spawn(do_something).wait()
+        spawn(do_something).wait()
 
         my_local.foo = "foo3"
         self.assertEquals("foo3", my_local.callme())
@@ -141,7 +117,7 @@ class Locals(LimitedTestCase):
             refs[o] = True
             my_local.foo = o
 
-        p = evy.GreenPool()
+        p = GreenPool()
         for i in xrange(100):
             p.spawn(do_something, i)
         p.waitall()

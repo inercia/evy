@@ -241,7 +241,7 @@ class TestGreenSocketSend(LimitedTestCase):
         server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         server.bind(('127.0.0.1', 0))
         server.listen(50)
-        bound_port = server.getsockname()[1]
+        _, bound_port = server.getsockname()
         self.assertNotEqual(bound_port, 0)
 
         def sender (evt):
@@ -268,6 +268,8 @@ class TestGreenSocketSend(LimitedTestCase):
             wrap_rfile = client.makefile()
             _c = wrap_rfile.read(1)
             self.fail()
+        except socket.error, e:
+            self.fail('could not connect to port %d: %s' % (bound_port, str(e)))
         except TimeoutError:
             pass
 

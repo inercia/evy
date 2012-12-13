@@ -579,9 +579,9 @@ class TestGreenPool(tests.LimitedTestCase):
         self.assertEqual(r, [1])
 
         p.spawn(foo, 4)
-        self.assertEqual(r, [1, 2, 3])
+        self.assertEqual(sorted(r), sorted([1, 2, 3]))
         sleep(0)
-        self.assertEqual(r, [1, 2, 3, 4])
+        self.assertEqual(sorted(r), sorted([1, 2, 3, 4]))
 
     def test_execute (self):
         p = GreenPool()

@@ -93,11 +93,6 @@ def using_pyevent (_f):
     return 'pyevent' in type(get_hub()).__module__
 
 
-def skip_with_pyevent (func):
-    """ Decorator that skips a test if we're using the pyevent hub."""
-    return skip_if(using_pyevent)(func)
-
-
 def skip_on_windows (func):
     """ Decorator that skips a test on Windows."""
     import sys
