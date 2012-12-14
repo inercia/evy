@@ -163,10 +163,6 @@ class UvBaseSocket(object):
         self.act_non_blocking = False
 
 
-    def _uv_closed_callback(self, handle):
-        self.uv_handle = None
-        self.uv_fileno = None
-
     def close(self):
         if self.uv_handle:
             ## we must remove all pollers on this socket
@@ -174,7 +170,10 @@ class UvBaseSocket(object):
                 get_hub().remove_descriptor(self.uv_fileno, skip_callbacks = True)
 
             if not self.uv_handle.closed:
-                self.uv_handle.close(self._uv_closed_callback)
+                def closed_callback(handle):
+                    self.uv_handle = None
+                    self.uv_fileno = None
+            self.uv_handle.close(closed_callback)
 
 
     @property
@@ -281,6 +280,18 @@ class UvTcpSocket(UvBaseSocket):
         self.uv_recv_string = ''                    # buffer for receiving data...
 
 
+    def close(self):
+        """
+        Close the TCP socket
+        :return: None
+        """
+        ## remove some TCP-specific stuff
+        self._did_listen = None
+        self._did_accept = None
+
+        super(UvTcpSocket, self).close()
+
+
     def dup (self, *args, **kw):
         new_handle = pyuv.TCP(self.uv_hub.uv_loop)
         return UvTcpSocket(family = socket.AF_INET, type = socket.SOCK_STREAM, uv_hub = self.uv_hub, uv_handle = new_handle)
@@ -301,35 +312,35 @@ class UvTcpSocket(UvBaseSocket):
     def listen(self, backlog):
         """
         Listen for a new connection
-
         :param backlog: the backlog
         """
         if not self.uv_handle:
             raise socket.error(errno.EBADFD, 'invalid file descriptor')
 
-        self.did_listen = Event()
-        self.did_accept = Event()
+        self._did_listen = Event()
+        self._did_accept = Event()
 
         def listen_callback(handle, error):
-            self.did_accept.wait()
+            self._did_accept.wait()
             try:
                 if error:
-                    self.did_listen.send_exception(last_socket_error(error, msg = 'accept error'))
+                    self._did_listen.send_exception(last_socket_error(error, msg = 'accept error'))
                 else:
                     ## create the handle for the newly accepted connection
                     new_handle = pyuv.TCP(self.uv_hub.uv_loop)
                     res = self.uv_handle.accept(new_handle)
                     new_sock = UvTcpSocket(socket.AF_INET, socket.SOCK_STREAM, 0, uv_hub = self.uv_hub, uv_handle = new_handle)
                     new_sock_addr, _ = new_sock.getpeername()
-                    self.did_listen.send((new_sock, new_sock_addr))
+                    self._did_listen.send((new_sock, new_sock_addr))
             except Exception, e:
-                self.did_listen.send_exception(e)
+                self._did_listen.send_exception(e)
 
         try:
             self.uv_handle.listen(listen_callback)
         except pyuv.error.TCPError, e:
+            self._did_listen = None
+            self._did_accept = None
             raise socket.error(last_socket_error(e.args[0], msg = 'listen error'))
-
 
     def accept (self):
         """
@@ -337,14 +348,14 @@ class UvTcpSocket(UvBaseSocket):
         :return:
         """
         try:
+            self._did_accept.send()
             with Timeout(self.gettimeout(), socket.timeout("timed out")):
-                self.did_accept.send()
-                return self.did_listen.wait()        ## this could raise an exception...
+                return self._did_listen.wait()        ## this could raise an exception...
         except pyuv.error.TCPError, e:
             raise socket.error(last_socket_error(e.args[0], msg = 'accept error'))
         finally:
-            self.did_listen = None
-            self.did_accept = None
+            self._did_listen = None
+            self._did_accept = None
 
     def connect(self, address):
         """
@@ -429,7 +440,7 @@ class UvTcpSocket(UvBaseSocket):
             raise ValueError('invalid read length')
 
         temp_str = self.recv(nbytes)
-        buf += temp_str
+        buf[:] = temp_str
         return len(temp_str)
 
     def recv (self, buflen, flags = 0):
@@ -453,6 +464,7 @@ class UvTcpSocket(UvBaseSocket):
 
                 def read_callback(handle, data, error):
                     try:
+                        self.uv_handle.stop_read()
                         if error:
                             if pyuv.errno.errorcode[error] == 'UV_EOF':
                                 did_read.send(UvBaseSocket.EOF)
@@ -470,7 +482,6 @@ class UvTcpSocket(UvBaseSocket):
 
                 self.uv_handle.start_read(read_callback)
                 did_read.wait()
-                self.uv_handle.stop_read()
                 tot_read = len(self.uv_recv_string)
 
             ## get the data we want from the read buffer, and keep the rest
