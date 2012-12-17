@@ -27,7 +27,10 @@
 
 import errno
 import time
-
+try:
+    from cStringIO import StringIO
+except ImportError:
+    from StringIO import StringIO
 
 import socket
 from socket import socket as _original_socket
@@ -433,14 +436,13 @@ class UvTcpSocket(UvBaseSocket):
         if not self.uv_handle:
             raise socket.error(errno.EBADFD, 'invalid file descriptor')
 
-        if not nbytes:
-            nbytes = len(buf)
-
-        if nbytes == 0:
-            raise ValueError('invalid read length')
+        if not nbytes:      nbytes = len(buf)
+        if nbytes == 0:     raise ValueError('invalid read length')
 
         temp_str = self.recv(nbytes)
-        buf[:] = temp_str
+
+        sbuf = StringIO(buf)
+        sbuf.write(temp_str)
         return len(temp_str)
 
     def recv (self, buflen, flags = 0):
@@ -484,9 +486,9 @@ class UvTcpSocket(UvBaseSocket):
                 did_read.wait()
                 tot_read = len(self.uv_recv_string)
 
-            ## get the data we want from the read buffer, and keep the rest
-            res, self.uv_recv_string = self.uv_recv_string[:buflen], self.uv_recv_string[buflen:]
-            return res
+        ## get the data we want from the read buffer, and keep the rest
+        res, self.uv_recv_string = self.uv_recv_string[:buflen], self.uv_recv_string[buflen:]
+        return res
 
     def send (self, data, flags = 0):
         """
@@ -513,8 +515,6 @@ class UvTcpSocket(UvBaseSocket):
                     did_write.send_exception(e)
 
             self.uv_handle.write(data, write_callback)
-
-            ## TODO: check if the connection has been broken, etc...
             return did_write.wait()
 
 
@@ -897,10 +897,6 @@ class GreenSocket(object):
         attr = getattr(self.delegate, name)
         setattr(self, name, attr)
         return attr
-
-
-
-
 
 
 
