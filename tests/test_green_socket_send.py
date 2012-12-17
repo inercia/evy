@@ -35,8 +35,7 @@ from evy import event
 from evy.io import sockets
 from evy.io import convenience
 from evy.patched import socket
-from evy.patched import time
-from evy.green.threads import spawn, sleep
+from evy.green.threads import spawn, sleep, waitall
 from evy.timeout import Timeout
 from evy.green.threads import TimeoutError
 
@@ -72,40 +71,94 @@ class TestGreenSocketSend(LimitedTestCase):
 
     TEST_TIMEOUT = 2
 
+    def test_send_something(self):
+        listener = convenience.listen(('', 0))
+        _, listener_port = listener.getsockname()
 
+        def server():
+            # accept the connection in another greenlet
+            sock, addr = listener.accept()
+            data = ''
+            while True:
+                last_data = sock.recv(1000)
+                if not last_data:
+                    break
+                data += last_data
+
+            return data
+
+        def client():
+            client = sockets.GreenSocket()
+            client.connect(('127.0.0.1', listener_port))
+            msg = 'hhheeeeelloooooo'
+            total_sent = 0
+            client.send(msg)
+            return msg
+
+        res = waitall(spawn(client), spawn(server))
+        self.assertEquals(res[0], res[1])
+
+    def test_send_many(self):
+        listener = convenience.listen(('', 0))
+        _, listener_port = listener.getsockname()
+
+        def server():
+            # accept the connection in another greenlet
+            sock, addr = listener.accept()
+            total_recv = 0
+            while True:
+                data = sock.recv(1000)
+                if not data:
+                    break
+                total_recv += len(data)
+            return total_recv
+
+        def client():
+            client = sockets.GreenSocket()
+            client.connect(('127.0.0.1', listener_port))
+            msg = s2b("A") * (10000)  # large enough number to overwhelm most buffers
+
+            # want to exceed the size of the OS buffer so it'll block in a single send
+            total_sent = 0
+            for x in range(10):
+                total_sent += client.send(msg)
+            return total_sent
+
+        res = waitall(spawn(client), spawn(server))
+        self.assertEqual(res[0], res[1])
+
+    @skipped
     def test_send_timeout (self):
-        listener = bufsized(convenience.listen(('', 0)))
+        self.reset_timeout(1000000)
+
+        listener = convenience.listen(('', 0))
+        _, port = listener.getsockname()
 
         evt = event.Event()
 
         def server ():
             # accept the connection in another greenlet
             sock, addr = listener.accept()
-            sock = bufsized(sock)
             evt.wait()
 
-        gt = spawn(server)
+        def client():
+            client = sockets.GreenSocket()
+            client.connect(('127.0.0.1', port))
+            try:
+                client.settimeout(0.00001)
+                msg = s2b("A") * (100000)  # large enough number to overwhelm most buffers
 
-        addr = listener.getsockname()
+                total_sent = 0
+                # want to exceed the size of the OS buffer so it'll block in a
+                # single send
+                for x in range(10):
+                    total_sent += client.send(msg)
+                self.fail("socket.timeout not raised")
+            except socket.timeout, e:
+                self.assert_(hasattr(e, 'args'))
+                self.assertEqual(e.args[0], 'timed out')
 
-        client = bufsized(sockets.GreenSocket())
-        client.connect(addr)
-        try:
-            client.settimeout(0.00001)
-            msg = s2b("A") * (100000)  # large enough number to overwhelm most buffers
-
-            total_sent = 0
-            # want to exceed the size of the OS buffer so it'll block in a
-            # single send
-            for x in range(10):
-                total_sent += client.send(msg)
-            self.fail("socket.timeout not raised")
-        except socket.timeout, e:
-            self.assert_(hasattr(e, 'args'))
-            self.assertEqual(e.args[0], 'timed out')
-
-        evt.send()
-        gt.wait()
+        waitall(spawn(client), spawn(server))
 
     def test_sendall_timeout (self):
         listener = sockets.GreenSocket()
@@ -149,7 +202,6 @@ class TestGreenSocketSend(LimitedTestCase):
         listener.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         listener.bind(('127.0.0.1', 0))
         listener.listen(50)
-        bufsized(listener)
 
         def send_large (sock):
             sock.sendall(large_data)
@@ -196,47 +248,52 @@ class TestGreenSocketSend(LimitedTestCase):
         def test_sendall_impl (many_bytes):
             bufsize = max(many_bytes // 15, 2)
 
+            received = event.Event()
+
+            listener = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            listener.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            listener.bind(("", 0))
+            listener.listen(50)
+            _, listener_port = listener.getsockname()
+
             def sender (listener):
                 (sock, addr) = listener.accept()
                 sock = bufsized(sock, size = bufsize)
                 sock.sendall(s2b('x') * many_bytes)
                 sock.sendall(s2b('y') * second_bytes)
 
-            listener = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            listener.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            listener.bind(("", 0))
-            listener.listen(50)
-            sender_coro = spawn(sender, listener)
-            client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                received.wait()
 
-            _, port = listener.getsockname()
-            client.connect(('127.0.0.1', port))
+            def receiver():
+                client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                client.connect(('127.0.0.1', listener_port))
+                total = 0
+                while total < many_bytes:
+                    data = client.recv(min(many_bytes - total, many_bytes // 10))
+                    if not data:
+                        break
+                    total += len(data)
 
-            bufsized(client, size = bufsize)
-            total = 0
-            while total < many_bytes:
-                data = client.recv(min(many_bytes - total, many_bytes // 10))
-                if not data:
-                    break
-                total += len(data)
+                total2 = 0
+                while total < second_bytes:
+                    data = client.recv(second_bytes)
+                    if not data:
+                        break
+                    total2 += len(data)
 
-            total2 = 0
-            while total < second_bytes:
-                data = client.recv(second_bytes)
-                if not data:
-                    break
-                total2 += len(data)
+                received.send()
 
-            sender_coro.wait()
-            client.close()
+            waitall(spawn(sender, listener),  spawn(receiver))
 
         for how_many in (1000, 10000, 100000, 1000000):
             test_sendall_impl(how_many)
 
 
     def test_timeout_and_final_write (self):
-        # This test verifies that a write on a socket that we've
-        # stopped listening for doesn't result in an incorrect switch
+        """
+        This test verifies that a write on a socket that we've stopped listening for doesn't
+        result in an incorrect switch
+        """
         server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         server.bind(('127.0.0.1', 0))
