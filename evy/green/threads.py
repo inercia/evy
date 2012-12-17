@@ -112,7 +112,7 @@ def spawn_n (func, *args, **kwargs):
     def _run_callback (func, args, kwargs):
         hub = hubs.get_hub()
         g = greenlet.greenlet(func, parent = hub.greenlet)
-        t = hub.run_callback(g.switch, *args, **kwargs)
+        hub.run_callback(g.switch, *args, **kwargs)
         return g
     return _run_callback(func, args, kwargs)
 
