@@ -92,8 +92,6 @@ class TestGreenSocketRecv(LimitedTestCase):
     def test_recv_something (self):
         DATLEN = 5
 
-        self.reset_timeout(1000000)
-
         listener = sockets.GreenSocket()
         listener.bind(('', 0))
         listener.listen(50)
@@ -215,7 +213,7 @@ class TestGreenSocketRecv(LimitedTestCase):
         gt_server = spawn(server)
 
         def client():
-            buf = ''
+            buf = buffer(array.array('B'))
             client = sockets.GreenSocket()
             accepting.wait()
             sleep(0.5)
