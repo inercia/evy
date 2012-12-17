@@ -84,6 +84,23 @@ class TestEvent(LimitedTestCase):
         spawn_n(send_to_event)
         self.assertEqual(evt.wait(), value)
 
+    def test_waiting_for_event_timeout (self):
+        evt = Event()
+
+        def send_to_event ():
+            sleep(10)
+            evt.send(0)
+
+        spawn_n(send_to_event)
+        try:
+            evt.wait(timeout = 0.5)
+        except Timeout:
+            pass
+        except:
+            self.fail('Timeout exception not raised')
+        else:
+            self.fail('Timeout exception not raised')
+
     def test_multiple_waiters (self):
         self._test_multiple_waiters(False)
 
