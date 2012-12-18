@@ -238,6 +238,7 @@ class TestGreenSocket(LimitedTestCase):
 
         server = convenience.listen(('127.0.0.1', 0))
         sender = spawn(spam_to_me, server.getsockname())
+
         client, address = server.accept()
         server.close()
 
