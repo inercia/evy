@@ -75,7 +75,7 @@ class Timer(object):
     def __repr__(self):
         secs = getattr(self, 'seconds', None)
         cb = getattr(self, 'callback', None)
-        retval =  "<Timer at %s (after=%s, callback=%s)>" % (hex(id(self)), secs, cb)
+        retval =  "<Timer object at %s (after=%s, callback=%s)>" % (hex(id(self)), secs, cb)
         if _g_debug and hasattr(self, 'traceback'):
             retval += '\n' + self.traceback.getvalue()
         return retval
@@ -91,17 +91,20 @@ class Timer(object):
         self.scheduled_time = get_hub().add_timer(self)
         return self
 
+    def __del__(self):
+        self.destroy()
+
     def destroy(self):
         """
         Stop and destroy the timer
 
         Invoke this method when this timer is no longer used
         """
-        def _dummy(*args): pass
-
-        self.impltimer.stop()
-        self.impltimer.close(_dummy)
-        del self.impltimer
+        if hasattr(self, 'impltimer'):
+            self.impltimer.stop()
+            def _dummy(*args): pass
+            self.impltimer.close(_dummy)
+            del self.impltimer
 
     def forget(self):
         try:
