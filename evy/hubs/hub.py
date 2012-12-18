@@ -353,18 +353,24 @@ class Hub(object):
                 if not more_events:
                     self.stopping = True
 
-            else:
-                ## remove all the timers and pollers
-                #for timer in self.timers:               timer.destroy()
-                #for poller in self.pollers.values():    poller.destroy()
-                #self.timers = set()
-                #self.pollers = {}
-
-                self.destroy()
-
         finally:
-            self.running = False
-            self.stopping = False
+            self._stopped()
+
+
+    def _stopped(self):
+        """
+        Invoked when the loop has been stopped
+        """
+        self.running = False
+        self.stopping = False
+
+        ## remove all the timers and pollers
+        for timer in self.timers:                   timer.destroy()
+        for poller in self.pollers.values():        poller.destroy()
+        for callback in self.callbacks:             callback.destroy()
+        self.timers = set()
+        self.pollers = {}
+        self.callbacks = set()
 
 
     def loop(self, once = False):
@@ -410,14 +416,7 @@ class Hub(object):
         global _default_loop_destroyed
 
         if self.uv_loop:
-
-            ## destroy all the timers and pollers
-            for timer in self.timers:                   timer.destroy()
-            for poller in self.pollers.values():        poller.destroy()
-            for callback in self.callbacks.values():    callback.destroy()
-            del self.timers
-            del self.pollers
-            del self.callbacks
+            self._stopped()
 
             ## destroy all the signals stuff
             if self.uv_signal_checker:
@@ -428,8 +427,6 @@ class Hub(object):
                 _default_loop_destroyed = True
 
             del self.uv_loop
-
-
 
     @property
     def num_active(self):
@@ -531,6 +528,7 @@ class Hub(object):
         :param timer:
         :return:
         """
+        assert isinstance(callback, Callback)
         eventcallback = pyuv.Idle(self.uv_loop)
         eventcallback.data = callback
         callback.implcallback = eventcallback
@@ -544,6 +542,7 @@ class Hub(object):
         :param callback: the callback that has been canceled
         :return: nothing
         """
+        assert isinstance(callback, Callback)
         try:
             callback.destroy()
         except (AttributeError, TypeError):
@@ -560,6 +559,7 @@ class Hub(object):
         :return: nothing
         """
         callback = handle.data
+        assert isinstance(callback, Callback)
         try:
             callback()
         except self.SYSTEM_EXCEPTIONS:
@@ -789,6 +789,6 @@ class Hub(object):
         return [x for x in self.pollers.values() if x.notify_writable]
 
     def __repr__(self):
-        retval =  "Hub(%d pollers, %d timers, %d active, %s counters)" % \
+        retval =  "<Hub(%d pollers, %d timers, %d active, %s counters)>" % \
                   (self.poller_count, self.timers_count, self.num_active, str(self.counters))
         return retval
