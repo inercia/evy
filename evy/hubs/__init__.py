@@ -62,9 +62,6 @@ def get_default_hub ():
 
 def use_hub (mod = None):
     """
-    Use the module *mod*, containing a class called Hub, as the
-    event hub. Usually not required; the default hub is usually fine.  
-    
     Calling this function has no effect, as we always use the uv hub.
     """
     if hasattr(_threadlocal, 'hub'):
