@@ -33,9 +33,9 @@ import warnings
 
 from evy import hubs
 from evy.event import Event
-from evy.green import threads as greenthread
+from evy.green.threads import sleep, spawn, spawn_n, kill, spawn_after, spawn_after_local
+from evy.green.threads import with_timeout, TimeoutError
 from evy.support import greenlets as greenlet
-from evy.green.threads import spawn
 from evy.io.convenience import listen, connect
 
 from tests import LimitedTestCase
@@ -55,7 +55,7 @@ def passthru (*args, **kw):
 
 
 def waiter (a):
-    greenthread.sleep(0.1)
+    sleep(0.1)
     return a
 
 
@@ -76,42 +76,42 @@ class TestSpawn(LimitedTestCase, Asserts):
         _g_results = []
 
     def test_simple (self):
-        gt = greenthread.spawn(passthru, 1, b = 2)
+        gt = spawn(passthru, 1, b = 2)
         self.assertEquals(gt.wait(), ((1,), {'b': 2}))
         self.assertEquals(_g_results, [((1,), {'b': 2})])
 
     def test_n (self):
-        gt = greenthread.spawn_n(passthru, 2, b = 3)
+        gt = spawn_n(passthru, 2, b = 3)
         self.assert_(not gt.dead)
-        greenthread.sleep(0)
+        sleep(0)
         self.assert_(gt.dead)
         self.assertEquals(_g_results, [((2,), {'b': 3})])
 
     def test_kill (self):
-        gt = greenthread.spawn(passthru, 6)
-        greenthread.kill(gt)
+        gt = spawn(passthru, 6)
+        kill(gt)
         self.assert_dead(gt)
-        greenthread.sleep(0.001)
+        sleep(0.001)
         self.assertEquals(_g_results, [])
-        greenthread.kill(gt)
+        kill(gt)
         self.assert_dead(gt)
 
     def test_kill_meth (self):
-        gt = greenthread.spawn(passthru, 6)
+        gt = spawn(passthru, 6)
         gt.kill()
         self.assert_dead(gt)
-        greenthread.sleep(0.001)
+        sleep(0.001)
         self.assertEquals(_g_results, [])
         gt.kill()
         self.assert_dead(gt)
 
     def test_kill_n (self):
-        gt = greenthread.spawn_n(passthru, 7)
-        greenthread.kill(gt)
+        gt = spawn_n(passthru, 7)
+        kill(gt)
         self.assert_dead(gt)
-        greenthread.sleep(0.001)
+        sleep(0.001)
         self.assertEquals(_g_results, [])
-        greenthread.kill(gt)
+        kill(gt)
         self.assert_dead(gt)
 
     def test_link (self):
@@ -122,7 +122,7 @@ class TestSpawn(LimitedTestCase, Asserts):
             results.append(a)
             results.append(kw)
 
-        gt = greenthread.spawn(passthru, 5)
+        gt = spawn(passthru, 5)
         gt.link(link_func, 4, b = 5)
         self.assertEquals(gt.wait(), ((5,), {}))
         self.assertEquals(results, [gt, (4,), {'b': 5}])
@@ -135,7 +135,7 @@ class TestSpawn(LimitedTestCase, Asserts):
             results.append(a)
             results.append(kw)
 
-        gt = greenthread.spawn(passthru, 5)
+        gt = spawn(passthru, 5)
         self.assertEquals(gt.wait(), ((5,), {}))
         gt.link(link_func, 4, b = 5)
         self.assertEquals(results, [gt, (4,), {'b': 5}])
@@ -143,23 +143,23 @@ class TestSpawn(LimitedTestCase, Asserts):
 
 class TestSpawnAfter(LimitedTestCase, Asserts):
     def test_basic (self):
-        gt = greenthread.spawn_after(0.1, passthru, 20)
+        gt = spawn_after(0.1, passthru, 20)
         self.assertEquals(gt.wait(), ((20,), {}))
 
     def test_cancel (self):
-        gt = greenthread.spawn_after(0.1, passthru, 21)
+        gt = spawn_after(0.1, passthru, 21)
         gt.cancel()
         self.assert_dead(gt)
 
     def test_cancel_already_started (self):
-        gt = greenthread.spawn_after(0, waiter, 22)
-        greenthread.sleep(0)
+        gt = spawn_after(0, waiter, 22)
+        sleep(0)
         gt.cancel()
         self.assertEquals(gt.wait(), 22)
 
     def test_kill_already_started (self):
-        gt = greenthread.spawn_after(0, waiter, 22)
-        greenthread.sleep(0)
+        gt = spawn_after(0, waiter, 22)
+        sleep(0)
         gt.kill()
         self.assert_dead(gt)
 
@@ -171,30 +171,30 @@ class TestSpawnAfterLocal(LimitedTestCase, Asserts):
 
     def test_timer_fired (self):
         def func ():
-            greenthread.spawn_after_local(0.1, self.lst.pop)
-            greenthread.sleep(0.2)
+            spawn_after_local(0.1, self.lst.pop)
+            sleep(0.2)
 
-        greenthread.spawn(func)
+        spawn(func)
         assert self.lst == [1], self.lst
-        greenthread.sleep(0.3)
+        sleep(0.3)
         assert self.lst == [], self.lst
 
     def test_timer_cancelled_upon_greenlet_exit (self):
         def func ():
-            greenthread.spawn_after_local(0.1, self.lst.pop)
+            spawn_after_local(0.1, self.lst.pop)
 
-        greenthread.spawn(func)
+        spawn(func)
         assert self.lst == [1], self.lst
-        greenthread.sleep(0.2)
+        sleep(0.2)
         assert self.lst == [1], self.lst
 
     def test_spawn_is_not_cancelled (self):
         def func ():
-            greenthread.spawn(self.lst.pop)
+            spawn(self.lst.pop)
             # exiting immediatelly, but self.lst.pop must be called
 
-        greenthread.spawn(func)
-        greenthread.sleep(0.1)
+        spawn(func)
+        sleep(0.1)
         assert self.lst == [], self.lst
 
 
@@ -209,14 +209,15 @@ class TestGreenHub(TestCase):
 
         def server (sock):
             client, addr = sock.accept()
-            greenthread.sleep(0.1)
+            sleep(0.1)
 
         server_evt = spawn(server, server_sock)
-        greenthread.sleep(0)
+        sleep(0)
+        
         try:
             desc = connect(('127.0.0.1', bound_port))
             hubs.trampoline(desc, read = True, write = False, timeout = 0.001)
-        except greenthread.TimeoutError:
+        except TimeoutError:
             pass # test passed
         else:
             assert False, "Didn't timeout"
@@ -239,18 +240,18 @@ class TestGreenHub(TestCase):
             desc = connect(('127.0.0.1', bound_port))
             try:
                 hubs.trampoline(desc, read = True, timeout = 0.1)
-            except greenthread.TimeoutError:
+            except TimeoutError:
                 assert False, "Timed out"
 
             server.close()
             desc.close()
             done.send()
 
-        greenthread.spawn_after_local(0, go)
+        spawn_after_local(0, go)
 
-        server_coro = greenthread.spawn(client_closer, server)
+        server_coro = spawn(client_closer, server)
         done.wait()
-        greenthread.kill(server_coro)
+        kill(server_coro)
 
         check_hub()
 
@@ -261,30 +262,30 @@ class TestGreenHub(TestCase):
         def test ():
             try:
                 state.append('start')
-                greenthread.sleep(DELAY)
+                sleep(DELAY)
             except:
                 state.append('except')
                 # catching GreenletExit
                 pass
                 # when switching to hub, hub makes itself the parent of this greenlet,
             # thus after the function's done, the control will go to the parent
-            greenthread.sleep(0)
+            sleep(0)
             state.append('finished')
 
-        g = greenthread.spawn(test)
-        greenthread.sleep(DELAY / 2)
+        g = spawn(test)
+        sleep(DELAY / 2)
         self.assertEquals(state, ['start'])
-        greenthread.kill(g)
+        kill(g)
         # will not get there, unless switching is explicitly scheduled by kill
         self.assertEquals(state, ['start', 'except'])
-        greenthread.sleep(DELAY)
+        sleep(DELAY)
         self.assertEquals(state, ['start', 'except', 'finished'])
 
     def test_nested_with_timeout (self):
         def func ():
-            return greenthread.with_timeout(0.2, greenthread.sleep, 2, timeout_value = 1)
+            return with_timeout(0.2, sleep, 2, timeout_value = 1)
 
-        self.assertRaises(greenthread.TimeoutError, greenthread.with_timeout, 0.1, func)
+        self.assertRaises(TimeoutError, with_timeout, 0.1, func)
 
 
 class Foo(object):
