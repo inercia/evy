@@ -76,15 +76,21 @@ class Callback(object):
         self.called = False
         return get_hub().add_callback(self)
 
+    def __del__(self):
+        self.destroy()
+
     def destroy(self):
         """
         Stop and destroy the callback
         """
-        def _dummy(*args): pass
+        if hasattr(self, 'implcallback'):
+            self.implcallback.stop()
 
-        self.implcallback.stop()
-        self.implcallback.close(_dummy)
-        del self.implcallback
+            def _dummy(*args): pass
+            self.implcallback.close(_dummy)
+
+            del self.implcallback
+            del self.callback
 
     def __call__(self, *args):
         if not self.called:
