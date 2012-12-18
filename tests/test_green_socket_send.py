@@ -127,7 +127,6 @@ class TestGreenSocketSend(LimitedTestCase):
         res = waitall(spawn(client), spawn(server))
         self.assertEqual(res[0], res[1])
 
-    @skipped
     def test_send_timeout (self):
         self.reset_timeout(1000000)
 
@@ -157,6 +156,8 @@ class TestGreenSocketSend(LimitedTestCase):
             except socket.timeout, e:
                 self.assert_(hasattr(e, 'args'))
                 self.assertEqual(e.args[0], 'timed out')
+            finally:
+                evt.send()
 
         waitall(spawn(client), spawn(server))
 
@@ -336,7 +337,6 @@ class TestGreenSocketSend(LimitedTestCase):
         client.close()
 
 
-    @skipped
     def test_invalid_connection (self):
         # find an unused port by creating a socket then closing it
         port = convenience.listen(('127.0.0.1', 0)).getsockname()[1]
