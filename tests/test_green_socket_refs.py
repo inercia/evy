@@ -28,10 +28,13 @@
 #
 
 
+from weakref import proxy
+
 from tests import LimitedTestCase, main, skipped, s2b
 
 from evy.io import convenience
 from evy.patched import socket
+
 from evy.green.threads import spawn
 
 import sys
@@ -79,6 +82,19 @@ class TestGreenSocketRefs(LimitedTestCase):
         else:
             # 3.x poll write to closed file-like pbject raises ValueError
             self.assertRaises(ValueError, fd.write, 'a')
+
+    def test_weakref(self):
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        p = proxy(s)
+        self.assertEqual(p.fileno(), s.fileno())
+        s.close()
+        s = None
+        try:
+            p.fileno()
+        except ReferenceError:
+            pass
+        else:
+            self.fail('Socket proxy still exists')
 
     @skipped
     def test_close_with_makefile (self):

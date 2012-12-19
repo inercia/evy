@@ -28,8 +28,10 @@
 #
 
 
-import socket as _orig_sock
-from tests import LimitedTestCase, main, skipped, s2b, skip_on_windows
+import signal
+import math
+
+from tests import LimitedTestCase, main, s2b
 
 from evy import event
 from evy.io import sockets
@@ -38,8 +40,6 @@ from evy.patched import socket
 from evy.green.threads import spawn, sleep, waitall
 from evy.timeout import Timeout
 from evy.green.threads import TimeoutError
-
-import os
 
 
 def bufsized (sock, size = 1):
@@ -155,7 +155,7 @@ class TestGreenSocketSend(LimitedTestCase):
                 self.fail("socket.timeout not raised")
             except socket.timeout, e:
                 self.assert_(hasattr(e, 'args'))
-                self.assertEqual(e.args[0], 'timed out')
+                self.assertEqual(e.args[1], 'timed out')
             finally:
                 evt.send()
 
@@ -190,7 +190,7 @@ class TestGreenSocketSend(LimitedTestCase):
             self.fail("socket.timeout not raised")
         except socket.timeout, e:
             self.assert_(hasattr(e, 'args'))
-            self.assertEqual(e.args[0], 'timed out')
+            self.assertEqual(e.args[1], 'timed out')
 
         evt.send()
         gt.wait()
@@ -341,8 +341,6 @@ class TestGreenSocketSend(LimitedTestCase):
         # find an unused port by creating a socket then closing it
         port = convenience.listen(('127.0.0.1', 0)).getsockname()[1]
         self.assertRaises(socket.error, convenience.connect, ('127.0.0.1', port))
-
-
 
 
 if __name__ == '__main__':

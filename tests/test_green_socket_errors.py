@@ -58,6 +58,22 @@ class TestGreenSocketErrors(LimitedTestCase):
             # 3.x poll write to closed file-like pbject raises ValueError
             self.assertRaises(ValueError, fd.write, 'a')
 
+    def test_socket_error(self):
+        # Testing socket module exceptions
+        def raise_error(*args, **kwargs):
+            raise socket.error
+        def raise_herror(*args, **kwargs):
+            raise socket.herror
+        def raise_gaierror(*args, **kwargs):
+            raise socket.gaierror
+        self.assertRaises(socket.error, raise_error,
+                          "Error raising socket exception.")
+        self.assertRaises(socket.error, raise_herror,
+                          "Error raising socket exception.")
+        self.assertRaises(socket.error, raise_gaierror,
+                          "Error raising socket exception.")
+
+
     def test_connect_timeout (self):
         gs = sockets.GreenSocket(socket.AF_INET, socket.SOCK_STREAM)
         gs.settimeout(0.5)
@@ -79,6 +95,43 @@ class TestGreenSocketErrors(LimitedTestCase):
         gs = sockets.GreenSocket(socket.AF_INET, socket.SOCK_STREAM)
         gs.connect(('0.0.0.0', 80))
 
+    def test_sendto_errors(self):
+        # Testing that sendto doens't masks failures. See #10169.
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.addCleanup(s.close)
+        s.bind(('', 0))
+        sockname = s.getsockname()
+        # 2 args
+        with self.assertRaises(UnicodeEncodeError):
+            s.sendto(u'\u2620', sockname)
+        with self.assertRaises(TypeError) as cm:
+            s.sendto(5j, sockname)
+        self.assertIn('not complex', str(cm.exception))
+        with self.assertRaises(TypeError) as cm:
+            s.sendto('foo', None)
+        self.assertIn('not NoneType', str(cm.exception))
+        # 3 args
+        with self.assertRaises(UnicodeEncodeError):
+            s.sendto(u'\u2620', 0, sockname)
+        with self.assertRaises(TypeError) as cm:
+            s.sendto(5j, 0, sockname)
+        self.assertIn('not complex', str(cm.exception))
+        with self.assertRaises(TypeError) as cm:
+            s.sendto('foo', 0, None)
+        self.assertIn('not NoneType', str(cm.exception))
+        with self.assertRaises(TypeError) as cm:
+            s.sendto('foo', 'bar', sockname)
+        self.assertIn('an integer is required', str(cm.exception))
+        with self.assertRaises(TypeError) as cm:
+            s.sendto('foo', None, None)
+        self.assertIn('an integer is required', str(cm.exception))
+        # wrong number of args
+        with self.assertRaises(TypeError) as cm:
+            s.sendto('foo')
+        self.assertIn('(1 given)', str(cm.exception))
+        with self.assertRaises(TypeError) as cm:
+            s.sendto('foo', 0, sockname, 4)
+        self.assertIn('(4 given)', str(cm.exception))
 
     def test_accept_timeout (self):
         gs = sockets.GreenSocket(socket.AF_INET, socket.SOCK_STREAM)
@@ -212,8 +265,12 @@ class TestGreenSocketErrors(LimitedTestCase):
         port = convenience.listen(('127.0.0.1', 0)).getsockname()[1]
         self.assertRaises(socket.error, convenience.connect, ('127.0.0.1', port))
 
-
-
+    def test_send_after_close(self):
+        # testing send() after close() with timeout
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(1)
+        sock.close()
+        self.assertRaises(socket.error, sock.send, "spam")
 
 
 if __name__ == '__main__':
