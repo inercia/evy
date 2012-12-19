@@ -125,7 +125,7 @@ class Event(object):
             return self.wait()
         return notready
 
-    def wait (self, timeout = None):
+    def wait (self, timeout = None, exception = None):
         """
         Wait until another coroutine calls :meth:`send`.
         Returns the value the other coroutine passed to
@@ -150,7 +150,7 @@ class Event(object):
         """
         current = greenlet.getcurrent()
         if self._result is NOT_USED:
-            with Timeout(timeout):
+            with Timeout(timeout, exception):
                 self._waiters.add(current)
                 try:
                     return hubs.get_hub().switch()
