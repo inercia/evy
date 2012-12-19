@@ -176,11 +176,9 @@ class GreenSocket(object):
             self.uv_fd = _sock.uv_fd
             if hasattr(_sock, 'uv_hub') and _sock.uv_hub:
                 _hub = _sock.uv_hub
-        elif isinstance(family, _original_socket):
+        else:
             _sock = family
             self.uv_fd = _sock
-        else:
-            raise RuntimeError('unsupported socket type')
 
         if not self.uv_hub:
             if _hub:    self.uv_hub = _hub
@@ -318,6 +316,8 @@ class GreenSocket(object):
         else:
             try:
                 self.uv_handle.bind(resolve_address(address))
+            except ValueError, e:
+                raise OverflowError(e)
             except pyuv.error.TCPError, e:
                 raise socket.error(*last_socket_error(e.args[0], msg = 'bind error'))
 
@@ -358,23 +358,22 @@ class GreenSocket(object):
         if self.act_non_blocking:
             return self.uv_fd.connect(address)
         elif self.uv_handle:
-            with Timeout(self.gettimeout(), socket.timeout((errno.ETIME, "timed out"))):
-                try:
-                    did_connect = Event()
+            try:
+                did_connect = Event()
 
-                    def connect_callback(tcp_handle, error):
-                        try:
-                            if error:
-                                did_connect.send_exception(last_socket_error(error, msg = 'connect error'))
-                            else:
-                                did_connect.send(0)
-                        except Exception, e:
-                            did_connect.send_exception(e)
+                def connect_callback(tcp_handle, error):
+                    try:
+                        if error:
+                            did_connect.send_exception(last_socket_error(error, msg = 'connect error'))
+                        else:
+                            did_connect.send(0)
+                    except Exception, e:
+                        did_connect.send_exception(e)
 
-                    self.uv_handle.connect(resolve_address(address), connect_callback)
-                    did_connect.wait()
-                except pyuv.error.TCPError, e:
-                    raise socket.error(*last_socket_error(e.args[0], msg = 'connect error'))
+                self.uv_handle.connect(resolve_address(address), connect_callback)
+                did_connect.wait(self.gettimeout(), socket.timeout(errno.ETIME, "timed out"))
+            except pyuv.error.TCPError, e:
+                raise socket.error(*last_socket_error(e.args[0], msg = 'connect error'))
         else:
             fd = self.uv_fd
             if self.gettimeout() is None:
@@ -490,30 +489,29 @@ class GreenSocket(object):
         elif self.uv_handle:
             tot_read = len(self.uv_recv_string)
             if tot_read < buflen:
-                with Timeout(self.gettimeout(), socket.timeout("timed out")):
 
-                    did_read = Event()
+                did_read = Event()
 
-                    def read_callback(handle, data, error):
-                        try:
-                            self.uv_handle.stop_read()
-                            if error:
-                                if pyuv.errno.errorcode[error] == 'UV_EOF':
-                                    did_read.send(GreenSocket.EOF)
-                                else:
-                                    did_read.send_exception(last_socket_error(error, msg = 'read error'))
-                            elif data is None or len(data) == 0:
+                def read_callback(handle, data, error):
+                    try:
+                        self.uv_handle.stop_read()
+                        if error:
+                            if pyuv.errno.errorcode[error] == 'UV_EOF':
                                 did_read.send(GreenSocket.EOF)
                             else:
-                                ## append the data to the buffer and, maybe, stop reading...
-                                self.uv_recv_string += data
-                                did_read.send()
+                                did_read.send_exception(last_socket_error(error, msg = 'read error'))
+                        elif data is None or len(data) == 0:
+                            did_read.send(GreenSocket.EOF)
+                        else:
+                            ## append the data to the buffer and, maybe, stop reading...
+                            self.uv_recv_string += data
+                            did_read.send()
 
-                        except Exception, e:
-                            did_read.send_exception(e)
+                    except Exception, e:
+                        did_read.send_exception(e)
 
-                    self.uv_handle.start_read(read_callback)
-                    did_read.wait()
+                self.uv_handle.start_read(read_callback)
+                did_read.wait(self.gettimeout(), socket.timeout("timed out"))
 
             ## get the data we want from the read buffer, and keep the rest
             res, self.uv_recv_string = self.uv_recv_string[:buflen], self.uv_recv_string[buflen:]
@@ -546,20 +544,19 @@ class GreenSocket(object):
         if self.act_non_blocking:
             return self.uv_fd.send(data, flags)
         elif self.uv_handle:
-            with Timeout(self.gettimeout(), socket.timeout("timed out")):
-                did_write = Event()
-                write_len = len(data)
-                def write_callback(handle, error):
-                    try:
-                        if error:
-                            did_write.send_exception(last_socket_error(error, msg = 'write error'))
-                        else:
-                            did_write.send(write_len)
-                    except Exception, e:
-                        did_write.send_exception(e)
+            did_write = Event()
+            write_len = len(data)
+            def write_callback(handle, error):
+                try:
+                    if error:
+                        did_write.send_exception(last_socket_error(error, msg = 'write error'))
+                    else:
+                        did_write.send(write_len)
+                except Exception, e:
+                    did_write.send_exception(e)
 
-                self.uv_handle.write(data, write_callback)
-                return did_write.wait()
+            self.uv_handle.write(data, write_callback)
+            return did_write.wait(self.gettimeout(), socket.timeout(errno.ETIME, "timed out"))
         else:
             fd = self.uv_fd
             # blocking socket behavior - sends all, blocks if the buffer is full
