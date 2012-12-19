@@ -25,6 +25,7 @@
 #
 
 from functools import partial
+import weakref
 
 import pyuv
 
@@ -77,7 +78,7 @@ class Poller(object):
         self.started = False
         self.read_callback = kw.pop('_read_callback', None)
         self.write_callback = kw.pop('_write_callback', None)
-        self.hub = kw.pop('_hub', get_hub())
+        self.hub = weakref.proxy(kw.pop('_hub', get_hub()))
         self.impl = pyuv.Poll(self.hub.uv_loop, fileno)
 
         if _g_debug:
