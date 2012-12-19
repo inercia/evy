@@ -202,7 +202,7 @@ class TestGreenSocketErrors(LimitedTestCase):
         s = convenience.connect(('127.0.0.1', port))
         a = spawn(reader, s)
         sleep(0)
-        self.assertRaises(RuntimeError, s.recv, 1)
+        self.assertRaises(RuntimeError, s.recv, 1)      ## try to read from the same socket...
         s.sendall('b')
         a.wait()
 
