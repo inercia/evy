@@ -93,122 +93,12 @@ class TestGreenSocket(LimitedTestCase):
         socket.close()
         check_hub()
 
-    def test_connect_tcp (self):
-        def accept_once (listenfd):
-            try:
-                conn, addr = listenfd.accept()
-                fd = conn.makefile(mode = 'w')
-                conn.close()
-                fd.write('hello\n')
-                fd.close()
-            finally:
-                listenfd.close()
-
-        server = convenience.listen(('0.0.0.0', 0))
-        spawn(accept_once, server)
-
-        client = convenience.connect(('127.0.0.1', server.getsockname()[1]))
-        fd = client.makefile()
-        client.close()
-        assert fd.readline() == 'hello\n'
-
-        assert fd.read() == ''
-        fd.close()
-
-        check_hub()
 
     def test_getsockname (self):
         listener = sockets.GreenSocket()
         listener.bind(('', 0))
         addr = listener.getsockname()
         self.assertNotEquals(addr[1], 0)
-
-    @skipped
-    def test_close_with_makefile (self):
-        def accept_close_early (listener):
-            # verify that the makefile and the socket are truly independent
-            # by closing the socket prior to using the made file
-            try:
-                conn, addr = listener.accept()
-                fd = conn.makefile('w')
-                conn.close()
-                fd.write('hello\n')
-                fd.close()
-                self.assertWriteToClosedFileRaises(fd)
-                self.assertRaises(socket.error, conn.send, s2b('b'))
-            finally:
-                listener.close()
-
-        def accept_close_late (listener):
-            # verify that the makefile and the socket are truly independent
-            # by closing the made file and then sending a character
-            try:
-                conn, addr = listener.accept()
-                fd = conn.makefile('w')
-                fd.write('hello')
-                fd.close()
-                conn.send(s2b('\n'))
-                conn.close()
-                self.assertWriteToClosedFileRaises(fd)
-                self.assertRaises(socket.error, conn.send, s2b('b'))
-            finally:
-                listener.close()
-
-        def did_it_work (server):
-            client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            _, port = server.getsockname()
-            print 'connecting to port', port
-            client.connect(('127.0.0.1', port))
-            fd = client.makefile()
-            client.close()
-            assert fd.readline() == 'hello\n'
-            assert fd.read() == ''
-            fd.close()
-
-        server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        server.bind(('0.0.0.0', 61222))
-        self.assertEqual(server.getsockname()[1], 61222)
-        server.listen(50)
-        killer = spawn(accept_close_early, server)
-        did_it_work(server)
-        killer.wait()
-
-        server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        server.bind(('0.0.0.0', 0))
-        server.listen(50)
-        killer = spawn(accept_close_late, server)
-        did_it_work(server)
-        killer.wait()
-
-    def test_del_closes_socket (self):
-        def accept_once (listener):
-            # delete/overwrite the original conn
-            # object, only keeping the file object around
-            # closing the file object should close everything
-            try:
-                conn, addr = listener.accept()
-                conn = conn.makefile('w')
-                conn.write('hello\n')
-                conn.close()
-                self.assertWriteToClosedFileRaises(conn)
-            finally:
-                listener.close()
-
-        server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        server.bind(('127.0.0.1', 0))
-        server.listen(50)
-        killer = spawn(accept_once, server)
-        client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        client.connect(('127.0.0.1', server.getsockname()[1]))
-        fd = client.makefile()
-        client.close()
-        assert fd.read() == 'hello\n'
-        assert fd.read() == ''
-
-        killer.wait()
 
 
     def test_wrap_socket (self):
