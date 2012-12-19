@@ -165,6 +165,7 @@ class TestSpawnAfter(LimitedTestCase, Asserts):
 
 
 class TestSpawnAfterLocal(LimitedTestCase, Asserts):
+
     def setUp (self):
         super(TestSpawnAfterLocal, self).setUp()
         self.lst = [1]
@@ -200,8 +201,6 @@ class TestSpawnAfterLocal(LimitedTestCase, Asserts):
 
 
 class TestGreenHub(TestCase):
-
-
 
     def test_001_trampoline_timeout (self):
         server_sock = listen(('127.0.0.1', 0))
