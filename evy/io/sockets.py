@@ -35,6 +35,7 @@ except ImportError:
 import socket
 from socket import socket as _original_socket
 
+import weakref
 import pyuv
 
 from evy.support import get_errno
@@ -157,7 +158,7 @@ class GreenSocket(object):
 
     EOF = (-1)
 
-    def __init__ (self, family = socket.AF_INET, type = socket.SOCK_STREAM, proto = 0, _sock = None):
+    def __init__ (self, family = socket.AF_INET, type = socket.SOCK_STREAM, proto = 0, _sock = None, _hub = None):
         """
         Initialize the UV socket
 
@@ -173,8 +174,8 @@ class GreenSocket(object):
         elif isinstance(family, GreenSocket):
             _sock = family
             self.uv_fd = _sock.uv_fd
-            self.uv_handle = _sock.uv_handle
-            self.uv_hub = _sock.uv_hub
+            if hasattr(_sock, 'uv_hub') and _sock.uv_hub:
+                _hub = _sock.uv_hub
         elif isinstance(family, _original_socket):
             _sock = family
             self.uv_fd = _sock
@@ -182,7 +183,8 @@ class GreenSocket(object):
             raise RuntimeError('unsupported socket type')
 
         if not self.uv_hub:
-            self.uv_hub = get_hub()
+            if _hub:    self.uv_hub = _hub
+            else:       self.uv_hub = weakref.proxy(get_hub())
 
         ## check if the socket type is supported by pyUV and we can create a pyUV socket...
         if not self.uv_handle:
@@ -317,7 +319,7 @@ class GreenSocket(object):
             try:
                 self.uv_handle.bind(resolve_address(address))
             except pyuv.error.TCPError, e:
-                raise socket.error(last_socket_error(e.args[0], msg = 'bind error'))
+                raise socket.error(*last_socket_error(e.args[0], msg = 'bind error'))
 
 
     def listen(self, backlog):
@@ -325,62 +327,27 @@ class GreenSocket(object):
         Listen for a new connection
         :param backlog: the backlog
         """
-#        if not self.uv_handle:
+        ## note: we cannot use the pyUV listne()/accept() as we would lose the reference to the
+        ## underlying 'python socket', and then we could not dup()/fileno()/etc...
         return self.uv_fd.listen(backlog)
-#        else:
-#            self._did_listen = Event()
-#            self._did_accept = Event()
-#
-#            def listen_callback(handle, error):
-#                self._did_accept.wait()
-#                try:
-#                    if error:
-#                        self._did_listen.send_exception(last_socket_error(error, msg = 'accept error'))
-#                    else:
-#                        ## create the handle for the newly accepted connection
-#                        new_handle = pyuv.TCP(self.uv_hub.uv_loop)
-#                        self.uv_handle.accept(new_handle)
-#                        new_sock = UvTcpSocket(socket.AF_INET, socket.SOCK_STREAM, 0, uv_hub = self.uv_hub, uv_handle = new_handle)
-#                        new_sock_addr, _ = new_sock.getpeername()
-#                        self._did_listen.send((new_sock, new_sock_addr))
-#                except Exception, e:
-#                    self._did_listen.send_exception(e)
-#
-#            try:
-#                self.uv_handle.listen(listen_callback)
-#            except pyuv.error.TCPError, e:
-#                self._did_listen = None
-#                self._did_accept = None
-#                raise socket.error(last_socket_error(e.args[0], msg = 'listen error'))
-
 
     def accept (self):
         """
         Accept a new connection when we are listening
-        :return:
+        :return: a socket and remote address pair
         """
         if self.act_non_blocking:
             return self.uv_fd.accept()
-#        elif self.uv_handle:
-#            try:
-#                self._did_accept.send()
-#                with Timeout(self.gettimeout(), socket.timeout("timed out")):
-#                    return self._did_listen.wait()        ## this could raise an exception...
-#            except pyuv.error.TCPError, e:
-#                raise socket.error(last_socket_error(e.args[0], msg = 'accept error'))
-#            finally:
-#                self._did_listen = None
-#                self._did_accept = None
-#        else:
-        fd = self.uv_fd
-        while True:
-            res = socket_accept(fd)
-            if not res:
-                wait_read(fd, self.gettimeout(), socket.timeout("timed out"))
-            else:
-                client, addr = res
-                set_nonblocking(client)
-                return GreenSocket(client), addr
+        else:
+            fd = self.uv_fd
+            while True:
+                res = socket_accept(fd)
+                if not res:
+                    wait_read(fd, self.gettimeout(), socket.timeout("timed out"))
+                else:
+                    client, addr = res
+                    set_nonblocking(client)
+                    return GreenSocket(client, _hub = self.uv_hub), addr
 
 
     def connect(self, address):
@@ -407,7 +374,7 @@ class GreenSocket(object):
                     self.uv_handle.connect(resolve_address(address), connect_callback)
                     did_connect.wait()
                 except pyuv.error.TCPError, e:
-                    raise socket.error(last_socket_error(e.args[0], msg = 'connect error'))
+                    raise socket.error(*last_socket_error(e.args[0], msg = 'connect error'))
         else:
             fd = self.uv_fd
             if self.gettimeout() is None:
@@ -439,7 +406,7 @@ class GreenSocket(object):
             except (socket.timeout, Timeout):
                 return errno.ETIME
             except pyuv.error.TCPError, e:
-                raise socket.error(last_socket_error(e.args[0], msg = 'connect error'))
+                raise socket.error(*last_socket_error(e.args[0], msg = 'connect error'))
             except Exception, e:
                 code = e.args[0]
                 return code
@@ -642,13 +609,19 @@ class GreenSocket(object):
 
     def getsockname(self):
         if self.uv_handle:
-            return self.uv_handle.getsockname()
+            try:
+                return self.uv_handle.getsockname()
+            except pyuv.error.TCPError, e:
+                raise socket.error(*last_socket_error(e.args[0]))
         else:
             return self.uv_fd.getsockname()
 
     def getpeername(self):
         if self.uv_handle:
-            return self.uv_handle.getpeername()
+            try:
+                return self.uv_handle.getpeername()
+            except pyuv.error.TCPError, e:
+                raise socket.error(*last_socket_error(e.args[0]))
         else:
             return self.uv_fd.getpeername()
 
