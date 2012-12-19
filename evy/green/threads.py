@@ -60,7 +60,7 @@ def cede():
     hub = hubs.get_hub()
     hub.cede()
 
-def sleep (seconds = 0):
+def sleep (seconds = 0.0):
     """
     Yield control to another eligible coroutine until at least *seconds* have
     elapsed.
@@ -69,7 +69,7 @@ def sleep (seconds = 0):
     are desired. Calling :func:`~threads.sleep` with *seconds* of 0 is equivalent
     to invoking :func:`~threads.cede`
     """
-    if seconds == 0:
+    if seconds == 0.0:
         cede()
     else:
         hub = hubs.get_hub()
