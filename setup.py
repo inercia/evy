@@ -42,6 +42,12 @@ setup(
     test_suite          = 'nose.collector',
     tests_require       = 'httplib2',
 
+   entry_points = {
+        'console_scripts': [
+            'evy-profiler = evy.tools.profiler:main'
+        ]
+    },
+    
     classifiers         = [
         "License :: OSI Approved :: MIT License",
         "Programming Language :: Python",
