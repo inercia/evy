@@ -1,14 +1,20 @@
 #!/usr/bin/env python
 
 
+import os
+
 try:
     from setuptools import setup, find_packages
 except ImportError:
     from distutils.core import setup, find_packages
 
 
-from os import path
+__HERE__ = os.path.dirname(__file__)
 
+__VERSION_FILE__ = os.path.join(__HERE__, 'VERSION')
+__VERSION__ = open(__VERSION_FILE__).read().strip()
+
+__README_FILE__ = os.path.join(__HERE__, 'README.md')
 
 ## note: do not import anything from evy or it will try to build the CFFI stuff...
 
@@ -30,12 +36,7 @@ setup(
     ],
     zip_safe            = False,
 
-    long_description    = open(
-        path.join(
-            path.dirname(__file__),
-            'README'
-        )
-    ).read(),
+    long_description    = open(__README_FILE__).read(),
 
     ext_package         = 'evy',              # must match the package defined in the CFFI verify()
 
