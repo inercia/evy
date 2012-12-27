@@ -13,6 +13,8 @@
 
 import sys, os
 
+__HERE__ = os.path.dirname(__file__)
+
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
@@ -49,7 +51,7 @@ copyright = u'2012, Alvaro Saurin'
 # |version| and |release|, also used in various other places throughout the
 # built documents.
 #
-VERSION_FILE=os.path.join('..', '..', 'VERSION')
+VERSION_FILE = os.path.join(__HERE__, '..', 'VERSION')
 __VERSION__ = open(VERSION_FILE).read().strip()
 
 # The short X.Y version.
