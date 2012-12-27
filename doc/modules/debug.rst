@@ -1,5 +1,5 @@
 :mod:`debug` -- Debugging tools for Evy
 ==================================================
 
-.. automodule:: evy.debug
+.. automodule:: evy.tools.debug
 	:members:

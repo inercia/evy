@@ -22,6 +22,6 @@ When this is running, the backdoor is accessible via telnet to the specified por
   
 The backdoor cooperatively yields to the rest of the application between commands, so on a running server continuously serving requests, you can observe the internal state changing between interpreter commands.
 
-.. automodule:: evy.backdoor
+.. automodule:: evy.tools.backdoor
 	:members:
 
