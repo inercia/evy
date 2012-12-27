@@ -33,3 +33,49 @@ __import__('pkg_resources').declare_namespace(__name__)
 
 version_info = (0, 0, 1, "dev")
 __version__ = ".".join(map(str, version_info))
+
+
+try:
+    from evy import queue
+    from evy import timeout
+    from evy import patcher
+    from evy.green import threads, pools
+    from evy.io import convenience
+    
+    import greenlet
+
+    sleep = threads.sleep
+    spawn = threads.spawn
+    spawn_n = threads.spawn_n
+    spawn_after = threads.spawn_after
+    kill = threads.kill
+
+    Timeout = timeout.Timeout
+    with_timeout = timeout.with_timeout
+
+    GreenPool = pools.GreenPool
+    GreenPile = pools.GreenPile
+
+    Queue = queue.Queue
+
+    import_patched = patcher.import_patched
+    monkey_patch = patcher.monkey_patch
+
+    connect = convenience.connect
+    listen = convenience.listen
+    serve = convenience.serve
+    StopServe = convenience.StopServe
+    wrap_ssl = convenience.wrap_ssl
+
+    getcurrent = greenlet.greenlet.getcurrent
+    
+except ImportError, e:
+    # This is to make Debian packaging easier, it ignores import
+    # errors of greenlet so that the packager can still at least
+    # access the version.  Also this makes easy_install a little quieter
+    if 'greenlet' not in str(e):
+        # any other exception should be printed
+        import traceback
+        traceback.print_exc()
+
+
