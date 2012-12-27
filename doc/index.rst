@@ -8,7 +8,7 @@ Code talks!  This is a simple web crawler that fetches a bunch of urls concurren
          "http://us.i1.yimg.com/us.yimg.com/i/ww/beta/y3.gif"]
     
     import evy
-    from evy.green import urllib2  
+    from evy.patched import urllib2  
     
     def fetch(url):
       return urllib2.urlopen(url).read()
