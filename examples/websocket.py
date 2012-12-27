@@ -1,6 +1,7 @@
+
 import evy
-from evy import wsgi
-from evy import websocket
+
+from evy.web import wsgi, websocket
 
 # demo app
 import os

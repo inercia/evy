@@ -6,7 +6,7 @@ http://pypi.python.org/pypi/Spawning/
 """
 
 import evy
-from evy import wsgi
+from evy.web import wsgi
 
 def hello_world (env, start_response):
     if env['PATH_INFO'] != '/':
