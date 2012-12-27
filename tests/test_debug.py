@@ -31,7 +31,7 @@
 import sys
 
 import evy
-from evy import debug
+from evy.tools import debug
 from evy.io import convenience
 from evy.green.threads import sleep
 

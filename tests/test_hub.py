@@ -186,7 +186,7 @@ class TestHubBlockingDetector(LimitedTestCase):
             import time
             time.sleep(2)
 
-        from evy import debug
+        from evy.tools import debug
 
         debug.hub_blocking_detection(True)
         gt = spawn(look_im_blocking)
@@ -200,7 +200,7 @@ class TestHubBlockingDetector(LimitedTestCase):
             import time
             time.sleep(0.5)
 
-        from evy import debug
+        from evy.tools import debug
 
         debug.hub_blocking_detection(True, resolution = 0.1)
         gt = spawn(look_im_blocking)

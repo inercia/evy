@@ -445,8 +445,9 @@ class TestQueue(LimitedTestCase):
         self.assertRaises(queue.Empty, c.get_nowait)
 
     def test_task_done (self):
-        from evy import queue, debug
-
+        from evy import queue
+        from evy.tools import debug
+        
         channel = queue.Queue(0)
         X = object()
         gt = spawn(channel.put, X)
