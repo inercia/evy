@@ -100,7 +100,7 @@ _UV_ERR_TO_ERRNO_MAP = {
     #'UV_ENONET' : errno.ENONET,
     'UV_ENOTCONN' : errno.ENOTCONN,
     'UV_ENOTSOCK' : errno.ENOTSOCK,
-    'UV_ENOTSUP' : errno.ENOTSUP,
+    #'UV_ENOTSUP' : errno.ENOTSUP,
     'UV_ENOENT' : errno.ENOENT,
     'UV_ENOSYS' : errno.ENOSYS,
     'UV_EPIPE' : errno.EPIPE,
