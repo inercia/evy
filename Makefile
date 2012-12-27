@@ -14,7 +14,7 @@ LIBUV_DIR=libuv
 all: build
 
 .PHONY: build
-build: setup.py setup_libuv.py $(LIBUV_DIR)/Makefile
+build: setup.py
 	@echo ">>> Building up..."
 	$(PYTHON) setup.py build
 
@@ -82,7 +82,7 @@ dist:
 
 dist-debug: clean
 	DISTUTILS_DEBUG=1 make dist
-	
+
 sdist:
 	@echo ">>> Making redistributable sources package..."
 	$(PYTHON) setup.py sdist
