@@ -6,7 +6,7 @@ or later, you're all set, evy wraps the built-in ssl module.  If on Python 2.5
 or 2.4, you have to install pyOpenSSL_ to use evy.
 
 In either case, the ``patched`` modules handle SSL sockets transparently, just
-like their standard counterparts.  As an example, :mod:`evy.green.urllib2` can
+like their standard counterparts.  As an example, :mod:`evy.patched.urllib2` can
 be used to fetch https urls in as non-blocking a fashion as you please::
 
     from evy.patched import urllib2
