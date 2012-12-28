@@ -18,17 +18,6 @@ build: setup.py
 	@echo ">>> Building up..."
 	$(PYTHON) setup.py build
 
-#$(LIBUV_DIR)/Makefile: checkout-submodule
-
-checkout-submodule:
-	@echo ">>> Checking out submodules..."
-	git submodule init
-	git submodule update
-
-update-submodule:
-	@echo ">>> Getting latests changes from submodules..."
-	git submodule foreach git pull origin master
-
 ##############################
 # testing
 ##############################
@@ -50,7 +39,6 @@ clean:
 	rm -rf Library
 	rm -f `find . -name '*.pyc'`
 	rm -rf `find . -name '__pycache__'`
-	make -C libuv  clean
 	make -C doc  clean
 
 distclean: clean
