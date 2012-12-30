@@ -24,20 +24,21 @@
 # THE SOFTWARE.
 #
 
-
 from errno import EAGAIN
-from sendfile import sendfile as original_sendfile
 
 from evy.hubs import wait_write
 
+__sendfile = __import__('sendfile')
+
+__patched__ = ['sendfile']
 
 ## TODO: replace this sendfile for a call to the uv sendfile
 
-def evy_sendfile(out_fd, in_fd, offset, count):
+def sendfile(out_fd, in_fd, offset, count):
     total_sent = 0
     while total_sent < count:
         try:
-            _offset, sent = original_sendfile(out_fd, in_fd, offset + total_sent, count - total_sent)
+            _offset, sent = __sendfile.sendfile(out_fd, in_fd, offset + total_sent, count - total_sent)
             #print '%s: sent %s [%d%%]' % (out_fd, sent, 100*total_sent/count)
             total_sent += sent
         except OSError, ex:
@@ -47,7 +48,3 @@ def evy_sendfile(out_fd, in_fd, offset, count):
                 raise
     return offset + total_sent, total_sent
 
-
-def patch_sendfile():
-    import sendfile
-    sendfile.sendfile = evy_sendfile
