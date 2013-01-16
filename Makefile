@@ -14,7 +14,7 @@ LIBUV_DIR=libuv
 all: build
 
 .PHONY: build
-build: setup.py setup_libuv.py $(LIBUV_DIR)/Makefile
+build: setup.py $(LIBUV_DIR)/Makefile
 	@echo ">>> Building up..."
 	$(PYTHON) setup.py build
 
