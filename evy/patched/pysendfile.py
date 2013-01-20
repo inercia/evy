@@ -4,9 +4,6 @@
 # Unless otherwise noted, the files in Evy are under the following MIT license:
 #
 # Copyright (c) 2012, Alvaro Saurin
-# Copyright (c) 2008-2010, Eventlet Contributors (see AUTHORS)
-# Copyright (c) 2007-2010, Linden Research, Inc.
-# Copyright (c) 2005-2006, Bob Ippolito
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -27,43 +24,27 @@
 # THE SOFTWARE.
 #
 
+from errno import EAGAIN
 
-from unittest import TestCase, main
+from evy.hubs import wait_write
 
-import evy
-from evy import hubs
-from evy.hubs import timer
+__sendfile = __import__('sendfile')
 
-class TestTimer(TestCase):
+__patched__ = ['sendfile']
 
-    def test_copy (self):
-        t = timer.Timer(0, lambda: None)
-        t2 = t.copy()
-        assert t.seconds == t2.seconds
-        assert t.callback == t2.callback
-        assert t.called == t2.called
+## TODO: replace this sendfile for a call to the uv sendfile
 
-    def test_schedule (self):
-        hub = hubs.get_hub()
-        # clean up the runloop, preventing side effects from previous tests
-        # on this thread
-        if hub.running:
-            hub.abort()
-            sleep(0)
-        called = []
+def sendfile(out_fd, in_fd, offset, count):
+    total_sent = 0
+    while total_sent < count:
+        try:
+            _offset, sent = __sendfile.sendfile(out_fd, in_fd, offset + total_sent, count - total_sent)
+            #print '%s: sent %s [%d%%]' % (out_fd, sent, 100*total_sent/count)
+            total_sent += sent
+        except OSError, ex:
+            if ex[0] == EAGAIN:
+                wait_write(out_fd)
+            else:
+                raise
+    return offset + total_sent, total_sent
 
-        #t = timer.Timer(0, lambda: (called.append(True), hub.abort()))
-        #t.schedule()
-        # let's have a timer somewhere in the future; make sure abort() still works
-        #hubs.get_hub().schedule_call_global(10000, lambda: (called.append(True), hub.abort()))
-
-        hubs.get_hub().run_callback(lambda: (called.append(True), hub.abort()))
-        hub.default_sleep = lambda: 0.0
-        hub.switch()
-
-        assert called
-        assert not hub.running
-
-
-if __name__ == '__main__':
-    main()

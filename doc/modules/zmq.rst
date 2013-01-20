@@ -1,10 +1,10 @@
-:mod:`evy.green.zmq` -- ØMQ support
+:mod:`evy.patched.zmq` -- ØMQ support
 ========================================
 
-.. automodule:: evy.green.zmq
+.. automodule:: evy.patched.zmq
     :show-inheritance:
 
-.. currentmodule:: evy.green.zmq
+.. currentmodule:: evy.patched.zmq
 
 .. autofunction:: Context
 

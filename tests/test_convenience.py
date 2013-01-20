@@ -47,13 +47,13 @@ class TestConvenience(LimitedTestCase):
 
     def setUp (self):
         super(TestConvenience, self).setUp()
-        from evy import debug
+        from evy.tools import debug
 
         debug.hub_exceptions(False)
 
     def tearDown (self):
         super(TestConvenience, self).tearDown()
-        from evy import debug
+        from evy.tools import debug
 
         debug.hub_exceptions(True)
 

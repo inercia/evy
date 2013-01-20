@@ -34,12 +34,24 @@ from tests import LimitedTestCase, main, skip_if_no_itimer
 import time
 
 from evy import hubs
+from evy.green import threads
 from evy.green.threads import spawn, sleep
 
 DELAY = 0.001
 
 def noop ():
     pass
+
+
+def check_hub ():
+    # Clear through the descriptor queue
+    threads.sleep(0)
+    threads.sleep(0)
+    hub = hubs.get_hub()
+    for nm in 'get_readers', 'get_writers':
+        dct = getattr(hub, nm)()
+        assert not dct, "hub.%s not empty: %s" % (nm, dct)
+
 
 
 class TestTimerCleanup(LimitedTestCase):
@@ -96,6 +108,7 @@ class TestTimerCleanup(LimitedTestCase):
 
 
 class TestScheduleCall(LimitedTestCase):
+
     def test_local (self):
         lst = [1]
         spawn(hubs.get_hub().schedule_call_local, DELAY, lst.pop)
@@ -141,7 +154,7 @@ class TestExceptions(LimitedTestCase):
         def fail ():
             1 // 0
 
-        hubs.get_hub().schedule_call_global(0, fail)
+        hubs.get_hub().run_callback(fail)
 
         start = time.time()
         sleep(DELAY)
@@ -173,7 +186,7 @@ class TestHubBlockingDetector(LimitedTestCase):
             import time
             time.sleep(2)
 
-        from evy import debug
+        from evy.tools import debug
 
         debug.hub_blocking_detection(True)
         gt = spawn(look_im_blocking)
@@ -187,7 +200,7 @@ class TestHubBlockingDetector(LimitedTestCase):
             import time
             time.sleep(0.5)
 
-        from evy import debug
+        from evy.tools import debug
 
         debug.hub_blocking_detection(True, resolution = 0.1)
         gt = spawn(look_im_blocking)

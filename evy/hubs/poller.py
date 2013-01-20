@@ -25,6 +25,7 @@
 #
 
 from functools import partial
+import weakref
 
 import pyuv
 
@@ -47,6 +48,17 @@ class Poller(object):
     A I/O poller
     """
 
+    __slots__ = [
+        'fileno',
+        'persistent',
+        'started',
+        'read_callback',
+        'write_callback',
+        'hub',
+        'impl',
+        'traceback'
+    ]
+
     def __init__(self, fileno, persistent = False, **kw):
         """
         Create a poller.
@@ -66,7 +78,7 @@ class Poller(object):
         self.started = False
         self.read_callback = kw.pop('_read_callback', None)
         self.write_callback = kw.pop('_write_callback', None)
-        self.hub = kw.pop('_hub', get_hub())
+        self.hub = weakref.proxy(kw.pop('_hub', get_hub()))
         self.impl = pyuv.Poll(self.hub.uv_loop, fileno)
 
         if _g_debug:
@@ -81,7 +93,7 @@ class Poller(object):
         if self.read_callback: events += 'R'
         if self.write_callback: events += 'W'
 
-        retval =  "Poller(%d, '%s')" % (self.fileno, events)
+        retval =  "<Poller(fd:%d, events:'%s')>" % (self.fileno, events)
 
         if _g_debug and hasattr(self, 'traceback'):
             retval += '\n' + self.traceback.getvalue()
@@ -106,19 +118,21 @@ class Poller(object):
         #assert event in [pyuv.UV_READABLE, pyuv.UV_WRITABLE]
 
         ## check we do not have another callback on the same descriptor and event
-        curr = 0
-        if self.notify_readable:    curr |= pyuv.UV_READABLE
-        if self.notify_writable:    curr |= pyuv.UV_WRITABLE
+        tot_events =  event
+        if self.notify_readable:    tot_events |= pyuv.UV_READABLE
+        if self.notify_writable:    tot_events |= pyuv.UV_WRITABLE
+
+        assert tot_events != 0, 'no events'
 
         self.impl.data = self
         try:
-            self.impl.start(curr | event, hub._poller_triggered)
+            self.impl.start(tot_events, hub._poller_triggered)
         except:
             pass
         else:
             cb = partial(cb, *args)
-            if event & pyuv.UV_READABLE:   self.read_callback  = cb
-            if event & pyuv.UV_WRITABLE:   self.write_callback = cb
+            if tot_events & pyuv.UV_READABLE:   self.read_callback  = cb
+            if tot_events & pyuv.UV_WRITABLE:   self.write_callback = cb
 
         return self.impl
 
@@ -136,6 +150,9 @@ class Poller(object):
 
         self.hub._poller_canceled(self)
 
+    def __del__(self):
+        self.destroy()
+
     def destroy(self):
         """
         Stop and destroy the poller
@@ -144,13 +161,11 @@ class Poller(object):
         """
         self.read_callback = self.write_callback = None
 
-        def _dummy(*args):
-            pass
-
-        if self.impl is not None:
+        if hasattr(self, 'impl'):
             self.impl.stop()
+            def _dummy(*args): pass
             self.impl.close(_dummy)
-            self.impl = None
+            del self.impl
 
     def forget(self):
         """
@@ -161,11 +176,17 @@ class Poller(object):
 
     @property
     def notify_readable(self):
-        return self.read_callback is not None
+        try:
+            return self.read_callback is not None
+        except AttributeError:
+            return False
 
     @property
     def notify_writable(self):
-        return self.write_callback is not None
+        try:
+            return self.write_callback is not None
+        except AttributeError:
+            return False
 
     ##
     ## callbacks

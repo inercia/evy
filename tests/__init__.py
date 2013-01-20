@@ -7,7 +7,8 @@ import errno
 import unittest
 import warnings
 
-from evy import debug, hubs
+from evy import hubs
+from evy.tools import debug
 
 from evy.timeout import Timeout
 
@@ -91,11 +92,6 @@ def using_pyevent (_f):
     from evy.hubs import get_hub
 
     return 'pyevent' in type(get_hub()).__module__
-
-
-def skip_with_pyevent (func):
-    """ Decorator that skips a test if we're using the pyevent hub."""
-    return skip_if(using_pyevent)(func)
 
 
 def skip_on_windows (func):

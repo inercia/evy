@@ -28,45 +28,33 @@
 #
 
 from functools import partial
-
-from evy.support import greenlets as greenlet
 from evy.hubs import get_hub
 
 
-## If true, captures a stack trace for each timer when constructed.  This is
-## useful for debugging leaking timers, to find out where the timer was set up.
-_g_debug = False
-
-
-class Timer(object):
+class Callback(object):
     """
-    A global timer
+    A global callback
     """
 
-    def __init__(self, seconds, cb, *args, **kw):
+    __slots__ = [
+        'callback',
+        'called',
+        'implcallback',
+    ]
+
+    def __init__(self, cb, *args, **kw):
         """
-        Create a timer.
-
-        :param seconds: the minimum number of seconds to wait before calling
-        :param cb: The callback to call when the timer has expired
+        Create a callback for being invoked at the end of the loop.
+        :param cb: The callback to call
         :param *args: the arguments to pass to cb
         :param **kw: the keyword arguments to pass to cb
-
-        This timer will not be run unless it is scheduled in a runloop by
-        calling timer.schedule() or runloop.add_timer(timer).
         """
-        self.seconds = seconds
         self.called = False
 
         if '_callback' in kw:
             self.callback = kw.pop('_callback')
         else:
             self.callback = partial(cb, *args, **kw)
-
-        if _g_debug:
-            import traceback, cStringIO
-            self.traceback = cStringIO.StringIO()
-            traceback.print_stack(file = self.traceback)
 
     @property
     def pending(self):
@@ -75,42 +63,34 @@ class Timer(object):
     def __repr__(self):
         secs = getattr(self, 'seconds', None)
         cb = getattr(self, 'callback', None)
-        retval =  "<Timer object at %s (after=%s, callback=%s)>" % (hex(id(self)), secs, cb)
-        if _g_debug and hasattr(self, 'traceback'):
-            retval += '\n' + self.traceback.getvalue()
+        retval =  "<Callback at %s (after=%s, callback=%s)>" % (hex(id(self)), secs, cb)
         return retval
 
     def copy(self):
-        return self.__class__(self.seconds, None, _callback = self.callback)
+        return self.__class__(None, _callback = self.callback)
 
     def schedule(self):
         """
-        Schedule this timer to run in the current loop.
+        Schedule this callback to run in the current loop.
         """
         self.called = False
-        self.scheduled_time = get_hub().add_timer(self)
-        return self
+        return get_hub().add_callback(self)
 
     def __del__(self):
         self.destroy()
 
     def destroy(self):
         """
-        Stop and destroy the timer
-
-        Invoke this method when this timer is no longer used
+        Stop and destroy the callback
         """
-        if hasattr(self, 'impltimer'):
-            self.impltimer.stop()
-            def _dummy(*args): pass
-            self.impltimer.close(_dummy)
-            del self.impltimer
+        if hasattr(self, 'implcallback'):
+            self.implcallback.stop()
 
-    def forget(self):
-        try:
-            self.impltimer.unref()
-        except AttributeError:
-            pass
+            def _dummy(*args): pass
+            self.implcallback.close(_dummy)
+
+            del self.implcallback
+            del self.callback
 
     def __call__(self, *args):
         if not self.called:
@@ -125,12 +105,12 @@ class Timer(object):
 
     def cancel(self):
         """
-        Prevent this timer from being called. If the timer has already
+        Prevent this idle from being called. If the callback has already
         been called or canceled, has no effect.
         """
         if not self.called:
             self.called = True
-            get_hub()._timer_canceled(self)
+            get_hub()._callback_canceled(self)
             try:
                 del self.callback
             except AttributeError:
@@ -140,30 +120,3 @@ class Timer(object):
     # FIXME should full set be added?
     def __lt__(self, other):
         return id(self)<id(other)
-
-
-class LocalTimer(Timer):
-
-    def __init__(self, *args, **kwargs):
-        self.greenlet = greenlet.getcurrent()
-        Timer.__init__(self, *args, **kwargs)
-
-    @property
-    def pending(self):
-        if self.greenlet is None or self.greenlet.dead:
-            return False
-        return not self.called
-
-    def __call__(self, *args):
-        if not self.called:
-            self.called = True
-            if self.greenlet is not None and self.greenlet.dead:
-                return
-            self.callback()
-
-    def cancel(self):
-        """
-        Cancel the timer
-        """
-        self.greenlet = None
-        Timer.cancel(self)

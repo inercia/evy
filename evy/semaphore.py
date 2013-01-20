@@ -115,7 +115,7 @@ class Semaphore(object):
         ignored"""
         self.counter += 1
         if self._waiters:
-            hubs.get_hub().schedule_call_global(0, self._do_acquire)
+            hubs.get_hub().run_callback(self._do_acquire)
         return True
 
     def _do_acquire (self):

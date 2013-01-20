@@ -1,5 +1,5 @@
 :mod:`greenthread` -- Green Thread Implementation
 ==================================================
 
-.. automodule:: evy.greenthread
+.. automodule:: evy.green.threads
 	:members:

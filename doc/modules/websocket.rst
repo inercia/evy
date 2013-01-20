@@ -9,7 +9,7 @@ coexist with other WSGI applications.
 To create a websocket server, simply decorate a handler method with
 :class:`WebSocketWSGI` and use it as a wsgi application::
 
-    from evy import wsgi, websocket
+    from evy.web import wsgi, websocket
     import evy
     
     @websocket.WebSocketWSGI
@@ -27,5 +27,5 @@ As of version 0.9.13, evy.websocket supports SSL websockets; all that's necessar
 .. note :: The web socket spec is still under development, and it will be necessary to change the way that this module works in response to spec changes.
 
 
-.. automodule:: evy.websocket
+.. automodule:: evy.web.websocket
 	:members:

@@ -6,6 +6,3 @@
 
 .. automodule:: evy.hubs.timer
 	:members:
-
-.. automodule:: evy.hubs.uv
-	:members:

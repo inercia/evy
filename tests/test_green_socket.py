@@ -29,24 +29,22 @@
 
 
 import socket as _orig_sock
-from tests import LimitedTestCase, main, skipped, s2b, skip_on_windows
+from tests import LimitedTestCase, main, skipped, s2b
 
-from evy import event
 from evy.io import sockets
 from evy.io import convenience
 from evy.support import get_errno
 from evy.patched import socket
 from evy.patched import time
 from evy.green.threads import spawn, spawn_n, sleep
-from evy.timeout import Timeout
-from evy.green.threads import TimeoutError
 
 import errno
-
 import os
 import sys
-import array
-import tempfile, shutil
+
+from test_hub import check_hub
+
+
 
 def bufsized (sock, size = 1):
     """
@@ -89,98 +87,31 @@ class TestGreenSocket(LimitedTestCase):
             self.assertRaises(ValueError, fd.write, 'a')
 
 
+
+    def test_crucial_constants(self):
+        # Testing for mission critical constants
+        socket.AF_INET
+        socket.SOCK_STREAM
+        socket.SOCK_DGRAM
+        socket.SOCK_RAW
+        socket.SOCK_RDM
+        socket.SOCK_SEQPACKET
+        socket.SOL_SOCKET
+        socket.SO_REUSEADDR
+
+
+    def test_tcp_listener (self):
+        socket = convenience.listen(('0.0.0.0', 0))
+        assert socket.getsockname()[0] == '0.0.0.0'
+        socket.close()
+        check_hub()
+
+
     def test_getsockname (self):
         listener = sockets.GreenSocket()
         listener.bind(('', 0))
         addr = listener.getsockname()
         self.assertNotEquals(addr[1], 0)
-
-    @skipped
-    def test_close_with_makefile (self):
-        def accept_close_early (listener):
-            # verify that the makefile and the socket are truly independent
-            # by closing the socket prior to using the made file
-            try:
-                conn, addr = listener.accept()
-                fd = conn.makefile('w')
-                conn.close()
-                fd.write('hello\n')
-                fd.close()
-                self.assertWriteToClosedFileRaises(fd)
-                self.assertRaises(socket.error, conn.send, s2b('b'))
-            finally:
-                listener.close()
-
-        def accept_close_late (listener):
-            # verify that the makefile and the socket are truly independent
-            # by closing the made file and then sending a character
-            try:
-                conn, addr = listener.accept()
-                fd = conn.makefile('w')
-                fd.write('hello')
-                fd.close()
-                conn.send(s2b('\n'))
-                conn.close()
-                self.assertWriteToClosedFileRaises(fd)
-                self.assertRaises(socket.error, conn.send, s2b('b'))
-            finally:
-                listener.close()
-
-        def did_it_work (server):
-            client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            _, port = server.getsockname()
-            print 'connecting to port', port
-            client.connect(('127.0.0.1', port))
-            fd = client.makefile()
-            client.close()
-            assert fd.readline() == 'hello\n'
-            assert fd.read() == ''
-            fd.close()
-
-        server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        server.bind(('0.0.0.0', 61222))
-        self.assertEqual(server.getsockname()[1], 61222)
-        server.listen(50)
-        killer = spawn(accept_close_early, server)
-        did_it_work(server)
-        killer.wait()
-
-        server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        server.bind(('0.0.0.0', 0))
-        server.listen(50)
-        killer = spawn(accept_close_late, server)
-        did_it_work(server)
-        killer.wait()
-
-    def test_del_closes_socket (self):
-        def accept_once (listener):
-            # delete/overwrite the original conn
-            # object, only keeping the file object around
-            # closing the file object should close everything
-            try:
-                conn, addr = listener.accept()
-                conn = conn.makefile('w')
-                conn.write('hello\n')
-                conn.close()
-                self.assertWriteToClosedFileRaises(conn)
-            finally:
-                listener.close()
-
-        server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        server.bind(('127.0.0.1', 0))
-        server.listen(50)
-        killer = spawn(accept_once, server)
-        client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        client.connect(('127.0.0.1', server.getsockname()[1]))
-        fd = client.makefile()
-        client.close()
-        assert fd.read() == 'hello\n'
-        assert fd.read() == ''
-
-        killer.wait()
 
 
     def test_wrap_socket (self):
@@ -210,6 +141,7 @@ class TestGreenSocket(LimitedTestCase):
 
         server = convenience.listen(('127.0.0.1', 0))
         sender = spawn(spam_to_me, server.getsockname())
+
         client, address = server.accept()
         server.close()
 
@@ -231,6 +163,173 @@ class TestGreenSocket(LimitedTestCase):
         spawn_n(closer)
         reader.wait()
         sender.wait()
+
+
+    def test_ntoh(self):
+        # This just checks that htons etc. are their own inverse,
+        # when looking at the lower 16 or 32 bits.
+        sizes = {socket.htonl: 32, socket.ntohl: 32,
+                 socket.htons: 16, socket.ntohs: 16}
+        for func, size in sizes.items():
+            mask = (1L<<size) - 1
+            for i in (0, 1, 0xffff, ~0xffff, 2, 0x01234567, 0x76543210):
+                self.assertEqual(i & mask, func(func(i&mask)) & mask)
+
+            swapped = func(mask)
+            self.assertEqual(swapped & mask, mask)
+            self.assertRaises(OverflowError, func, 1L<<34)
+
+
+    def test_ntoh_errors(self):
+        good_values = [ 1, 2, 3, 1L, 2L, 3L ]
+        bad_values = [ -1, -2, -3, -1L, -2L, -3L ]
+        for k in good_values:
+            socket.ntohl(k)
+            socket.ntohs(k)
+            socket.htonl(k)
+            socket.htons(k)
+        for k in bad_values:
+            self.assertRaises(OverflowError, socket.ntohl, k)
+            self.assertRaises(OverflowError, socket.ntohs, k)
+            self.assertRaises(OverflowError, socket.htonl, k)
+            self.assertRaises(OverflowError, socket.htons, k)
+
+
+    def test_getservbyname(self):
+        eq = self.assertEqual
+        # Find one service that exists, then check all the related interfaces.
+        # I've ordered this by protocols that have both a tcp and udp
+        # protocol, at least for modern Linuxes.
+        if (sys.platform.startswith('linux') or
+            sys.platform.startswith('freebsd') or
+            sys.platform.startswith('netbsd') or
+            sys.platform == 'darwin'):
+            # avoid the 'echo' service on this platform, as there is an
+            # assumption breaking non-standard port/protocol entry
+            services = ('daytime', 'qotd', 'domain')
+        else:
+            services = ('echo', 'daytime', 'domain')
+        for service in services:
+            try:
+                port = socket.getservbyname(service, 'tcp')
+                break
+            except socket.error:
+                pass
+        else:
+            raise socket.error
+            # Try same call with optional protocol omitted
+        port2 = socket.getservbyname(service)
+        eq(port, port2)
+        # Try udp, but don't barf it it doesn't exist
+        try:
+            udpport = socket.getservbyname(service, 'udp')
+        except socket.error:
+            udpport = None
+        else:
+            eq(udpport, port)
+            # Now make sure the lookup by port returns the same service name
+        eq(socket.getservbyport(port2), service)
+        eq(socket.getservbyport(port, 'tcp'), service)
+        if udpport is not None:
+            eq(socket.getservbyport(udpport, 'udp'), service)
+            # Make sure getservbyport does not accept out of range ports.
+        self.assertRaises(OverflowError, socket.getservbyport, -1)
+        self.assertRaises(OverflowError, socket.getservbyport, 65536)
+
+
+    def test_default_timeout(self):
+        # Testing default timeout
+        # The default timeout should initially be None
+        self.assertEqual(socket.getdefaulttimeout(), None)
+        s = socket.socket()
+        self.assertEqual(s.gettimeout(), None)
+        s.close()
+
+        # Set the default timeout to 10, and see if it propagates
+        socket.setdefaulttimeout(10)
+        self.assertEqual(socket.getdefaulttimeout(), 10)
+        s = socket.socket()
+        self.assertEqual(s.gettimeout(), 10)
+        s.close()
+
+        # Reset the default timeout to None, and see if it propagates
+        socket.setdefaulttimeout(None)
+        self.assertEqual(socket.getdefaulttimeout(), None)
+        s = socket.socket()
+        self.assertEqual(s.gettimeout(), None)
+        s.close()
+
+        # Check that setting it to an invalid value raises ValueError
+        self.assertRaises(ValueError, socket.setdefaulttimeout, -1)
+
+        # Check that setting it to an invalid type raises TypeError
+        self.assertRaises(TypeError, socket.setdefaulttimeout, "spam")
+
+
+    def test_sock_name(self):
+        # Testing getsockname()
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.addCleanup(sock.close)
+        sock.bind(("0.0.0.0", 0))
+        name = sock.getsockname()
+        # XXX(nnorwitz): http://tinyurl.com/os5jz seems to indicate
+        # it reasonable to get the host's addr in addition to 0.0.0.0.
+        # At least for eCos.  This is required for the S/390 to pass.
+        try:
+            my_ip_addr = socket.gethostbyname(socket.gethostname())
+        except socket.error:
+            # Probably name lookup wasn't set up right; skip this test
+            return
+        self.assertIn(name[0], ("0.0.0.0", my_ip_addr), '%s invalid' % name[0])
+
+    def test_get_sock_opt(self):
+        # Testing getsockopt()
+        # We know a socket should start without reuse==0
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.addCleanup(sock.close)
+        reuse = sock.getsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR)
+        self.assertFalse(reuse != 0, "initial mode is reuse")
+
+    def test_set_sock_opt(self):
+        # Testing setsockopt()
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.addCleanup(sock.close)
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        reuse = sock.getsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR)
+        self.assertFalse(reuse == 0, "failed to set reuse mode")
+
+
+    def test_new_attributes(self):
+        # testing .family, .type and .protocol
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.assertEqual(sock.family, socket.AF_INET)
+        self.assertEqual(sock.type, socket.SOCK_STREAM)
+        self.assertEqual(sock.proto, 0)
+        sock.close()
+
+
+    def test_getsockaddrarg(self):
+        host = '0.0.0.0'
+        port = 34555
+        big_port = port + 65536
+        neg_port = port - 65536
+        sock = socket.socket()
+        try:
+            self.assertRaises(OverflowError, sock.bind, (host, big_port))
+            self.assertRaises(OverflowError, sock.bind, (host, neg_port))
+            sock.bind((host, port))
+        finally:
+            sock.close()
+
+
+    def test_listen_backlog0(self):
+        srv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        srv.bind(('0.0.0.0', 0))
+        # backlog = 0
+        srv.listen(0)
+        srv.close()
+
+
 
 
 class TestGreenIoStarvation(LimitedTestCase):
@@ -329,6 +428,7 @@ class TestGreenIoStarvation(LimitedTestCase):
                                   0], "Largest difference in starting times more than twice the shortest running time!"
         assert runlengths[0] * 2 > runlengths[
                                    -1], "Longest runtime more than twice as long as shortest!"
+
 
 
 

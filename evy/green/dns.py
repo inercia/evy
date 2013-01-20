@@ -38,16 +38,17 @@ Non-blocking DNS support for Evy
 
 
 
+import sys
 
 import pyuv
 import pycares
 
 from evy.hubs import get_hub
-
 from evy.event import Event
 from evy.timeout import Timeout
 
 import socket
+from _socket import getservbyname, gaierror, error
 
 
 DNS_QUERY_TIMEOUT = 10.0
@@ -132,6 +133,53 @@ class CaresResolver(object):
         if not events & pyuv.UV_WRITABLE:
             write_fd = pycares.ARES_SOCKET_BAD
         self._channel.process_fd(read_fd, write_fd)
+
+    def _lookup_port(self, port, socktype):
+        socktypes = []
+
+        if isinstance(port, str):
+            try:
+                port = int(port)
+            except ValueError:
+                try:
+                    if socktype == 0:
+                        origport = port
+                        try:
+                            port = getservbyname(port, 'tcp')
+                            socktypes.append(socket.SOCK_STREAM)
+                        except error:
+                            port = getservbyname(port, 'udp')
+                            socktypes.append(socket.SOCK_DGRAM)
+                        else:
+                            try:
+                                if port == getservbyname(origport, 'udp'):
+                                    socktypes.append(socket.SOCK_DGRAM)
+                            except error:
+                                pass
+                    elif socktype == socket.SOCK_STREAM:
+                        port = getservbyname(port, 'tcp')
+                    elif socktype == socket.SOCK_DGRAM:
+                        port = getservbyname(port, 'udp')
+                    else:
+                        raise gaierror(socket.EAI_SERVICE, 'Servname not supported for ai_socktype')
+                except error:
+                    ex = sys.exc_info()[1]
+                    if 'not found' in str(ex):
+                        raise gaierror(socket.EAI_SERVICE, 'Servname not supported for ai_socktype')
+                    else:
+                        raise gaierror(str(ex))
+                except UnicodeEncodeError:
+                    raise error('Int or String expected')
+        elif port is None:
+            port = 0
+        elif isinstance(port, int):
+            pass
+        else:
+            raise error('Int or String expected')
+        port = int(port % 65536)
+        if not socktypes and socktype:
+            socktypes.append(socktype)
+        return port, socktypes
 
     def query(self, query_type, name, cb):
         self._channel.query(query_type, name, cb)

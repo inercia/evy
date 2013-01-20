@@ -135,7 +135,7 @@ def backdoor ((conn, addr), locals = None):
     fl = conn.makefile("rw")
     console = SocketConsole(fl, (host, port), locals)
     hub = hubs.get_hub()
-    hub.schedule_call_global(0, console.switch)
+    hub.run_callback(console.switch)
 
 
 if __name__ == '__main__':

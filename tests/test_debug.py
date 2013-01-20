@@ -31,7 +31,10 @@
 import sys
 
 import evy
-from evy import debug
+from evy.tools import debug
+from evy.io import convenience
+from evy.green.threads import sleep
+
 from tests import LimitedTestCase, main, s2b
 from unittest import TestCase
 
@@ -137,8 +140,8 @@ class TestDebug(LimitedTestCase):
 
     def test_hub_exceptions (self):
         debug.hub_exceptions(True)
-        server = listen(('0.0.0.0', 0))
-        client = connect(('127.0.0.1', server.getsockname()[1]))
+        server = convenience.listen(('0.0.0.0', 0))
+        client = convenience.connect(('127.0.0.1', server.getsockname()[1]))
         client_2, addr = server.accept()
 
         def hurl (s):

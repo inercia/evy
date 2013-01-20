@@ -67,7 +67,10 @@ class TestDirectRaise(LimitedTestCase):
         str(tm)
 
 
-class TestWithTimeout(LimitedTestCase):
+class TestTimeout(LimitedTestCase):
+
+
+
     def test_with_timeout (self):
         self.assertRaises(timeout.Timeout, timeout.with_timeout, DELAY, greenthread.sleep,
                           DELAY * 10)

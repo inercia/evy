@@ -14,20 +14,9 @@ LIBUV_DIR=libuv
 all: build
 
 .PHONY: build
-build: setup.py $(LIBUV_DIR)/Makefile
+build: setup.py
 	@echo ">>> Building up..."
 	$(PYTHON) setup.py build
-
-#$(LIBUV_DIR)/Makefile: checkout-submodule
-
-checkout-submodule:
-	@echo ">>> Checking out submodules..."
-	git submodule init
-	git submodule update
-
-update-submodule:
-	@echo ">>> Getting latests changes from submodules..."
-	git submodule foreach git pull origin master
 
 ##############################
 # testing
@@ -50,7 +39,6 @@ clean:
 	rm -rf Library
 	rm -f `find . -name '*.pyc'`
 	rm -rf `find . -name '__pycache__'`
-	make -C libuv  clean
 	make -C doc  clean
 
 distclean: clean
@@ -82,7 +70,7 @@ dist:
 
 dist-debug: clean
 	DISTUTILS_DEBUG=1 make dist
-	
+
 sdist:
 	@echo ">>> Making redistributable sources package..."
 	$(PYTHON) setup.py sdist
