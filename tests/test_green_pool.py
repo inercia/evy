@@ -553,45 +553,15 @@ class TestGreenPool(tests.LimitedTestCase):
         self.assertEquals(tp.get(), 'wakeup')
 
 
-    def test_execute_async (self):
-        p = GreenPool(2)
-        self.assertEqual(p.free(), 2)
-        r = []
-
-        def foo (a):
-            r.append(a)
-
-        evt = p.spawn(foo, 1)
-        self.assertEqual(p.free(), 1)
-        evt.wait()
-        self.assertEqual(r, [1])
-        sleep(0)
-        self.assertEqual(p.free(), 2)
-
-        #Once the pool is exhausted, calling an execute forces a yield.
-
-        p.spawn(foo, 2)
-        self.assertEqual(1, p.free())
-        self.assertEqual(r, [1])
-
-        p.spawn(foo, 3)
-        self.assertEqual(0, p.free())
-        self.assertEqual(r, [1])
-
-        p.spawn(foo, 4)
-        self.assertEqual(sorted(r), sorted([1, 2, 3]))
-        sleep(0)
-        self.assertEqual(sorted(r), sorted([1, 2, 3, 4]))
-
     def test_execute (self):
         p = GreenPool()
         evt = p.spawn(lambda a: ('foo', a), 1)
         self.assertEqual(evt.wait(), ('foo', 1))
 
     def test_with_intpool (self):
-        from evy import pools
+        from evy.pools import Pool
 
-        class IntPool(pools.Pool):
+        class IntPool(Pool):
             def create (self):
                 self.current_integer = getattr(self, 'current_integer', 0) + 1
                 return self.current_integer
