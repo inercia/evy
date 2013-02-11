@@ -28,16 +28,31 @@
 #
 
 
-"Test cases for db_pool"
+"""
+Test cases for db_pool
+"""
+
+
+
+
 import sys
 import os
 import traceback
 from unittest import TestCase, main
 
-from tests import skipped, skip_unless, skip_with_pyevent, get_database_auth
+from tests import skipped, skip_unless, get_database_auth
+
 from evy import event
 from evy import db_pool
+from evy import sleep
+from evy import Timeout
+
+
+
 import evy
+
+
+
 
 
 class DBTester(object):
