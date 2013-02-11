@@ -12,6 +12,11 @@ from evy.tools import debug
 
 from evy.timeout import Timeout
 
+from nose.plugins.attrib import attr
+
+
+
+
 # convenience for importers
 main = unittest.main
 
