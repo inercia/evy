@@ -141,14 +141,14 @@ class Hub(object):
 
             self.uv_loop = pyuv.Loop.default_loop()
             if default:
-                self.uv_signal_checker = pyuv.SignalChecker(self.uv_loop)
+                #self.uv_signal_checker = pyuv.SignalChecker(self.uv_loop)
 
                 for signum in self.SYSTEM_EXCEPTIONS_SIGNUMS:
                     handler = pyuv.Signal(self.uv_loop)
                     handler.start(self.signal_received, int(signum))
                     self.uv_sighandlers.add(handler)
-            else:
-                self.uv_signal_checker = None
+            #else:
+            #    self.uv_signal_checker = None
 
         if not self.uv_loop:
             raise SystemError("default_loop() failed")
@@ -380,11 +380,11 @@ class Hub(object):
         :param once: if True, polls for new events once (and it blocks if there are no pending events)
         :return: 1 if more events are expected, 0 otherwise (when *once* is False, it always returns 0)
         """
-        if self.uv_signal_checker:
-            self.uv_signal_checker.start()
+        #if self.uv_signal_checker:
+        #    self.uv_signal_checker.start()
 
         if once:
-            return self.uv_loop.run_once()
+            return self.uv_loop.run(pyuv.UV_RUN_ONCE)
         else:
             return self.uv_loop.run()
 
@@ -419,9 +419,9 @@ class Hub(object):
             self._stopped()
 
             ## destroy all the signals stuff
-            if self.uv_signal_checker:
-                for handler in self.uv_sighandlers: handler.stop()
-                self.uv_signal_checker.stop()
+            #if self.uv_signal_checker:
+            #    for handler in self.uv_sighandlers: handler.stop()
+            #    self.uv_signal_checker.stop()
 
             if self.uv_loop == pyuv.Loop.default_loop():
                 _default_loop_destroyed = True
