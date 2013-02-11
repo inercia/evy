@@ -131,8 +131,6 @@ class TestDebug(LimitedTestCase):
         debug.hub_exceptions(False)
         debug.tpool_exceptions(True)
         debug.tpool_exceptions(False)
-        debug.hub_listener_stacks(True)
-        debug.hub_listener_stacks(False)
         debug.hub_timer_stacks(True)
         debug.hub_timer_stacks(False)
         debug.format_hub_listeners()
