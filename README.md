@@ -12,11 +12,6 @@ Here's something you can try right on the command line::
     >>> gt2 = spawn(urllib2.urlopen, 'http://secondlife.com')
     >>> waitall(gt1, gt2)
 
-Read the docs
-=============
-
-Check out the latest documentation (here)[http://evy.readthedocs.org/en/latest/].
-
 Documentation
 =============
 
