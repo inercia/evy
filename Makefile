@@ -26,7 +26,7 @@ build: setup.py
 tests: test
 test:
 	@echo ">>> Running all tests..."
-	@PYTHONPATH=`pwd` nosetests -v
+	@PYTHONPATH=`pwd` nosetests -v -a '!perf' -w tests
 
 ##############################
 # cleaning
