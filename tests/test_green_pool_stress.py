@@ -98,9 +98,11 @@ class Stress(tests.LimitedTestCase):
         for l in latest[1:]:
             self.assertEquals(l, iters - 1)
 
+    @tests.attr('perf')
     def test_ordering_5 (self):
         self.spawn_order_check(5)
 
+    @tests.attr('perf')
     def test_ordering_50 (self):
         self.spawn_order_check(50)
 
@@ -131,17 +133,19 @@ class Stress(tests.LimitedTestCase):
             # make sure we got to the end
         self.assertEquals(latest, count - 1)
 
-    #@tests.skip_unless(os.environ.get('RUN_STRESS_TESTS') == 'YES')
+    @tests.attr('perf')
     def test_imap_50 (self):
         self.imap_memory_check(50)
 
+    @tests.attr('perf')
     def test_imap_500 (self):
         self.imap_memory_check(500)
 
+    @tests.attr('perf')
     def test_with_intpool (self):
-        from evy import pools
+        from evy.pools import Pool
 
-        class IntPool(pools.Pool):
+        class IntPool(Pool):
             def create (self):
                 self.current_integer = getattr(self, 'current_integer', 0) + 1
                 return self.current_integer
