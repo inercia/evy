@@ -40,6 +40,7 @@ import os
 import sys
 import signal
 
+from evy import sleep
 from evy.timeout import Timeout
 
 mydir = %r
