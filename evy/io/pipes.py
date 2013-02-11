@@ -42,11 +42,12 @@ from evy.support import get_errno
 from evy.hubs import get_hub
 from evy.hubs import trampoline, wait_read, wait_write
 from evy.event import Event
-
 from evy.io.utils import set_nonblocking
+from evy.patcher import original
 
 import errno
-import os
+
+_os_orig = original("os")
 
 
 # Emulate _fileobject class in 3.x implementation
@@ -149,7 +150,7 @@ class _SocketDuckForFd(object):
     def recv (self, buflen):
         while True:
             try:
-                data = os.read(self._fileno, buflen)
+                data = _os_orig.read(self._fileno, buflen)
                 return data
             except OSError, e:
                 if get_errno(e) != errno.EAGAIN:
@@ -158,7 +159,7 @@ class _SocketDuckForFd(object):
 
     def sendall (self, data):
         len_data = len(data)
-        os_write = os.write
+        os_write = _os_orig.write
         fileno = self._fileno
         try:
             total_sent = os_write(fileno, data)
@@ -177,7 +178,7 @@ class _SocketDuckForFd(object):
 
     def __del__ (self):
         try:
-            os.close(self._fileno)
+            _os_orig.close(self._fileno)
         except:
             # os.close may fail if __init__ didn't complete (i.e file dscriptor passed to popen was invalid
             pass
@@ -226,14 +227,14 @@ class GreenPipe(_fileobject):
             self._name = "<fd:%d>" % fileno
             self._path = None
         else:
-            fileno = os.dup(f.fileno())
+            fileno = _os_orig.dup(f.fileno())
             self._name = self._path = f.name
             if f.mode != mode:
                 raise ValueError('file.mode %r does not match mode parameter %r' % (f.mode, mode))
             f.close()       ## close the file provided: we keep our dupped version...
 
         assert isinstance(fileno, int)
-        self._fileobj = os.fdopen(fileno, mode)
+        self._fileobj = _os_orig.fdopen(fileno, mode)
         
         super(GreenPipe, self).__init__(_SocketDuckForFd(fileno), mode, bufsize)
         set_nonblocking(self)
@@ -304,7 +305,7 @@ class GreenPipe(_fileobject):
         if whence == 1 and offset == 0: # tell synonym
             return self.tell()
         try:
-            rv = os.lseek(self.fileno(), offset, whence)
+            rv = _os_orig.lseek(self.fileno(), offset, whence)
         except OSError, e:
             raise IOError(*e.args)
         else:
@@ -316,7 +317,7 @@ class GreenPipe(_fileobject):
             if size == -1:
                 size = self.tell()
             try:
-                rv = os.ftruncate(self.fileno(), size)
+                rv = _os_orig.ftruncate(self.fileno(), size)
             except OSError, e:
                 raise IOError(*e.args)
             else:
@@ -325,7 +326,7 @@ class GreenPipe(_fileobject):
 
     def isatty (self):
         try:
-            return os.isatty(self.fileno())
+            return _os_orig.isatty(self.fileno())
         except OSError, e:
             raise IOError(*e.args)
 
