@@ -4,6 +4,9 @@
 # Unless otherwise noted, the files in Evy are under the following MIT license:
 #
 # Copyright (c) 2012, Alvaro Saurin
+# Copyright (c) 2008-2010, Eventlet Contributors (see AUTHORS)
+# Copyright (c) 2007-2010, Linden Research, Inc.
+# Copyright (c) 2005-2006, Bob Ippolito
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -24,17 +27,21 @@
 # THE SOFTWARE.
 #
 #
+
+import pyuv
+
 import sys
 import array
+
+from weakref import proxy
 
 import socket
 from socket import socket as _original_socket
 
-
 from evy.support import get_errno
-
-from evy.hubs import trampoline, wait_read, wait_write
 from evy.hubs import get_hub
+from evy.hubs import trampoline, wait_read, wait_write
+from evy.event import Event
 
 from evy.io.utils import set_nonblocking
 
@@ -54,6 +61,72 @@ except AttributeError:
 
 __all__ = []
 
+
+#: the mapping between libuv errors and errno
+_UV_ERR_TO_ERRNO_MAP = {
+    'UV_EACCES' : errno.EACCES ,
+    'UV_EAGAIN' : errno.EAGAIN,
+    'UV_EADDRINUSE' : errno.EADDRINUSE ,
+    'UV_EADDRNOTAVAIL' : errno.EADDRNOTAVAIL,
+    'UV_EAFNOSUPPORT' : errno.EAFNOSUPPORT,
+    'UV_EALREADY' : errno.EALREADY,
+    'UV_EBADF' : errno.EBADF,
+    'UV_EBUSY' : errno.EBUSY,
+    'UV_ECONNABORTED' : errno.ECONNABORTED,
+    'UV_ECONNREFUSED' : errno.ECONNREFUSED ,
+    'UV_ECONNRESET' : errno.ECONNRESET,
+    'UV_EDESTADDRREQ' : errno.EDESTADDRREQ,
+    'UV_EFAULT' : errno.EFAULT,
+    'UV_EHOSTUNREACH' : errno.EHOSTUNREACH,
+    'UV_EINTR' : errno.EINTR,
+    'UV_EINVAL' : errno.EINVAL,
+    'UV_EISCONN' : errno.EISCONN,
+    'UV_EMFILE' : errno.EMFILE,
+    'UV_EMSGSIZE' : errno.EMSGSIZE,
+    'UV_ENETDOWN' : errno.ENETDOWN,
+    'UV_ENETUNREACH' : errno.ENETUNREACH,
+    'UV_ENFILE' : errno.ENFILE,
+    'UV_ENOBUFS' : errno.ENOBUFS,
+    'UV_ENOMEM' : errno.ENOMEM,
+    'UV_ENOTDIR' : errno.ENOTDIR,
+    'UV_EISDIR' : errno.EISDIR,
+    #'UV_ENONET' : errno.ENONET,
+    'UV_ENOTCONN' : errno.ENOTCONN,
+    'UV_ENOTSOCK' : errno.ENOTSOCK,
+    #'UV_ENOTSUP' : errno.ENOTSUP,
+    'UV_ENOENT' : errno.ENOENT,
+    'UV_ENOSYS' : errno.ENOSYS,
+    'UV_EPIPE' : errno.EPIPE,
+    'UV_EPROTO' : errno.EPROTO,
+    'UV_EPROTONOSUPPORT' : errno.EPROTONOSUPPORT,
+    'UV_EPROTOTYPE' : errno.EPROTOTYPE,
+    'UV_ETIMEDOUT' : errno.ETIMEDOUT,
+    'UV_ESHUTDOWN' : errno.ESHUTDOWN,
+    'UV_EEXIST' : errno.EEXIST,
+    'UV_ESRCH' : errno.ESRCH,
+    'UV_ENAMETOOLONG' : errno.ENAMETOOLONG,
+    'UV_EPERM' : errno.EPERM,
+    'UV_ELOOP' : errno.ELOOP,
+    'UV_EXDEV' : errno.EXDEV,
+    'UV_ENOTEMPTY' : errno.ENOTEMPTY,
+    'UV_ENOSPC' : errno.ENOSPC,
+    'UV_EIO' : errno.EIO,
+    'UV_EROFS' : errno.EROFS,
+    'UV_ENODEV' : errno.ENODEV ,
+    'UV_ESPIPE' : errno.ESPIPE ,
+}
+
+def last_file_error(code, msg = None):
+    """
+    Utility function for getting the last exception as a IOerror
+    """
+    if msg: msg += ': %s' % (pyuv.errno.strerror(code))
+    else:   msg = '%s' % (pyuv.errno.strerror(code))
+
+    try:                errno_code = _UV_ERR_TO_ERRNO_MAP[pyuv.errno.errorcode[code]]
+    except KeyError:    errno_code = code
+
+    return IOError(errno_code, msg)
 
 
 
@@ -137,23 +210,31 @@ class GreenPipe(_fileobject):
     """
 
     def __init__ (self, f, mode = 'r', bufsize = -1):
+
+        self.uv_hub = proxy(get_hub())
+
         if not isinstance(f, (basestring, int, file)):
             raise TypeError('f(ile) should be int, str, unicode or file, not %r' % f)
 
         if isinstance(f, basestring):
+            self._path = f
             f = open(f, mode, 0)
+            fileno = f.fileno()
 
         if isinstance(f, int):
             fileno = f
             self._name = "<fd:%d>" % fileno
+            self._path = None
         else:
             fileno = os.dup(f.fileno())
-            self._name = f.name
+            self._name = self._path = f.name
             if f.mode != mode:
                 raise ValueError('file.mode %r does not match mode parameter %r' % (f.mode, mode))
-            self._name = f.name
-            f.close()
+            f.close()       ## close the file provided: we keep our dupped version...
 
+        assert isinstance(fileno, int)
+        self._fileobj = os.fdopen(fileno, mode)
+        
         super(GreenPipe, self).__init__(_SocketDuckForFd(fileno), mode, bufsize)
         set_nonblocking(self)
         self.softspace = 0
@@ -172,15 +253,18 @@ class GreenPipe(_fileobject):
     def close (self):
         """
         Close the file
-
         :return: nothing
         """
-        super(GreenPipe, self).close()
+        #super(GreenPipe, self).close()
+        self._fileobj.close()
         for method in ['fileno', 'flush', 'isatty', 'next', 'read', 'readinto',
                        'readline', 'readlines', 'seek', 'tell', 'truncate',
                        'write', 'xreadlines', '__iter__', 'writelines']:
             setattr(self, method, _operationOnClosedFile)
 
+    def fileno(self):
+        return self._fileobj.fileno()
+        
     if getattr(file, '__enter__', None):
         def __enter__ (self):
             return self
@@ -188,9 +272,18 @@ class GreenPipe(_fileobject):
         def __exit__ (self, *args):
             self.close()
 
-    def xreadlines (self, buffer):
-        return iter(self)
+    def read(self, rlen):
+        did_read = Event()
+        def read_callback(loop, path, read_data, errorno):
+            if errorno:
+                did_read.send_exception(last_file_error(errorno, 'read error on fd:%d' % self.fileno()))
+            else:
+                did_read.send(read_data)
 
+        roffset = self._fileobj.tell()            
+        pyuv.fs.read(self.uv_hub.ptr, self.fileno(), rlen, roffset, read_callback)
+        return did_read.wait()
+        
     def readinto (self, buf):
         data = self.read(len(buf))      ## TODO: could it be done without allocating intermediate?
         n = len(data)
@@ -202,36 +295,19 @@ class GreenPipe(_fileobject):
             buf[:n] = array.array('c', data)
         return n
 
-    def _get_readahead_len (self):
-        try:
-            return len(self._rbuf.getvalue()) # StringIO in 2.5
-        except AttributeError:
-            return len(self._rbuf) # str in 2.4
-
-    def _clear_readahead_buf (self):
-        len = self._get_readahead_len()
-        if len > 0:
-            self.read(len)
-
     def tell (self):
         self.flush()
-        try:
-            return os.lseek(self.fileno(), 0, 1) - self._get_readahead_len()
-        except OSError, e:
-            raise IOError(*e.args)
+        return self._fileobj.tell()
 
     def seek (self, offset, whence = 0):
         self.flush()
         if whence == 1 and offset == 0: # tell synonym
             return self.tell()
-        if whence == 1: # adjust offset by what is read ahead
-            offset -= self.get_readahead_len()
         try:
             rv = os.lseek(self.fileno(), offset, whence)
         except OSError, e:
             raise IOError(*e.args)
         else:
-            self._clear_readahead_buf()
             return rv
 
     if getattr(file, "truncate", None): # not all OSes implement truncate

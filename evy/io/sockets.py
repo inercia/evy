@@ -4,6 +4,9 @@
 # Unless otherwise noted, the files in Evy are under the following MIT license:
 #
 # Copyright (c) 2012, Alvaro Saurin
+# Copyright (c) 2008-2010, Eventlet Contributors (see AUTHORS)
+# Copyright (c) 2007-2010, Linden Research, Inc.
+# Copyright (c) 2005-2006, Bob Ippolito
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -100,7 +103,7 @@ _UV_ERR_TO_ERRNO_MAP = {
     #'UV_ENONET' : errno.ENONET,
     'UV_ENOTCONN' : errno.ENOTCONN,
     'UV_ENOTSOCK' : errno.ENOTSOCK,
-    'UV_ENOTSUP' : errno.ENOTSUP,
+    #'UV_ENOTSUP' : errno.ENOTSUP,
     'UV_ENOENT' : errno.ENOENT,
     'UV_ENOSYS' : errno.ENOSYS,
     'UV_EPIPE' : errno.EPIPE,

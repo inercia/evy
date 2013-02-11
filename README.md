@@ -1,7 +1,7 @@
 Evy is a concurrency library, based on eventlet, and using libuv in its core.
 
 Quick Example
-===============
+=============
 
 Here's something you can try right on the command line::
 
@@ -17,15 +17,20 @@ Read the docs
 
 Check out the latest documentation (here)[http://evy.readthedocs.org/en/latest/].
 
-Building the Docs Locally
-=========================
+Documentation
+=============
 
-To build a complete set of HTML documentation, you must have Sphinx, which can be found at
-http://sphinx.pocoo.org/ (or installed with `easy_install sphinx`)
+You can checkout evy's documentation at
 
-  make docs
-  
-The built html files can be found in doc/_build/html afterward.
+https://evy.readthedocs.org/en/latest/index.html
+
+Or, if you want to build a local copy of the HTML docs, you must have Sphinx,
+(which can be found at http://sphinx.pocoo.org/ or installed with `easy_install sphinx`)
+and then run:
+
+    make docs
+
+The built html files can be found in `doc/_build/html` afterwards...
 
 Status
 ======

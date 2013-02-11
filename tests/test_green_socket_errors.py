@@ -147,7 +147,7 @@ class TestGreenSocketErrors(LimitedTestCase):
             self.assert_(hasattr(e, 'args'))
             self.assertEqual(e.args[0], 'timed out')
         except Exception, e:
-            self.fail("unexpected exception '%s' %s" % (str(e), str(*e.args)))
+            self.fail("unexpected exception '%s' %s" % (str(e), str(e.args)))
 
 
     def test_connect_ex_timeout (self):
@@ -227,7 +227,7 @@ class TestGreenSocketErrors(LimitedTestCase):
         except socket.error, e:
             self.assert_(hasattr(e, 'args'))
         except Exception, e:
-            self.fail("unexpected exception '%s' %s" % (str(e), str(*e.args)))
+            self.fail("unexpected exception '%s' %s" % (str(e), str(e.args)))
 
         addr = listener.getsockname()
         self.assertNotEquals(addr[1], 0)

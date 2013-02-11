@@ -7,7 +7,8 @@ import errno
 import unittest
 import warnings
 
-from evy import debug, hubs
+from evy import hubs
+from evy.tools import debug
 
 from evy.timeout import Timeout
 

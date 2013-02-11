@@ -8,7 +8,7 @@ server package.  One such package is `Spawning <http://pypi.python.org/pypi/Spaw
 
 To launch a wsgi server, simply create a socket and call :func:`evy.wsgi.server` with it::
 
-    from evy import wsgi
+    from evy.web import wsgi
     import evy
     
     def hello_world(env, start_response):
@@ -21,7 +21,7 @@ To launch a wsgi server, simply create a socket and call :func:`evy.wsgi.server`
 You can find a slightly more elaborate version of this code in the file
 ``examples/wsgi.py``.
 
-.. automodule:: evy.wsgi
+.. automodule:: evy.web.wsgi
 	:members:
 
 .. _wsgi_ssl:
@@ -29,7 +29,9 @@ You can find a slightly more elaborate version of this code in the file
 SSL
 ---
 
-Creating a secure server is only slightly more involved than the base example.  All that's needed is to pass an SSL-wrapped socket to the :func:`~evy.wsgi.server` method::
+Creating a secure server is only slightly more involved than the base example.
+All that's needed is to pass an SSL-wrapped socket to the
+:func:`~evy.wsgi.server` method::
 
     wsgi.server(evy.wrap_ssl(evy.listen(('', 8090)),
                                   certfile='cert.crt',
@@ -37,7 +39,8 @@ Creating a secure server is only slightly more involved than the base example.  
                                   server_side=True),
                 hello_world)
 
-Applications can detect whether they are inside a secure server by the value of the ``env['wsgi.url_scheme']`` environment variable.
+Applications can detect whether they are inside a secure server by the value
+of the ``env['wsgi.url_scheme']`` environment variable.
 
 
 Non-Standard Extension to Support Post Hooks
@@ -51,7 +54,7 @@ in the post hook.
 
 For example::
 
-    from evy import wsgi
+    from evy.web import wsgi
     import evy
 
     def hook(env, arg1, arg2, kwarg3=None, kwarg4=None):

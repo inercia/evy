@@ -765,7 +765,7 @@ class TestHttpd(_TestBase):
         fd.close()
 
     def test_025_accept_errors (self):
-        from evy import debug
+        from evy.tools import debug
 
         debug.hub_exceptions(True)
         listener = greensocket.socket()
