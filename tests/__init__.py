@@ -20,13 +20,15 @@ from nose.plugins.attrib import attr
 # convenience for importers
 main = unittest.main
 
+
 def s2b (s):
     """portable way to convert string to bytes. In 3.x socket.send and recv require bytes"""
     return s.encode()
 
 
 def skipped (func):
-    """ Decorator that marks a function as skipped.  Uses nose's SkipTest exception
+    """
+    Decorator that marks a function as skipped.  Uses nose's SkipTest exception
     if installed.  Without nose, this will count skipped tests as passing tests."""
     try:
         from nose.plugins.skip import SkipTest
@@ -45,8 +47,9 @@ def skipped (func):
         return skipme
 
 
-def skip_if (condition):
-    """ Decorator that skips a test if the *condition* evaluates True.
+def skip_if (condition, reason = None):
+    """
+    Decorator that skips a test if the *condition* evaluates True.
     *condition* can be a boolean or a callable that accepts one argument.
     The callable will be called with the function to be decorated, and 
     should return True to skip the test.
@@ -69,8 +72,9 @@ def skip_if (condition):
     return skipped_wrapper
 
 
-def skip_unless (condition):
-    """ Decorator that skips a test if the *condition* does not return True.
+def skip_unless (condition, reason = None):
+    """
+    Decorator that skips a test if the *condition* does not return True.
     *condition* can be a boolean or a callable that accepts one argument.
     The callable will be called with the  function to be decorated, and 
     should return True if the condition is satisfied.
@@ -192,7 +196,7 @@ def verify_hub_empty ():
     num_writers = len(hub.get_writers())
     num_timers = hub.get_timers_count()
     assert num_readers == 0 and num_writers == 0, "Readers: %s Writers: %s" % (
-    num_readers, num_writers)
+        num_readers, num_writers)
 
 
 def find_command (command):
@@ -253,11 +257,12 @@ def get_database_auth ():
             # mysqldb is dum. Using a doubly-nested list comprehension
             # because we know that the structure is a two-level dict.
             return dict([(str(modname), dict([(str(k), str(v))
-            for k, v in connectargs.items()]))
-            for modname, connectargs in auth_utf8.items()])
+                                              for k, v in connectargs.items()]))
+                         for modname, connectargs in auth_utf8.items()])
         except IOError:
             pass
     return retval
+
 
 certificate_file = os.path.join(os.path.dirname(__file__), 'server.crt')
 private_key_file = os.path.join(os.path.dirname(__file__), 'server.key')
