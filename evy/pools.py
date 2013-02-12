@@ -118,12 +118,12 @@ class Pool(object):
 
     def __init__ (self, min_size = 0, max_size = 4, order_as_stack = False, create = None):
         """
-        *order_as_stack* governs the ordering of the items in the free pool.
-        If ``False`` (the default), the free items collection (of items that
-        were created and were put back in the pool) acts as a round-robin,
-        giving each item approximately equal utilization.  If ``True``, the
-        free pool acts as a FILO stack, which preferentially re-uses items that
-        have most recently been used.
+        :param order_as_stack: governs the ordering of the items in the free pool.
+                               If ``False`` (the default), the free items collection (of items that
+                               were created and were put back in the pool) acts as a round-robin,
+                               giving each item approximately equal utilization.  If ``True``, the
+                               free pool acts as a FILO stack, which preferentially re-uses items that
+                               have most recently been used.
         """
         self.min_size = min_size
         self.max_size = max_size
