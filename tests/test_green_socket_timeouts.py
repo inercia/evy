@@ -27,8 +27,9 @@
 # THE SOFTWARE.
 #
 
-
-"""Unit tests for socket timeout feature."""
+"""
+Unit tests for socket timeout feature.
+"""
 
 import unittest
 from test import test_support
