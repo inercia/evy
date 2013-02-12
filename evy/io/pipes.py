@@ -40,10 +40,11 @@ from socket import socket as _original_socket
 
 from evy.support import get_errno
 from evy.hubs import get_hub
-from evy.hubs import trampoline, wait_read, wait_write
+from evy.hubs import wait_read, wait_write
 from evy.event import Event
 from evy.io.utils import set_nonblocking
 from evy.patcher import original
+from evy.support.errors import last_file_error
 
 import errno
 
@@ -62,72 +63,6 @@ except AttributeError:
 
 __all__ = []
 
-
-#: the mapping between libuv errors and errno
-_UV_ERR_TO_ERRNO_MAP = {
-    'UV_EACCES' : errno.EACCES ,
-    'UV_EAGAIN' : errno.EAGAIN,
-    'UV_EADDRINUSE' : errno.EADDRINUSE ,
-    'UV_EADDRNOTAVAIL' : errno.EADDRNOTAVAIL,
-    'UV_EAFNOSUPPORT' : errno.EAFNOSUPPORT,
-    'UV_EALREADY' : errno.EALREADY,
-    'UV_EBADF' : errno.EBADF,
-    'UV_EBUSY' : errno.EBUSY,
-    'UV_ECONNABORTED' : errno.ECONNABORTED,
-    'UV_ECONNREFUSED' : errno.ECONNREFUSED ,
-    'UV_ECONNRESET' : errno.ECONNRESET,
-    'UV_EDESTADDRREQ' : errno.EDESTADDRREQ,
-    'UV_EFAULT' : errno.EFAULT,
-    'UV_EHOSTUNREACH' : errno.EHOSTUNREACH,
-    'UV_EINTR' : errno.EINTR,
-    'UV_EINVAL' : errno.EINVAL,
-    'UV_EISCONN' : errno.EISCONN,
-    'UV_EMFILE' : errno.EMFILE,
-    'UV_EMSGSIZE' : errno.EMSGSIZE,
-    'UV_ENETDOWN' : errno.ENETDOWN,
-    'UV_ENETUNREACH' : errno.ENETUNREACH,
-    'UV_ENFILE' : errno.ENFILE,
-    'UV_ENOBUFS' : errno.ENOBUFS,
-    'UV_ENOMEM' : errno.ENOMEM,
-    'UV_ENOTDIR' : errno.ENOTDIR,
-    'UV_EISDIR' : errno.EISDIR,
-    #'UV_ENONET' : errno.ENONET,
-    'UV_ENOTCONN' : errno.ENOTCONN,
-    'UV_ENOTSOCK' : errno.ENOTSOCK,
-    #'UV_ENOTSUP' : errno.ENOTSUP,
-    'UV_ENOENT' : errno.ENOENT,
-    'UV_ENOSYS' : errno.ENOSYS,
-    'UV_EPIPE' : errno.EPIPE,
-    'UV_EPROTO' : errno.EPROTO,
-    'UV_EPROTONOSUPPORT' : errno.EPROTONOSUPPORT,
-    'UV_EPROTOTYPE' : errno.EPROTOTYPE,
-    'UV_ETIMEDOUT' : errno.ETIMEDOUT,
-    'UV_ESHUTDOWN' : errno.ESHUTDOWN,
-    'UV_EEXIST' : errno.EEXIST,
-    'UV_ESRCH' : errno.ESRCH,
-    'UV_ENAMETOOLONG' : errno.ENAMETOOLONG,
-    'UV_EPERM' : errno.EPERM,
-    'UV_ELOOP' : errno.ELOOP,
-    'UV_EXDEV' : errno.EXDEV,
-    'UV_ENOTEMPTY' : errno.ENOTEMPTY,
-    'UV_ENOSPC' : errno.ENOSPC,
-    'UV_EIO' : errno.EIO,
-    'UV_EROFS' : errno.EROFS,
-    'UV_ENODEV' : errno.ENODEV ,
-    'UV_ESPIPE' : errno.ESPIPE ,
-}
-
-def last_file_error(code, msg = None):
-    """
-    Utility function for getting the last exception as a IOerror
-    """
-    if msg: msg += ': %s' % (pyuv.errno.strerror(code))
-    else:   msg = '%s' % (pyuv.errno.strerror(code))
-
-    try:                errno_code = _UV_ERR_TO_ERRNO_MAP[pyuv.errno.errorcode[code]]
-    except KeyError:    errno_code = code
-
-    return IOError(errno_code, msg)
 
 
 
