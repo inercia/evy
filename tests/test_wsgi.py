@@ -35,7 +35,7 @@ import errno
 import os
 import socket
 import sys
-from tests import skipped, LimitedTestCase, skip_with_pyevent, skip_if_no_ssl
+from tests import skipped, LimitedTestCase, skip_if_no_ssl
 from unittest import main
 
 from evy import event
@@ -695,9 +695,9 @@ class TestHttpd(_TestBase):
         # just test that it accepts the parameter for now
         # TODO: test that it uses the pool and that you can waitall() to
         # ensure that all clients finished
-        from evy import greenpool
+        from evy.pools import Pool
 
-        p = greenpool.GreenPool(5)
+        p = Pool(5)
         self.spawn_server(custom_pool = p)
 
         # this stuff is copied from test_001_server, could be better factored
