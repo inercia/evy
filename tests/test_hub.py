@@ -148,7 +148,7 @@ class TestExceptions(LimitedTestCase):
         sleep(DELAY)
         delay = time.time() - start
 
-        assert delay >= DELAY * 0.9, 'sleep returned after %s seconds (was scheduled for %s)' % (
+        assert delay >= DELAY * 0.9, 'sleep returned after %f seconds (was scheduled for %s)' % (
         delay, DELAY)
 
         def fail ():
@@ -160,7 +160,7 @@ class TestExceptions(LimitedTestCase):
         sleep(DELAY)
         delay = time.time() - start
 
-        assert delay >= DELAY * 0.9, 'sleep returned after %s seconds (was scheduled for %s)' % (
+        assert delay >= DELAY * 0.9, 'sleep returned after %f seconds (was scheduled for %s)' % (
         delay, DELAY)
 
     def test_exception_spawn (self):
@@ -242,6 +242,7 @@ except Timeout:
         sleep(0.4)  # wait for process to hit accept
         os.kill(p.pid, signal.SIGSTOP) # suspend and resume to generate EINTR
         os.kill(p.pid, signal.SIGCONT)
+
         output, _ = p.communicate()
         lines = [l for l in output.split("\n") if l]
         self.assert_("exited correctly" in lines[-1])
