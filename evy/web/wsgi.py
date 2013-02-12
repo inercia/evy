@@ -37,7 +37,7 @@ import warnings
 from evy.patched import urllib
 from evy.patched import socket
 from evy.patched import BaseHTTPServer
-from evy import greenpool
+from evy.green.pools import GreenPool
 from evy.io import sockets
 from evy.support import get_errno
 
@@ -669,7 +669,7 @@ def server (sock, site,
     if custom_pool is not None:
         pool = custom_pool
     else:
-        pool = greenpool.GreenPool(max_size)
+        pool = GreenPool(max_size)
     try:
         host, port = sock.getsockname()[:2]
         port = ':%s' % (port, )
