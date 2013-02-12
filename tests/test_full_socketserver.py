@@ -34,22 +34,23 @@ Test suite for SocketServer.py.
 
 import contextlib
 import imp
-import os
-import select
 import signal
-import socket
 import tempfile
 import unittest
-import SocketServer
+
+from evy.patched import socket
+from evy.patched import SocketServer
+from evy.patched import os
+from evy.patched import select
+from evy.patched import threading
 
 import test.test_support
 from test.test_support import reap_children, reap_threads, verbose
-try:
-    import threading
-except ImportError:
-    threading = None
 
 test.test_support.requires("network")
+
+
+
 
 TEST_STR = "hello world\n"
 HOST = test.test_support.HOST
