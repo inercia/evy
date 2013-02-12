@@ -30,7 +30,7 @@
 
 import os
 
-from tests import patcher_test, skip_unless
+from tests import skip_unless
 from tests import get_database_auth
 from tests.test_db_pool import postgres_requirement
 
