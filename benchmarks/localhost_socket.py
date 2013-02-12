@@ -1,12 +1,61 @@
-"""Benchmark evaluating evy's performance at speaking to itself over a localhost socket."""
+"""
+Benchmark evaluating evy's performance at speaking to itself over a localhost socket.
+
+Profiling and graphs
+====================
+
+You can profile this program and obtain a call graph with `gprof2dot` and `graphviz`:
+
+```
+python -m cProfile -o output.pstats    path/to/this/script arg1 arg2
+gprof2dot.py -f pstats output.pstats | dot -Tpng -o output.png
+```
+
+It generates a graph where a node represents a function and has the following layout:
+
+```
+    +------------------------------+
+    |        function name         |
+    | total time % ( self time % ) |
+    |         total calls          |
+    +------------------------------+
+```
+
+where:
+
+  * total time % is the percentage of the running time spent in this function and all its children;
+  * self time % is the percentage of the running time spent in this function alone;
+  * total calls is the total number of times this function was called (including recursive calls).
+
+An edge represents the calls between two functions and has the following layout:
+
+```
+               total time %
+                  calls
+    parent --------------------> children
+```
+
+where:
+
+  * total time % is the percentage of the running time transfered from the children to this parent (if available);
+  * calls is the number of calls the parent function called the children.
+
+"""
 
 import time
 import benchmarks
+
+import socket as socket_orig
+
+
 
 BYTES = 1000
 SIZE = 1
 CONCURRENCY = 50
 TRIES = 5
+
+
+
 
 def reader (sock):
     expect = BYTES
@@ -16,7 +65,7 @@ def reader (sock):
 
 
 def writer (addr, socket_impl):
-    sock = socket_impl(socket.AF_INET, socket.SOCK_STREAM)
+    sock = socket_impl(socket_orig.AF_INET, socket_orig.SOCK_STREAM)
     sock.connect(addr)
     sent = 0
     while sent < BYTES:
@@ -25,41 +74,41 @@ def writer (addr, socket_impl):
         sent += len(d)
 
 
-def green_accepter (server_sock, pool):
-    for i in xrange(CONCURRENCY):
-        sock, addr = server_sock.accept()
-        pool.spawn_n(reader, sock)
+####################################################################################################
 
-
-def heavy_accepter (server_sock, pool):
-    for i in xrange(CONCURRENCY):
-        sock, addr = server_sock.accept()
-        t = threading.Thread(None, reader, "reader thread", (sock,))
-        t.start()
-        pool.append(t)
-
-import evy.green.socket
-import evy
-
-from evy import debug
-
-debug.hub_exceptions(True)
 
 def launch_green_threads ():
+    from evy.patched import socket
+    import evy
+
+    def green_accepter (server_sock, pool):
+        for i in xrange(CONCURRENCY):
+            sock, addr = server_sock.accept()
+            pool.spawn_n(reader, sock)
+
     pool = evy.GreenPool(CONCURRENCY * 2 + 1)
-    server_sock = evy.green.socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_sock.bind(('localhost', 0))
     server_sock.listen(50)
     addr = ('localhost', server_sock.getsockname()[1])
     pool.spawn_n(green_accepter, server_sock, pool)
     for i in xrange(CONCURRENCY):
-        pool.spawn_n(writer, addr, evy.green.socket.socket)
+        pool.spawn_n(writer, addr, socket.socket)
     pool.waitall()
 
-import threading
-import socket
 
 def launch_heavy_threads ():
+    import threading
+    import socket
+
+    def heavy_accepter (server_sock, pool):
+        import threading
+        for i in xrange(CONCURRENCY):
+            sock, addr = server_sock.accept()
+            t = threading.Thread(None, reader, "reader thread", (sock,))
+            t.start()
+            pool.append(t)
+
     threads = []
     server_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_sock.bind(('localhost', 0))
@@ -93,19 +142,24 @@ if __name__ == "__main__":
                       default = TRIES)
 
     opts, args = parser.parse_args()
+
     BYTES = opts.bytes
     SIZE = opts.size
     CONCURRENCY = opts.concurrency
-    TRIES = opts.tries
 
     funcs = [launch_green_threads]
     if opts.threading:
-        funcs = [launch_green_threads, launch_heavy_threads]
-    results = benchmarks.measure_best(TRIES, 3,
-                                      lambda: None, lambda: None,
-                                      *funcs)
+        funcs.append(launch_heavy_threads)
+
+    print
+    print "measuring results for %d iterations..." % opts.tries
+    print
+
+    results = benchmarks.measure_best(opts.tries, 3, lambda: None, lambda: None, *funcs)
+
     print "green:", results[launch_green_threads]
     if opts.threading:
         print "threads:", results[launch_heavy_threads]
-        print "%", (results[launch_green_threads] - results[launch_heavy_threads]) / results[
-                                                                                     launch_heavy_threads] * 100
+        print "%", ((results[launch_green_threads] - results[launch_heavy_threads]) /
+                    (results[launch_heavy_threads] * 100))
+
