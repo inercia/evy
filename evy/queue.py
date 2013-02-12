@@ -65,6 +65,9 @@ from evy.timeout import Timeout
 
 __all__ = ['Queue', 'PriorityQueue', 'LifoQueue', 'LightQueue', 'Full', 'Empty']
 
+
+
+
 class Waiter(object):
     """
     A low level synchronization class.
@@ -280,7 +283,8 @@ class LightQueue(object):
             raise Full
 
     def put_nowait (self, item):
-        """Put an item into the queue without blocking.
+        """
+        Put an item into the queue without blocking.
 
         Only enqueue the item if a free slot is immediately available.
         Otherwise raise the :class:`Full` exception.
@@ -327,7 +331,8 @@ class LightQueue(object):
             raise Empty
 
     def get_nowait (self):
-        """Remove and return an item from the queue without blocking.
+        """
+        Remove and return an item from the queue without blocking.
 
         Only get an item if one is immediately available. Otherwise
         raise the :class:`Empty` exception.
