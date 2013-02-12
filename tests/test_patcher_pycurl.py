@@ -34,10 +34,8 @@ from tests import LimitedTestCase, main
 
 
 class TestPyCurl(LimitedTestCase):
-
     def test_simple_get (self):
-
-        def progress(download_t, download_d, upload_t, upload_d):
+        def progress (download_t, download_d, upload_t, upload_d):
             """
             Callback function invoked when download/upload has progress
             """
@@ -52,22 +50,23 @@ class TestPyCurl(LimitedTestCase):
         c.setopt(c.PROGRESSFUNCTION, progress)
         c.perform()
 
-    def test_get_headers_body(self):
-
-        def body(buf):
+    def test_get_headers_body (self):
+        def body (buf):
             """
             Callback function invoked when body data is ready
             """
             import sys              # Print body data to stdout
+
             sys.stdout.write(buf)
             # Returning None implies that all bytes were written
 
-        def header(buf):
+        def header (buf):
             """
             Callback function invoked when header data is ready
             """
             # Print header data to stderr
             import sys
+
             sys.stderr.write(buf)
             # Returning None implies that all bytes were written
 
@@ -76,6 +75,7 @@ class TestPyCurl(LimitedTestCase):
         c.setopt(pycurl.WRITEFUNCTION, body)
         c.setopt(pycurl.HEADERFUNCTION, header)
         c.perform()
+
 
 if __name__ == '__main__':
     main()

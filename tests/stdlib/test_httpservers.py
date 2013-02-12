@@ -9,12 +9,12 @@ from evy.patched import threading
 
 patcher.inject('test.test_httpservers',
                globals(),
-    ('BaseHTTPServer', BaseHTTPServer),
-    ('SimpleHTTPServer', SimpleHTTPServer),
-    ('CGIHTTPServer', CGIHTTPServer),
-    ('urllib', urllib),
-    ('httplib', httplib),
-    ('threading', threading))
+               ('BaseHTTPServer', BaseHTTPServer),
+               ('SimpleHTTPServer', SimpleHTTPServer),
+               ('CGIHTTPServer', CGIHTTPServer),
+               ('urllib', urllib),
+               ('httplib', httplib),
+               ('threading', threading))
 
 if __name__ == "__main__":
     test_main()

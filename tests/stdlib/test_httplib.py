@@ -4,8 +4,8 @@ from evy.patched import socket
 
 patcher.inject('test.test_httplib',
                globals(),
-    ('httplib', httplib),
-    ('socket', socket))
+               ('httplib', httplib),
+               ('socket', socket))
 
 if __name__ == "__main__":
     test_main()

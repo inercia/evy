@@ -37,7 +37,6 @@ import tempfile
 from tests import LimitedTestCase, main
 
 
-
 base_module_contents = """
 import socket
 import urllib
@@ -58,6 +57,7 @@ import patching
 import socket
 print "importing", patching, socket, patching.socket, patching.urllib
 """
+
 
 class ProcessBase(LimitedTestCase):
     TEST_TIMEOUT = 3 # starting processes is time-consuming
@@ -84,9 +84,9 @@ class ProcessBase(LimitedTestCase):
             filename = filename + '.py'
         p = subprocess.Popen([sys.executable,
                               os.path.join(self.tempdir, filename)],
-                                                                   stdout = subprocess.PIPE,
-                                                                   stderr = subprocess.STDOUT,
-                                                                   env = new_env)
+                             stdout = subprocess.PIPE,
+                             stderr = subprocess.STDOUT,
+                             env = new_env)
         output, _ = p.communicate()
         lines = output.split("\n")
         return output, lines
@@ -128,9 +128,7 @@ print "newmod", base, base.socket, base.urllib.socket.socket
         self.assert_('GreenSocket' in lines[1], repr(output))
 
 
-
 class TestMonkeyPatch(ProcessBase):
-
     def test_patched_modules (self):
         new_mod = """
 from evy import patcher
@@ -221,7 +219,7 @@ print "already_patched", ",".join(sorted(patcher.already_patched.keys()))
                                   'os,select,socket,thread,time')
 
     def test_boolean_all_negative (self):
-        self.assert_boolean_logic("patcher.monkey_patch(all=False, "\
+        self.assert_boolean_logic("patcher.monkey_patch(all=False, " \
                                   "socket=False, select=True)",
                                   'select')
 
@@ -230,7 +228,7 @@ print "already_patched", ",".join(sorted(patcher.already_patched.keys()))
                                   'socket')
 
     def test_boolean_double (self):
-        self.assert_boolean_logic("patcher.monkey_patch(socket=True,"\
+        self.assert_boolean_logic("patcher.monkey_patch(socket=True," \
                                   " select=True)",
                                   'select,socket')
 
@@ -239,12 +237,12 @@ print "already_patched", ",".join(sorted(patcher.already_patched.keys()))
                                   'os,select,thread,time')
 
     def test_boolean_negative2 (self):
-        self.assert_boolean_logic("patcher.monkey_patch(socket=False,"\
+        self.assert_boolean_logic("patcher.monkey_patch(socket=False," \
                                   "time=False)",
                                   'os,select,thread')
 
     def test_conflicting_specifications (self):
-        self.assert_boolean_logic("patcher.monkey_patch(socket=False, "\
+        self.assert_boolean_logic("patcher.monkey_patch(socket=False, " \
                                   "select=True)",
                                   'select')
 
@@ -267,6 +265,7 @@ def test_monkey_patch_threading():
     assert tickcount[0] > 900
     tpool.killall()
 """
+
 
 class TestTpool(ProcessBase):
     TEST_TIMEOUT = 3
@@ -327,10 +326,7 @@ print "done"
         self.assertEqual(output, "done\n", output)
 
 
-
-
 class TestThreading(ProcessBase):
-
     def test_orig_thread (self):
         new_mod = """import evy
 evy.monkey_patch()
@@ -430,7 +426,6 @@ evy.monkey_patch()
 
 
 class TestGreenThreadWrapper(ProcessBase):
-
     prologue = """import evy
 evy.monkey_patch()
 import threading

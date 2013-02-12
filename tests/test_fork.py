@@ -32,7 +32,6 @@ from tests.test_patcher import ProcessBase
 
 
 class ForkTest(ProcessBase):
-
     def test_simple (self):
         newmod = '''
 import evy

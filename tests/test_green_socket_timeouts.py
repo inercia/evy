@@ -42,25 +42,23 @@ import time
 from evy.patched import socket
 
 
-
-
 class TestGreenSocketTimeouts(unittest.TestCase):
     """
     Test case for socket.gettimeout() and socket.settimeout()
     """
 
-    def setUp(self):
+    def setUp (self):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-    def tearDown(self):
+    def tearDown (self):
         self.sock.close()
 
-    def test_object_creation(self):
+    def test_object_creation (self):
         # Test Socket creation
         self.assertEqual(self.sock.gettimeout(), None,
                          "timeout not disabled by default")
 
-    def test_float_return_value(self):
+    def test_float_return_value (self):
         # Test return value of gettimeout()
         self.sock.settimeout(7.345)
         self.assertEqual(self.sock.gettimeout(), 7.345)
@@ -71,7 +69,7 @@ class TestGreenSocketTimeouts(unittest.TestCase):
         self.sock.settimeout(None)
         self.assertEqual(self.sock.gettimeout(), None)
 
-    def test_return_type(self):
+    def test_return_type (self):
         # Test return type of gettimeout()
         self.sock.settimeout(1)
         self.assertEqual(type(self.sock.gettimeout()), type(1.0))
@@ -79,7 +77,7 @@ class TestGreenSocketTimeouts(unittest.TestCase):
         self.sock.settimeout(3.9)
         self.assertEqual(type(self.sock.gettimeout()), type(1.0))
 
-    def test_type_check(self):
+    def test_type_check (self):
         # Test type checking by settimeout()
         self.sock.settimeout(0)
         self.sock.settimeout(0L)
@@ -92,13 +90,13 @@ class TestGreenSocketTimeouts(unittest.TestCase):
         self.assertRaises(TypeError, self.sock.settimeout, {})
         self.assertRaises(TypeError, self.sock.settimeout, 0j)
 
-    def test_range_check(self):
+    def test_range_check (self):
         # Test range checking by settimeout()
         self.assertRaises(ValueError, self.sock.settimeout, -1)
         self.assertRaises(ValueError, self.sock.settimeout, -1L)
         self.assertRaises(ValueError, self.sock.settimeout, -1.0)
 
-    def test_timeout_then_blocking(self):
+    def test_timeout_then_blocking (self):
         # Test settimeout() followed by setblocking()
         self.sock.settimeout(10)
         self.sock.setblocking(1)
@@ -112,7 +110,7 @@ class TestGreenSocketTimeouts(unittest.TestCase):
         self.sock.setblocking(1)
         self.assertEqual(self.sock.gettimeout(), None)
 
-    def test_blocking_then_timeout(self):
+    def test_blocking_then_timeout (self):
         # Test setblocking() followed by settimeout()
         self.sock.setblocking(0)
         self.sock.settimeout(1)
@@ -134,15 +132,15 @@ class TimeoutTestCase(unittest.TestCase):
     # solution.
     fuzz = 2.0
 
-    def setUp(self):
+    def setUp (self):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.addr_remote = ('www.python.org.', 80)
         self.localhost = '127.0.0.1'
 
-    def tearDown(self):
+    def tearDown (self):
         self.sock.close()
 
-    def test_connect_timeout(self):
+    def test_connect_timeout (self):
         # Choose a private address that is unlikely to exist to prevent
         # failures due to the connect succeeding before the timeout.
         # Use a dotted IP address to avoid including the DNS lookup time
@@ -160,10 +158,10 @@ class TimeoutTestCase(unittest.TestCase):
 
         _delta = abs(_t1 - _t2)
         self.assertTrue(_delta < _timeout + self.fuzz,
-                     "timeout (%g) is more than %g seconds more than expected (%g)"
-                     %(_delta, self.fuzz, _timeout))
+                        "timeout (%g) is more than %g seconds more than expected (%g)"
+                        % (_delta, self.fuzz, _timeout))
 
-    def test_recv_timeout(self):
+    def test_recv_timeout (self):
         # Test recv() timeout
         _timeout = 0.02
 
@@ -177,10 +175,10 @@ class TimeoutTestCase(unittest.TestCase):
 
             _delta = abs(_t1 - _t2)
             self.assertTrue(_delta < _timeout + self.fuzz,
-                         "timeout (%g) is %g seconds more than expected (%g)"
-                         %(_delta, self.fuzz, _timeout))
+                            "timeout (%g) is %g seconds more than expected (%g)"
+                            % (_delta, self.fuzz, _timeout))
 
-    def test_accept_timeout(self):
+    def test_accept_timeout (self):
         # Test accept() timeout
         _timeout = 2
         self.sock.settimeout(_timeout)
@@ -194,10 +192,10 @@ class TimeoutTestCase(unittest.TestCase):
 
         _delta = abs(_t1 - _t2)
         self.assertTrue(_delta < _timeout + self.fuzz,
-                     "timeout (%g) is %g seconds more than expected (%g)"
-                     %(_delta, self.fuzz, _timeout))
+                        "timeout (%g) is %g seconds more than expected (%g)"
+                        % (_delta, self.fuzz, _timeout))
 
-    def test_recvfrom_timeout(self):
+    def test_recvfrom_timeout (self):
         # Test recvfrom() timeout
         _timeout = 2
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -211,8 +209,8 @@ class TimeoutTestCase(unittest.TestCase):
 
         _delta = abs(_t1 - _t2)
         self.assertTrue(_delta < _timeout + self.fuzz,
-                     "timeout (%g) is %g seconds more than expected (%g)"
-                     %(_delta, self.fuzz, _timeout))
+                        "timeout (%g) is %g seconds more than expected (%g)"
+                        % (_delta, self.fuzz, _timeout))
 
 
 

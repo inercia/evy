@@ -30,12 +30,12 @@
 
 from unittest import TestCase, main
 
-
 from evy import pools
 from evy.timeout import Timeout
 from evy.queue import Queue
 from evy.green.threads import spawn, sleep, kill
 from evy.green.pools import GreenPool
+
 
 class IntPool(pools.Pool):
     def create (self):
@@ -44,7 +44,6 @@ class IntPool(pools.Pool):
 
 
 class TestIntPool(TestCase):
-
     def setUp (self):
         self.pool = IntPool(min_size = 0, max_size = 4)
 
@@ -260,6 +259,7 @@ SOMETIMES = RuntimeError('I fail half the time')
 
 class TestTookTooLong(Exception):
     pass
+
 
 if __name__ == '__main__':
     main()

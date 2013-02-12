@@ -32,7 +32,6 @@ from tests import LimitedTestCase, main, skipped, s2b, skip_on_windows
 
 from evy.patched import socket
 
-
 import sys
 
 import unittest
@@ -44,15 +43,14 @@ HOST = 'localhost'
 
 
 class TestDnsResolution(unittest.TestCase):
-
-    def test_resolve(self):
+    def test_resolve (self):
         res = resolve('google.com')
         self.assertTrue(len(res) > 1)
 
-    def test_resolve_with_wrong_name(self):
+    def test_resolve_with_wrong_name (self):
         self.assertRaises(socket.gaierror, resolve('mipuroch.coocoo'))
 
-    def test_hostname_resolution(self):
+    def test_hostname_resolution (self):
 
         # Testing hostname resolution mechanisms
         hostname = socket.gethostname()
@@ -70,22 +68,24 @@ class TestDnsResolution(unittest.TestCase):
         all_host_names = [hostname, hname] + aliases
         fqhn = socket.getfqdn(ip)
         if not fqhn in all_host_names:
-            self.fail("Error testing host resolution mechanisms. (fqdn: %s, all: %s)" % (fqhn, repr(all_host_names)))
+            self.fail("Error testing host resolution mechanisms. (fqdn: %s, all: %s)" % (
+            fqhn, repr(all_host_names)))
 
-    def test_ref_count_getnameinfo(self):
+    def test_ref_count_getnameinfo (self):
         if hasattr(sys, "getrefcount"):
             try:
                 # On some versions, this loses a reference
                 orig = sys.getrefcount(__name__)
-                socket.getnameinfo(__name__,0)
+                socket.getnameinfo(__name__, 0)
             except TypeError:
-                self.assertEqual(sys.getrefcount(__name__), orig, "socket.getnameinfo loses a reference")
+                self.assertEqual(sys.getrefcount(__name__), orig,
+                                 "socket.getnameinfo loses a reference")
 
 
-    def test_gethostbyname(self):
+    def test_gethostbyname (self):
         socket.gethostbyname('www.google.com')
 
-    def test_getaddrinfo(self):
+    def test_getaddrinfo (self):
         try:
             socket.getaddrinfo('localhost', 80)
         except socket.gaierror as err:
@@ -130,7 +130,7 @@ class TestDnsResolution(unittest.TestCase):
         socket.getaddrinfo(None, 0, socket.AF_UNSPEC, socket.SOCK_STREAM, 0, socket.AI_PASSIVE)
 
 
-    def test_getnameinfo(self):
+    def test_getnameinfo (self):
         addr, service = socket.getnameinfo(('127.0.0.1', 80), 0)
         self.assertEquals(service, 'http')
 

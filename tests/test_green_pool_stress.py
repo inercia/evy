@@ -37,13 +37,11 @@ from evy.green.threads import spawn, sleep
 import tests
 
 
-
-
 class StressException(Exception):
     pass
 
-r = random.Random(0)
 
+r = random.Random(0)
 
 
 def pressure (arg):
@@ -130,7 +128,7 @@ class Stress(tests.LimitedTestCase):
                 gc.collect()
                 objs_created = len(gc.get_objects()) - initial_obj_count
                 self.assert_(objs_created < 25 * concurrency, objs_created)
-            # make sure we got to the end
+                # make sure we got to the end
         self.assertEquals(latest, count - 1)
 
     @tests.attr('perf')

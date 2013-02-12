@@ -43,6 +43,7 @@ try:
 except ImportError:
     from StringIO import StringIO
 
+
 class TestSpew(TestCase):
     def setUp (self):
         self.orig_trace = sys.settrace
@@ -164,6 +165,7 @@ class TestDebug(LimitedTestCase):
             # look for the KeyError exception in the traceback
         self.assert_('KeyError: 1' in fake.getvalue(),
                      "Traceback not in:\n" + fake.getvalue())
+
 
 if __name__ == "__main__":
     main()

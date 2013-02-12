@@ -42,7 +42,6 @@ import sys
 from test_hub import check_hub
 
 
-
 def bufsized (sock, size = 1):
     """
     Resize both send and receive buffers on a socket.
@@ -66,10 +65,7 @@ def min_buf_size ():
     return 65535
 
 
-
-
 class TestGreenSocketRefs(LimitedTestCase):
-
     TEST_TIMEOUT = 2
 
     def assertWriteToClosedFileRaises (self, fd):
@@ -83,7 +79,7 @@ class TestGreenSocketRefs(LimitedTestCase):
             # 3.x poll write to closed file-like pbject raises ValueError
             self.assertRaises(ValueError, fd.write, 'a')
 
-    def test_weakref(self):
+    def test_weakref (self):
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         p = proxy(s)
         self.assertEqual(p.fileno(), s.fileno())
@@ -212,8 +208,6 @@ class TestGreenSocketRefs(LimitedTestCase):
         assert fd.read() == ''
 
         killer.wait()
-
-
 
 
 if __name__ == '__main__':

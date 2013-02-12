@@ -36,6 +36,7 @@ from evy.timeout import Timeout
 
 import tests
 
+
 def passthru (a):
     sleep(0.01)
     return a
@@ -48,7 +49,6 @@ def passthru2 (a, b):
 
 def raiser (exc):
     raise exc
-
 
 
 class TestGreenPile(tests.LimitedTestCase):

@@ -45,7 +45,6 @@ import sys
 from test_hub import check_hub
 
 
-
 def bufsized (sock, size = 1):
     """
     Resize both send and receive buffers on a socket.
@@ -69,10 +68,7 @@ def min_buf_size ():
     return 65535
 
 
-
-
 class TestGreenSocket(LimitedTestCase):
-
     TEST_TIMEOUT = 2
 
     def assertWriteToClosedFileRaises (self, fd):
@@ -87,8 +83,7 @@ class TestGreenSocket(LimitedTestCase):
             self.assertRaises(ValueError, fd.write, 'a')
 
 
-
-    def test_crucial_constants(self):
+    def test_crucial_constants (self):
         # Testing for mission critical constants
         socket.AF_INET
         socket.SOCK_STREAM
@@ -165,24 +160,24 @@ class TestGreenSocket(LimitedTestCase):
         sender.wait()
 
 
-    def test_ntoh(self):
+    def test_ntoh (self):
         # This just checks that htons etc. are their own inverse,
         # when looking at the lower 16 or 32 bits.
         sizes = {socket.htonl: 32, socket.ntohl: 32,
                  socket.htons: 16, socket.ntohs: 16}
         for func, size in sizes.items():
-            mask = (1L<<size) - 1
+            mask = (1L << size) - 1
             for i in (0, 1, 0xffff, ~0xffff, 2, 0x01234567, 0x76543210):
-                self.assertEqual(i & mask, func(func(i&mask)) & mask)
+                self.assertEqual(i & mask, func(func(i & mask)) & mask)
 
             swapped = func(mask)
             self.assertEqual(swapped & mask, mask)
-            self.assertRaises(OverflowError, func, 1L<<34)
+            self.assertRaises(OverflowError, func, 1L << 34)
 
 
-    def test_ntoh_errors(self):
-        good_values = [ 1, 2, 3, 1L, 2L, 3L ]
-        bad_values = [ -1, -2, -3, -1L, -2L, -3L ]
+    def test_ntoh_errors (self):
+        good_values = [1, 2, 3, 1L, 2L, 3L]
+        bad_values = [-1, -2, -3, -1L, -2L, -3L]
         for k in good_values:
             socket.ntohl(k)
             socket.ntohs(k)
@@ -195,15 +190,15 @@ class TestGreenSocket(LimitedTestCase):
             self.assertRaises(OverflowError, socket.htons, k)
 
 
-    def test_getservbyname(self):
+    def test_getservbyname (self):
         eq = self.assertEqual
         # Find one service that exists, then check all the related interfaces.
         # I've ordered this by protocols that have both a tcp and udp
         # protocol, at least for modern Linuxes.
         if (sys.platform.startswith('linux') or
-            sys.platform.startswith('freebsd') or
-            sys.platform.startswith('netbsd') or
-            sys.platform == 'darwin'):
+                sys.platform.startswith('freebsd') or
+                sys.platform.startswith('netbsd') or
+                    sys.platform == 'darwin'):
             # avoid the 'echo' service on this platform, as there is an
             # assumption breaking non-standard port/protocol entry
             services = ('daytime', 'qotd', 'domain')
@@ -237,7 +232,7 @@ class TestGreenSocket(LimitedTestCase):
         self.assertRaises(OverflowError, socket.getservbyport, 65536)
 
 
-    def test_default_timeout(self):
+    def test_default_timeout (self):
         # Testing default timeout
         # The default timeout should initially be None
         self.assertEqual(socket.getdefaulttimeout(), None)
@@ -266,7 +261,7 @@ class TestGreenSocket(LimitedTestCase):
         self.assertRaises(TypeError, socket.setdefaulttimeout, "spam")
 
 
-    def test_sock_name(self):
+    def test_sock_name (self):
         # Testing getsockname()
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.addCleanup(sock.close)
@@ -282,7 +277,7 @@ class TestGreenSocket(LimitedTestCase):
             return
         self.assertIn(name[0], ("0.0.0.0", my_ip_addr), '%s invalid' % name[0])
 
-    def test_get_sock_opt(self):
+    def test_get_sock_opt (self):
         # Testing getsockopt()
         # We know a socket should start without reuse==0
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -290,7 +285,7 @@ class TestGreenSocket(LimitedTestCase):
         reuse = sock.getsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR)
         self.assertFalse(reuse != 0, "initial mode is reuse")
 
-    def test_set_sock_opt(self):
+    def test_set_sock_opt (self):
         # Testing setsockopt()
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.addCleanup(sock.close)
@@ -299,7 +294,7 @@ class TestGreenSocket(LimitedTestCase):
         self.assertFalse(reuse == 0, "failed to set reuse mode")
 
 
-    def test_new_attributes(self):
+    def test_new_attributes (self):
         # testing .family, .type and .protocol
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.assertEqual(sock.family, socket.AF_INET)
@@ -308,7 +303,7 @@ class TestGreenSocket(LimitedTestCase):
         sock.close()
 
 
-    def test_getsockaddrarg(self):
+    def test_getsockaddrarg (self):
         host = '0.0.0.0'
         port = 34555
         big_port = port + 65536
@@ -322,14 +317,12 @@ class TestGreenSocket(LimitedTestCase):
             sock.close()
 
 
-    def test_listen_backlog0(self):
+    def test_listen_backlog0 (self):
         srv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         srv.bind(('0.0.0.0', 0))
         # backlog = 0
         srv.listen(0)
         srv.close()
-
-
 
 
 class TestGreenIoStarvation(LimitedTestCase):
@@ -420,17 +413,14 @@ class TestGreenIoStarvation(LimitedTestCase):
         # assert that the last task started before the first task ended
         # (our no-starvation condition)
         assert starttimes[-1] < endtimes[0], "Not overlapping: starts %s ends %s" % (
-        starttimes, endtimes)
+            starttimes, endtimes)
 
         maxstartdiff = starttimes[-1] - starttimes[0]
 
         assert maxstartdiff * 2 < runlengths[
-                                  0], "Largest difference in starting times more than twice the shortest running time!"
+            0], "Largest difference in starting times more than twice the shortest running time!"
         assert runlengths[0] * 2 > runlengths[
-                                   -1], "Longest runtime more than twice as long as shortest!"
-
-
-
+            -1], "Longest runtime more than twice as long as shortest!"
 
 
 if __name__ == '__main__':

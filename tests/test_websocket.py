@@ -63,7 +63,9 @@ def handle (ws):
     else:
         ws.close()
 
+
 wsapp = WebSocketWSGI(handle)
+
 
 class TestWebSocket(_TestBase):
     TEST_TIMEOUT = 5
@@ -88,7 +90,7 @@ class TestWebSocket(_TestBase):
             "Host: localhost:%s" % self.port,
             "Origin: http://localhost:%s" % self.port,
             "WebSocket-Protocol: ws",
-            ])
+        ])
         http = httplib.HTTPConnection('localhost', self.port)
         http.request("GET", "/echo", headers = headers)
         resp = http.getresponse()
@@ -105,7 +107,7 @@ class TestWebSocket(_TestBase):
             "Host: localhost:%s" % self.port,
             "Origin: http://localhost:%s" % self.port,
             "Sec-WebSocket-Protocol: ws",
-            ])
+        ])
         http = httplib.HTTPConnection('localhost', self.port)
         http.request("GET", "/echo", headers = headers)
         resp = http.getresponse()
@@ -140,7 +142,7 @@ class TestWebSocket(_TestBase):
             "Host: localhost:%s" % self.port,
             "Origin: http://localhost:%s" % self.port,
             "WebSocket-Protocol: ws",
-            ]
+        ]
         sock = connect(
             ('localhost', self.port))
 
@@ -164,7 +166,7 @@ class TestWebSocket(_TestBase):
             "Sec-WebSocket-Protocol: ws",
             "Sec-WebSocket-Key1: 4 @1  46546xW%0l 1 5",
             "Sec-WebSocket-Key2: 12998 5 Y3 1  .P00",
-            ]
+        ]
         sock = connect(
             ('localhost', self.port))
 
@@ -191,7 +193,7 @@ class TestWebSocket(_TestBase):
             "Sec-WebSocket-Protocol: ws",
             "Sec-WebSocket-Key1: 4 @1  46546xW%0l 1 5",
             "Sec-WebSocket-Key2: 12998 5 Y3 1  .P00",
-            ]
+        ]
         sock = connect(
             ('localhost', self.port))
 
@@ -216,7 +218,7 @@ class TestWebSocket(_TestBase):
             "Sec-WebSocket-Protocol: ws",
             "Sec-WebSocket-Key1: 4 @1  46546xW%0l 1 5",
             "Sec-WebSocket-Key2: 12998 5 Y3 1  .P00",
-            ]
+        ]
         sock = connect(
             ('localhost', self.port))
 
@@ -239,7 +241,7 @@ class TestWebSocket(_TestBase):
             "Host: localhost:%s" % self.port,
             "Origin: http://localhost:%s" % self.port,
             "WebSocket-Protocol: ws",
-            ]
+        ]
         sock = connect(
             ('localhost', self.port))
 
@@ -267,7 +269,7 @@ class TestWebSocket(_TestBase):
             "Sec-WebSocket-Protocol: ws",
             "Sec-WebSocket-Key1: 4 @1  46546xW%0l 1 5",
             "Sec-WebSocket-Key2: 12998 5 Y3 1  .P00",
-            ]
+        ]
         sock = connect(
             ('localhost', self.port))
 
@@ -293,7 +295,7 @@ class TestWebSocket(_TestBase):
             "Host: localhost:%s" % self.port,
             "Origin: http://localhost:%s" % self.port,
             "WebSocket-Protocol: ws",
-            ]
+        ]
         sock = connect(
             ('localhost', self.port))
 
@@ -318,7 +320,7 @@ class TestWebSocket(_TestBase):
             "Sec-WebSocket-Protocol: ws",
             "Sec-WebSocket-Key1: 4 @1  46546xW%0l 1 5",
             "Sec-WebSocket-Key2: 12998 5 Y3 1  .P00",
-            ]
+        ]
         sock = connect(
             ('localhost', self.port))
 
@@ -357,7 +359,7 @@ class TestWebSocket(_TestBase):
             "Host: localhost:%s" % self.port,
             "Origin: http://localhost:%s" % self.port,
             "WebSocket-Protocol: ws",
-            ]
+        ]
         sock = connect(
             ('localhost', self.port))
         sock.sendall('\r\n'.join(connect_data) + '\r\n\r\n')
@@ -392,7 +394,7 @@ class TestWebSocket(_TestBase):
             "Sec-WebSocket-Protocol: ws",
             "Sec-WebSocket-Key1: 4 @1  46546xW%0l 1 5",
             "Sec-WebSocket-Key2: 12998 5 Y3 1  .P00",
-            ]
+        ]
         sock = connect(
             ('localhost', self.port))
         sock.sendall('\r\n'.join(connect_data) + '\r\n\r\n^n:ds[4U')
@@ -427,7 +429,7 @@ class TestWebSocket(_TestBase):
             "Sec-WebSocket-Protocol: ws",
             "Sec-WebSocket-Key1: 4 @1  46546xW%0l 1 5",
             "Sec-WebSocket-Key2: 12998 5 Y3 1  .P00",
-            ]
+        ]
         sock = connect(
             ('localhost', self.port))
         sock.sendall('\r\n'.join(connect_data) + '\r\n\r\n^n:ds[4U')
@@ -462,7 +464,7 @@ class TestWebSocket(_TestBase):
             "Sec-WebSocket-Protocol: ws",
             "Sec-WebSocket-Key1: 4 @1  46546xW%0l 1 5",
             "Sec-WebSocket-Key2: 12998 5 Y3 1  .P00",
-            ]
+        ]
         sock = connect(
             ('localhost', self.port))
         sock.sendall('\r\n'.join(connect_data) + '\r\n\r\n^n:ds[4U')
@@ -481,7 +483,7 @@ class TestWebSocket(_TestBase):
             "Sec-WebSocket-Protocol: ws",
             "Sec-WebSocket-Key1: 4 @1  46546xW%0l 1 5",
             "Sec-WebSocket-Key2: 12998 5 Y3 1  .P00",
-            ]
+        ]
         sock = connect(
             ('localhost', self.port))
 
@@ -515,7 +517,7 @@ class TestWebSocket(_TestBase):
             "Host: localhost:%s" % self.port,
             "Origin: http://localhost:%s" % self.port,
             "WebSocket-Protocol: ws",
-            ]
+        ]
         sock = connect(('localhost', self.port))
         sock.sendall('\r\n'.join(connect_data) + '\r\n\r\n')
         resp = sock.recv(1024)
@@ -548,7 +550,7 @@ class TestWebSocket(_TestBase):
             "Sec-WebSocket-Protocol: ws",
             "Sec-WebSocket-Key1: 4 @1  46546xW%0l 1 5",
             "Sec-WebSocket-Key2: 12998 5 Y3 1  .P00",
-            ]
+        ]
         sock = connect(
             ('localhost', self.port))
         sock.sendall('\r\n'.join(connect_data) + '\r\n\r\n^n:ds[4U')
@@ -564,9 +566,9 @@ class TestWebSocketSSL(_TestBase):
     @skip_if_no_ssl
     def test_ssl_sending_messages (self):
         s = evy.wrap_ssl(listen(('localhost', 0)),
-                              certfile = certificate_file,
-                              keyfile = private_key_file,
-                              server_side = True)
+                         certfile = certificate_file,
+                         keyfile = private_key_file,
+                         server_side = True)
         self.spawn_server(sock = s)
         connect_data = [
             "GET /echo HTTP/1.1",
@@ -577,7 +579,7 @@ class TestWebSocketSSL(_TestBase):
             "Sec-WebSocket-Protocol: ws",
             "Sec-WebSocket-Key1: 4 @1  46546xW%0l 1 5",
             "Sec-WebSocket-Key2: 12998 5 Y3 1  .P00",
-            ]
+        ]
         sock = evy.wrap_ssl(connect(
             ('localhost', self.port)))
 

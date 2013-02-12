@@ -5,6 +5,7 @@ from evy import patcher
 
 patcher.monkey_patch()
 
+
 def assimilate_real (name):
     print "Assimilating", name
     try:
@@ -19,6 +20,7 @@ def assimilate_real (name):
             modobj.test_main.__name__ = name + '.test_main'
         except AttributeError:
             print "No test_main for %s, assuming it tests on import" % name
+
 
 import all_modules
 

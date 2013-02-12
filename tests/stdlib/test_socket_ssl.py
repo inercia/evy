@@ -8,11 +8,13 @@ import test.test_support
 
 i_r_e = test.test_support.is_resource_enabled
 
+
 def is_resource_enabled (resource):
     if resource == 'network':
         return True
     else:
         return i_r_e(resource)
+
 
 test.test_support.is_resource_enabled = is_resource_enabled
 
@@ -26,6 +28,7 @@ patcher.inject('test.test_socket_ssl', globals())
 
 test_basic = patcher.patch_function(test_basic)
 test_rude_shutdown = patcher.patch_function(test_rude_shutdown)
+
 
 def test_main ():
     if not hasattr(socket, "ssl"):

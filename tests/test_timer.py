@@ -35,8 +35,8 @@ from evy import hubs
 from evy import sleep
 from evy.hubs import timer
 
-class TestTimer(TestCase):
 
+class TestTimer(TestCase):
     def test_copy (self):
         t = timer.Timer(0, lambda: None)
         t2 = t.copy()

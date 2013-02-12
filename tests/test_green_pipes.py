@@ -37,9 +37,7 @@ import os
 import tempfile, shutil
 
 
-
 class TestGreenPipes(LimitedTestCase):
-
     @skip_on_windows
     def setUp (self):
         super(self.__class__, self).setUp()
@@ -147,7 +145,6 @@ class TestGreenPipes(LimitedTestCase):
         f.write('1234567890')
         f.truncate(9)
         self.assertEquals(f.tell(), 9)
-
 
 
 if __name__ == '__main__':

@@ -32,9 +32,6 @@
 Test cases for db_pool
 """
 
-
-
-
 import sys
 import os
 import traceback
@@ -47,12 +44,7 @@ from evy import db_pool
 from evy import sleep
 from evy import Timeout
 
-
-
 import evy
-
-
-
 
 
 class DBTester(object):
@@ -516,7 +508,6 @@ class TpoolConnectionPool(DBConnectionPool):
                                              **self._auth)
 
 
-    
     def setUp (self):
         super(TpoolConnectionPool, self).setUp()
 
@@ -540,7 +531,9 @@ class RawConnectionPool(DBConnectionPool):
                                          connect_timeout = connect_timeout,
                                          **self._auth)
 
+
 get_auth = get_database_auth
+
 
 def mysql_requirement (_f):
     verbose = os.environ.get('evy_test_mysql_verbose')
@@ -688,6 +681,7 @@ class Test01Psycopg2Tpool(Psycopg2ConnectionPool, TpoolConnectionPool, TestCase)
 
 class Test02Psycopg2Raw(Psycopg2ConnectionPool, RawConnectionPool, TestCase):
     __test__ = True
+
 
 if __name__ == '__main__':
     main()

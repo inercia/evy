@@ -43,9 +43,6 @@ from evy.io.ssl import SSL
 from evy.green import threads as greenthread
 
 
-
-
-
 def listen_ssl_socket (address = ('127.0.0.1', 0)):
     sock = util.wrap_ssl(socket.socket(), certificate_file, private_key_file, True)
     sock.bind(address)
@@ -55,7 +52,6 @@ def listen_ssl_socket (address = ('127.0.0.1', 0)):
 
 
 class SSLTest(LimitedTestCase):
-
     certificate_file = os.path.join(os.path.dirname(__file__), 'server.crt')
     private_key_file = os.path.join(os.path.dirname(__file__), 'server.key')
 
@@ -169,8 +165,6 @@ class SSLTest(LimitedTestCase):
 
 
 class SocketSSLTest(LimitedTestCase):
-
-
     @skip_if_no_ssl
     def test_greensslobject (self):
         import warnings

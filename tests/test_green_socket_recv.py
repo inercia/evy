@@ -40,10 +40,7 @@ from evy.green.threads import spawn, sleep
 from evy.green.threads import waitall
 
 
-
-
 class TestGreenSocketRecv(LimitedTestCase):
-
     TEST_TIMEOUT = 1
 
     def test_recv (self):
@@ -65,15 +62,17 @@ class TestGreenSocketRecv(LimitedTestCase):
             accepting.send()
             sock, addr = listener.accept()
             sock.send(sent_data)
+
         gt_server = spawn(server)
 
-        def client():
+        def client ():
             client = sockets.GreenSocket()
             accepting.wait()
             sleep(0.5)
             client.connect(('127.0.0.1', port))
             received_data = client.recv(5000)
             received.send(received_data)
+
         gt_client = spawn(client)
 
         waitall(gt_client, gt_server)
@@ -106,7 +105,7 @@ class TestGreenSocketRecv(LimitedTestCase):
 
         gt_server = spawn(server)
 
-        def client():
+        def client ():
             client = sockets.GreenSocket()
             accepting.wait()
             sleep(0.5)
@@ -120,7 +119,6 @@ class TestGreenSocketRecv(LimitedTestCase):
         received_data = received.wait()
 
         self.assertEquals(sent_data[:DATLEN], received_data)
-
 
 
     def test_recv_timeout (self):
@@ -138,6 +136,7 @@ class TestGreenSocketRecv(LimitedTestCase):
             accepting.send()
             sock, addr = listener.accept()
             accepted.wait()
+
         gt = spawn(server)
 
         client = sockets.GreenSocket()
@@ -207,7 +206,7 @@ class TestGreenSocketRecv(LimitedTestCase):
             sock, addr = listener.accept()
             sock.send(sent_data)
 
-        def client():
+        def client ():
             buf = buffer(array.array('B'))
             client = sockets.GreenSocket()
             accepting.wait()
@@ -240,6 +239,7 @@ class TestGreenSocketRecv(LimitedTestCase):
             accepting.send()
             sock, addr = listener.accept()
             accepted.wait()
+
         gt = spawn(server)
 
         client = sockets.GreenSocket()
@@ -257,7 +257,6 @@ class TestGreenSocketRecv(LimitedTestCase):
 
         accepted.send()
         gt.wait()
-
 
 
 if __name__ == '__main__':

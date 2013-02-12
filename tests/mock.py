@@ -49,9 +49,10 @@ __all__ = (
     'patch_object',
     'sentinel',
     'DEFAULT'
-    )
+)
 
 __version__ = '0.6.0'
+
 
 class SentinelObject(object):
     def __init__ (self, name):
@@ -73,10 +74,13 @@ sentinel = Sentinel()
 
 DEFAULT = sentinel.DEFAULT
 
+
 class OldStyleClass:
     pass
 
+
 ClassType = type(OldStyleClass)
+
 
 def _is_magic (name):
     return '__%s__' % name[2:-2] == name
@@ -146,8 +150,8 @@ class Mock(object):
         ret_val = DEFAULT
         if self.side_effect is not None:
             if (isinstance(self.side_effect, Exception) or
-                isinstance(self.side_effect, (type, ClassType)) and
-                issubclass(self.side_effect, Exception)):
+                        isinstance(self.side_effect, (type, ClassType)) and
+                        issubclass(self.side_effect, Exception)):
                 raise self.side_effect
 
             ret_val = self.side_effect(*args, **kwargs)
@@ -179,7 +183,7 @@ class Mock(object):
 
     def assert_called_with (self, *args, **kwargs):
         assert self.call_args == (args, kwargs), 'Expected: %s\nCalled with: %s' % (
-        (args, kwargs), self.call_args)
+            (args, kwargs), self.call_args)
 
 
 def _dot_lookup (thing, comp, import_path):

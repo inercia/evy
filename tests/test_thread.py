@@ -40,7 +40,6 @@ from evy.green.pools import GreenPool
 from tests import LimitedTestCase, skipped
 
 
-
 class Locals(LimitedTestCase):
     def passthru (self, *args, **kw):
         self.results.append((args, kw))

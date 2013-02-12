@@ -38,8 +38,8 @@ from evy.event import Event
 from evy.green.pools import GreenPool
 from evy.green.threads import spawn, sleep
 
-
 import tests
+
 
 def passthru (a):
     sleep(0.01)
@@ -56,7 +56,6 @@ def raiser (exc):
 
 
 class TestGreenPool(tests.LimitedTestCase):
-
     def test_spawn (self):
         p = GreenPool(4)
         waiters = []
@@ -441,7 +440,6 @@ class TestGreenPool(tests.LimitedTestCase):
 
         pool.spawn(reenter_async)
         evt.wait()
-
 
 
     def test_resize (self):

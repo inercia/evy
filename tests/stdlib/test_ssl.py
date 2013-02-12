@@ -14,24 +14,26 @@ import test.test_support
 
 i_r_e = test.test_support.is_resource_enabled
 
+
 def is_resource_enabled (resource):
     if resource == 'network':
         return True
     else:
         return i_r_e(resource)
 
+
 test.test_support.is_resource_enabled = is_resource_enabled
 
 patcher.inject('test.test_ssl',
                globals(),
-    ('asyncore', asyncore),
-    ('BaseHTTPServer', BaseHTTPServer),
-    ('select', select),
-    ('socket', socket),
-    ('SocketServer', SocketServer),
-    ('ssl', ssl),
-    ('threading', threading),
-    ('urllib', urllib))
+               ('asyncore', asyncore),
+               ('BaseHTTPServer', BaseHTTPServer),
+               ('select', select),
+               ('socket', socket),
+               ('SocketServer', SocketServer),
+               ('ssl', ssl),
+               ('threading', threading),
+               ('urllib', urllib))
 
 
 # TODO svn.python.org stopped serving up the cert that these tests expect; 

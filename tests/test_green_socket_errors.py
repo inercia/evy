@@ -41,10 +41,7 @@ import errno
 import sys
 
 
-
-
 class TestGreenSocketErrors(LimitedTestCase):
-
     TEST_TIMEOUT = 2
 
     def assertWriteToClosedFileRaises (self, fd):
@@ -58,14 +55,17 @@ class TestGreenSocketErrors(LimitedTestCase):
             # 3.x poll write to closed file-like pbject raises ValueError
             self.assertRaises(ValueError, fd.write, 'a')
 
-    def test_socket_error(self):
+    def test_socket_error (self):
         # Testing socket module exceptions
-        def raise_error(*args, **kwargs):
+        def raise_error (*args, **kwargs):
             raise socket.error
-        def raise_herror(*args, **kwargs):
+
+        def raise_herror (*args, **kwargs):
             raise socket.herror
-        def raise_gaierror(*args, **kwargs):
+
+        def raise_gaierror (*args, **kwargs):
             raise socket.gaierror
+
         self.assertRaises(socket.error, raise_error,
                           "Error raising socket exception.")
         self.assertRaises(socket.error, raise_herror,
@@ -95,7 +95,7 @@ class TestGreenSocketErrors(LimitedTestCase):
         gs = sockets.GreenSocket(socket.AF_INET, socket.SOCK_STREAM)
         gs.connect(('0.0.0.0', 80))
 
-    def test_sendto_errors(self):
+    def test_sendto_errors (self):
         # Testing that sendto doens't masks failures. See #10169.
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.addCleanup(s.close)
@@ -155,7 +155,8 @@ class TestGreenSocketErrors(LimitedTestCase):
         gs.settimeout(0.1)
         #e = gs.connect_ex(('192.0.2.1', 80))
         e = gs.connect_ex(('255.255.0.1', 80))
-        self.assertIn(e, (errno.EHOSTUNREACH, errno.ECONNREFUSED, errno.ENETUNREACH, errno.ETIME, errno.EAGAIN))
+        self.assertIn(e, (
+        errno.EHOSTUNREACH, errno.ECONNREFUSED, errno.ENETUNREACH, errno.ETIME, errno.EAGAIN))
 
     def test_connection_refused (self):
         # open and close a dummy server to find an unused port
@@ -265,7 +266,7 @@ class TestGreenSocketErrors(LimitedTestCase):
         port = convenience.listen(('127.0.0.1', 0)).getsockname()[1]
         self.assertRaises(socket.error, convenience.connect, ('127.0.0.1', port))
 
-    def test_send_after_close(self):
+    def test_send_after_close (self):
         # testing send() after close() with timeout
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.settimeout(1)

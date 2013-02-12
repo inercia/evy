@@ -4,8 +4,8 @@ from evy.patched import time
 
 patcher.inject('test.test_timeout',
                globals(),
-    ('socket', socket),
-    ('time', time))
+               ('socket', socket),
+               ('time', time))
 
 # to get past the silly 'requires' check
 from test import test_support

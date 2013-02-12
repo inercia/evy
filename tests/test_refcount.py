@@ -46,6 +46,7 @@ from evy.patched.time import sleep
 
 SOCKET_TIMEOUT = 0.1
 
+
 def init_server ():
     s = socket.socket()
     s.settimeout(SOCKET_TIMEOUT)
@@ -63,7 +64,7 @@ def handle_request (s, raise_on_timeout):
             raise
         else:
             return
-        #print 'handle_request - accepted'
+            #print 'handle_request - accepted'
     res = conn.recv(100)
     assert res == 'hello', repr(res)
     #print 'handle_request - recvd %r' % res
@@ -117,6 +118,7 @@ def test_clean_exit ():
 def test_timeout_exit ():
     run_and_check(False)
     run_and_check(False)
+
 
 if __name__ == '__main__':
     unittest.main()

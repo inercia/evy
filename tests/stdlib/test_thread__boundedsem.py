@@ -2,8 +2,10 @@
 from evy import coros
 from evy.patched import thread
 
+
 def allocate_lock ():
     return coros.semaphore(1, 9999)
+
 
 original_allocate_lock = thread.allocate_lock
 thread.allocate_lock = allocate_lock
