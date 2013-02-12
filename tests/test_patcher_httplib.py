@@ -28,77 +28,81 @@
 #
 
 
-import httplib
 import array
-import httplib
 import StringIO
-import socket
 import errno
 
-import unittest
-TestCase = unittest.TestCase
+from evy.patched import socket
+from evy.patched import httplib
+
+from tests import LimitedTestCase, skip_if
 
 from test import test_support
 
 HOST = test_support.HOST
 
+
 class FakeSocket:
-    def __init__(self, text, fileclass=StringIO.StringIO):
+    def __init__ (self, text, fileclass = StringIO.StringIO):
         self.text = text
         self.fileclass = fileclass
         self.data = ''
 
-    def sendall(self, data):
+    def sendall (self, data):
         self.data += ''.join(data)
 
-    def makefile(self, mode, bufsize=None):
+    def makefile (self, mode, bufsize = None):
         if mode != 'r' and mode != 'rb':
             raise httplib.UnimplementedFileMode()
         return self.fileclass(self.text)
 
-class EPipeSocket(FakeSocket):
 
-    def __init__(self, text, pipe_trigger):
+class EPipeSocket(FakeSocket):
+    def __init__ (self, text, pipe_trigger):
         # When sendall() is called with pipe_trigger, raise EPIPE.
         FakeSocket.__init__(self, text)
         self.pipe_trigger = pipe_trigger
 
-    def sendall(self, data):
+    def sendall (self, data):
         if self.pipe_trigger in data:
             raise socket.error(errno.EPIPE, "gotcha")
         self.data += data
 
-    def close(self):
+    def close (self):
         pass
 
+
 class NoEOFStringIO(StringIO.StringIO):
-    """Like StringIO, but raises AssertionError on EOF.
+    """
+    Like StringIO, but raises AssertionError on EOF.
 
     This is used below to test that httplib doesn't try to read
     more from the underlying file than it should.
     """
-    def read(self, n=-1):
+
+    def read (self, n = -1):
         data = StringIO.StringIO.read(self, n)
         if data == '':
             raise AssertionError('caller tried to read past EOF')
         return data
 
-    def readline(self, length=None):
+    def readline (self, length = None):
         data = StringIO.StringIO.readline(self, length)
         if data == '':
             raise AssertionError('caller tried to read past EOF')
         return data
 
 
-class HeaderTests(TestCase):
-    def test_auto_headers(self):
+class HeaderTests(LimitedTestCase):
+    def test_auto_headers (self):
         # Some headers are added automatically, but should not be added by
         # .request() if they are explicitly set.
 
         class HeaderCountingBuffer(list):
-            def __init__(self):
+            def __init__ (self):
                 self.count = {}
-            def append(self, item):
+
+            def append (self, item):
                 kv = item.split(':')
                 if len(kv) > 1:
                     # item is a 'Key: Value' header string
@@ -120,14 +124,14 @@ class HeaderTests(TestCase):
                 conn.request('POST', '/', body, headers)
                 self.assertEqual(conn._buffer.count[header.lower()], 1)
 
-    def test_putheader(self):
+    def test_putheader (self):
         conn = httplib.HTTPConnection('example.com')
         conn.sock = FakeSocket(None)
-        conn.putrequest('GET','/')
-        conn.putheader('Content-length',42)
+        conn.putrequest('GET', '/')
+        conn.putheader('Content-length', 42)
         self.assertTrue('Content-length: 42' in conn._buffer)
 
-    def test_ipv6host_header(self):
+    def test_ipv6host_header (self):
         # Default host header on IPv6 transaction should wrapped by [] if
         # its actual IPv6 address
         expected = 'GET /foo HTTP/1.1\r\nHost: [2001::]:81\r\n' \
@@ -147,8 +151,8 @@ class HeaderTests(TestCase):
         self.assertTrue(sock.data.startswith(expected))
 
 
-class BasicTest(TestCase):
-    def test_status_lines(self):
+class BasicTest(LimitedTestCase):
+    def test_status_lines (self):
         # Test HTTP status lines
 
         body = "HTTP/1.1 200 Ok\r\n\r\nText"
@@ -163,11 +167,11 @@ class BasicTest(TestCase):
         resp = httplib.HTTPResponse(sock)
         self.assertRaises(httplib.BadStatusLine, resp.begin)
 
-    def test_bad_status_repr(self):
+    def test_bad_status_repr (self):
         exc = httplib.BadStatusLine('')
         self.assertEqual(repr(exc), '''BadStatusLine("\'\'",)''')
 
-    def test_partial_reads(self):
+    def test_partial_reads (self):
         # if we have a lenght, the system knows when to close itself
         # same behaviour than when we read the whole thing with read()
         body = "HTTP/1.1 200 Ok\r\nContent-Length: 4\r\n\r\nText"
@@ -179,7 +183,7 @@ class BasicTest(TestCase):
         self.assertEqual(resp.read(2), 'xt')
         self.assertTrue(resp.isclosed())
 
-    def test_host_port(self):
+    def test_host_port (self):
         # Check invalid host_port
 
         # Note that httplib does not accept user:password@ in the host-port.
@@ -199,7 +203,7 @@ class BasicTest(TestCase):
             if p != c.port:
                 self.fail("Port incorrectly parsed: %s != %s" % (p, c.host))
 
-    def test_response_headers(self):
+    def test_response_headers (self):
         # test response with multiple message headers with the same field name.
         text = ('HTTP/1.1 200 OK\r\n'
                 'Set-Cookie: Customer="WILE_E_COYOTE";'
@@ -218,7 +222,7 @@ class BasicTest(TestCase):
         if cookies != hdr:
             self.fail("multiple headers not combined properly")
 
-    def test_read_head(self):
+    def test_read_head (self):
         # Test that the library doesn't attempt to read any data
         # from a HEAD request.  (Tickles SF bug #622042.)
         sock = FakeSocket(
@@ -226,12 +230,12 @@ class BasicTest(TestCase):
             'Content-Length: 14432\r\n'
             '\r\n',
             NoEOFStringIO)
-        resp = httplib.HTTPResponse(sock, method="HEAD")
+        resp = httplib.HTTPResponse(sock, method = "HEAD")
         resp.begin()
         if resp.read() != "":
             self.fail("Did not expect response from HEAD request")
 
-    def test_send_file(self):
+    def test_send_file (self):
         expected = 'GET /foo HTTP/1.1\r\nHost: example.com\r\n' \
                    'Accept-Encoding: identity\r\nContent-Length:'
 
@@ -242,7 +246,7 @@ class BasicTest(TestCase):
         conn.request('GET', '/foo', body)
         self.assertTrue(sock.data.startswith(expected))
 
-    def test_send(self):
+    def test_send (self):
         expected = 'this is a test this is only a test'
         conn = httplib.HTTPConnection('example.com')
         sock = FakeSocket(None)
@@ -256,7 +260,7 @@ class BasicTest(TestCase):
         conn.send(StringIO.StringIO(expected))
         self.assertEqual(expected, sock.data)
 
-    def test_chunked(self):
+    def test_chunked (self):
         chunked_start = (
             'HTTP/1.1 200 OK\r\n'
             'Transfer-Encoding: chunked\r\n\r\n'
@@ -266,27 +270,27 @@ class BasicTest(TestCase):
             'd\r\n'
         )
         sock = FakeSocket(chunked_start + '0\r\n')
-        resp = httplib.HTTPResponse(sock, method="GET")
+        resp = httplib.HTTPResponse(sock, method = "GET")
         resp.begin()
         self.assertEqual(resp.read(), 'hello world')
         resp.close()
 
         for x in ('', 'foo\r\n'):
             sock = FakeSocket(chunked_start + x)
-            resp = httplib.HTTPResponse(sock, method="GET")
+            resp = httplib.HTTPResponse(sock, method = "GET")
             resp.begin()
             try:
                 resp.read()
             except httplib.IncompleteRead, i:
                 self.assertEqual(i.partial, 'hello world')
-                self.assertEqual(repr(i),'IncompleteRead(11 bytes read)')
-                self.assertEqual(str(i),'IncompleteRead(11 bytes read)')
+                self.assertEqual(repr(i), 'IncompleteRead(11 bytes read)')
+                self.assertEqual(str(i), 'IncompleteRead(11 bytes read)')
             else:
                 self.fail('IncompleteRead expected')
             finally:
                 resp.close()
 
-    def test_chunked_head(self):
+    def test_chunked_head (self):
         chunked_start = (
             'HTTP/1.1 200 OK\r\n'
             'Transfer-Encoding: chunked\r\n\r\n'
@@ -296,24 +300,24 @@ class BasicTest(TestCase):
             'd\r\n'
         )
         sock = FakeSocket(chunked_start + '0\r\n')
-        resp = httplib.HTTPResponse(sock, method="HEAD")
+        resp = httplib.HTTPResponse(sock, method = "HEAD")
         resp.begin()
         self.assertEqual(resp.read(), '')
         self.assertEqual(resp.status, 200)
         self.assertEqual(resp.reason, 'OK')
         self.assertTrue(resp.isclosed())
 
-    def test_negative_content_length(self):
+    def test_negative_content_length (self):
         sock = FakeSocket('HTTP/1.1 200 OK\r\n'
                           'Content-Length: -1\r\n\r\nHello\r\n')
-        resp = httplib.HTTPResponse(sock, method="GET")
+        resp = httplib.HTTPResponse(sock, method = "GET")
         resp.begin()
         self.assertEqual(resp.read(), 'Hello\r\n')
         resp.close()
 
-    def test_incomplete_read(self):
+    def test_incomplete_read (self):
         sock = FakeSocket('HTTP/1.1 200 OK\r\nContent-Length: 10\r\n\r\nHello\r\n')
-        resp = httplib.HTTPResponse(sock, method="GET")
+        resp = httplib.HTTPResponse(sock, method = "GET")
         resp.begin()
         try:
             resp.read()
@@ -328,7 +332,7 @@ class BasicTest(TestCase):
         finally:
             resp.close()
 
-    def test_epipe(self):
+    def test_epipe (self):
         sock = EPipeSocket(
             "HTTP/1.0 401 Authorization Required\r\n"
             "Content-type: text/html\r\n"
@@ -343,23 +347,23 @@ class BasicTest(TestCase):
         self.assertEqual("Basic realm=\"example\"",
                          resp.getheader("www-authenticate"))
 
-    def test_filenoattr(self):
+    def test_filenoattr (self):
         # Just test the fileno attribute in the HTTPResponse Object.
         body = "HTTP/1.1 200 Ok\r\n\r\nText"
         sock = FakeSocket(body)
         resp = httplib.HTTPResponse(sock)
-        self.assertTrue(hasattr(resp,'fileno'),
-                'HTTPResponse should expose a fileno attribute')
+        self.assertTrue(hasattr(resp, 'fileno'),
+                        'HTTPResponse should expose a fileno attribute')
 
     # Test lines overflowing the max line size (_MAXLINE in http.client)
 
-    def test_overflowing_status_line(self):
+    def test_overflowing_status_line (self):
         self.skipTest("disabled for HTTP 0.9 support")
         body = "HTTP/1.1 200 Ok" + "k" * 65536 + "\r\n"
         resp = httplib.HTTPResponse(FakeSocket(body))
         self.assertRaises((httplib.LineTooLong, httplib.BadStatusLine), resp.begin)
 
-    def test_overflowing_header_line(self):
+    def test_overflowing_header_line (self):
         body = (
             'HTTP/1.1 200 OK\r\n'
             'X-Foo: bar' + 'r' * 65536 + '\r\n\r\n'
@@ -367,68 +371,67 @@ class BasicTest(TestCase):
         resp = httplib.HTTPResponse(FakeSocket(body))
         self.assertRaises(httplib.LineTooLong, resp.begin)
 
-    def test_overflowing_chunked_line(self):
+    def test_overflowing_chunked_line (self):
         body = (
             'HTTP/1.1 200 OK\r\n'
             'Transfer-Encoding: chunked\r\n\r\n'
             + '0' * 65536 + 'a\r\n'
-            'hello world\r\n'
-            '0\r\n'
+                            'hello world\r\n'
+                            '0\r\n'
         )
         resp = httplib.HTTPResponse(FakeSocket(body))
         resp.begin()
         self.assertRaises(httplib.LineTooLong, resp.read)
 
 
-class OfflineTest(TestCase):
-    def test_responses(self):
+class OfflineTest(LimitedTestCase):
+    def test_responses (self):
         self.assertEqual(httplib.responses[httplib.NOT_FOUND], "Not Found")
 
 
-class SourceAddressTest(TestCase):
-    def setUp(self):
+class SourceAddressTest(LimitedTestCase):
+    def setUp (self):
         self.serv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.port = test_support.bind_port(self.serv)
         self.source_port = test_support.find_unused_port()
         self.serv.listen(5)
         self.conn = None
 
-    def tearDown(self):
+    def tearDown (self):
         if self.conn:
             self.conn.close()
             self.conn = None
         self.serv.close()
         self.serv = None
 
-    def testHTTPConnectionSourceAddress(self):
+    def testHTTPConnectionSourceAddress (self):
         self.conn = httplib.HTTPConnection(HOST, self.port,
-                source_address=('', self.source_port))
+                                           source_address = ('', self.source_port))
         self.conn.connect()
         self.assertEqual(self.conn.sock.getsockname()[1], self.source_port)
 
-    @unittest.skipIf(not hasattr(httplib, 'HTTPSConnection'),
-                     'httplib.HTTPSConnection not defined')
-    def testHTTPSConnectionSourceAddress(self):
+    @skip_if(not hasattr(httplib, 'HTTPSConnection'), 'httplib.HTTPSConnection not defined')
+    def testHTTPSConnectionSourceAddress (self):
         self.conn = httplib.HTTPSConnection(HOST, self.port,
-                source_address=('', self.source_port))
+                                            source_address = ('', self.source_port))
         # We don't test anything here other the constructor not barfing as
         # this code doesn't deal with setting up an active running SSL server
         # for an ssl_wrapped connect() to actually return from.
 
 
-class TimeoutTest(TestCase):
+class TimeoutTest(LimitedTestCase):
     PORT = None
 
-    def setUp(self):
+    def setUp (self):
         self.serv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         TimeoutTest.PORT = test_support.bind_port(self.serv)
         self.serv.listen(5)
 
-    def tearDown(self):
+    def tearDown (self):
         self.serv.close()
         self.serv = None
 
-    def testTimeoutAttribute(self):
+    def testTimeoutAttribute (self):
         '''This will prove that the timeout gets through
         HTTPConnection and into the socket.
         '''
@@ -448,7 +451,7 @@ class TimeoutTest(TestCase):
         socket.setdefaulttimeout(30)
         try:
             httpConn = httplib.HTTPConnection(HOST, TimeoutTest.PORT,
-                                              timeout=None)
+                                              timeout = None)
             httpConn.connect()
         finally:
             socket.setdefaulttimeout(None)
@@ -456,23 +459,23 @@ class TimeoutTest(TestCase):
         httpConn.close()
 
         # a value
-        httpConn = httplib.HTTPConnection(HOST, TimeoutTest.PORT, timeout=30)
+        httpConn = httplib.HTTPConnection(HOST, TimeoutTest.PORT, timeout = 30)
         httpConn.connect()
         self.assertEqual(httpConn.sock.gettimeout(), 30)
         httpConn.close()
 
 
-class HTTPSTimeoutTest(TestCase):
+class HTTPSTimeoutTest(LimitedTestCase):
 # XXX Here should be tests for HTTPS, there isn't any right now!
 
-    def test_attributes(self):
+    def test_attributes (self):
         # simple test to check it's storing it
         if hasattr(httplib, 'HTTPSConnection'):
-            h = httplib.HTTPSConnection(HOST, TimeoutTest.PORT, timeout=30)
+            h = httplib.HTTPSConnection(HOST, TimeoutTest.PORT, timeout = 30)
             self.assertEqual(h.timeout, 30)
 
-    @unittest.skipIf(not hasattr(httplib, 'HTTPS'), 'httplib.HTTPS not available')
-    def test_host_port(self):
+    @skip_if(not hasattr(httplib, 'HTTPS'), 'httplib.HTTPS not available')
+    def test_host_port (self):
         # Check invalid host_port
 
         # Note that httplib does not accept user:password@ in the host-port.
@@ -493,9 +496,10 @@ class HTTPSTimeoutTest(TestCase):
                 self.fail("Port incorrectly parsed: %s != %s" % (p, c.host))
 
 
-def test_main(verbose=None):
+def test_main (verbose = None):
     test_support.run_unittest(HeaderTests, OfflineTest, BasicTest, TimeoutTest,
                               HTTPSTimeoutTest, SourceAddressTest)
+
 
 if __name__ == '__main__':
     test_main()

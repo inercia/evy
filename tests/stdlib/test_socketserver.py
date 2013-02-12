@@ -14,11 +14,11 @@ test_support.use_resources = ['network']
 
 patcher.inject('test.test_socketserver',
                globals(),
-    ('SocketServer', SocketServer),
-    ('socket', socket),
-    ('select', select),
-    ('time', time),
-    ('threading', threading))
+               ('SocketServer', SocketServer),
+               ('socket', socket),
+               ('select', select),
+               ('time', time),
+               ('threading', threading))
 
 # only a problem with pyevent
 from evy import tests

@@ -65,17 +65,14 @@ def min_buf_size ():
     return 65535
 
 
-
-
 class TestGreenSocketSend(LimitedTestCase):
-
     TEST_TIMEOUT = 2
 
-    def test_send_something(self):
+    def test_send_something (self):
         listener = convenience.listen(('', 0))
         _, listener_port = listener.getsockname()
 
-        def server():
+        def server ():
             # accept the connection in another greenlet
             sock, addr = listener.accept()
             data = ''
@@ -87,7 +84,7 @@ class TestGreenSocketSend(LimitedTestCase):
 
             return data
 
-        def client():
+        def client ():
             client = sockets.GreenSocket()
             client.connect(('127.0.0.1', listener_port))
             msg = 'hhheeeeelloooooo'
@@ -98,11 +95,11 @@ class TestGreenSocketSend(LimitedTestCase):
         res = waitall(spawn(client), spawn(server))
         self.assertEquals(res[0], res[1])
 
-    def test_send_many(self):
+    def test_send_many (self):
         listener = convenience.listen(('', 0))
         _, listener_port = listener.getsockname()
 
-        def server():
+        def server ():
             # accept the connection in another greenlet
             sock, addr = listener.accept()
             total_recv = 0
@@ -113,7 +110,7 @@ class TestGreenSocketSend(LimitedTestCase):
                 total_recv += len(data)
             return total_recv
 
-        def client():
+        def client ():
             client = sockets.GreenSocket()
             client.connect(('127.0.0.1', listener_port))
             msg = s2b("A") * (10000)  # large enough number to overwhelm most buffers
@@ -140,7 +137,7 @@ class TestGreenSocketSend(LimitedTestCase):
             sock, addr = listener.accept()
             evt.wait()
 
-        def client():
+        def client ():
             client = sockets.GreenSocket()
             client.connect(('127.0.0.1', port))
             try:
@@ -194,7 +191,6 @@ class TestGreenSocketSend(LimitedTestCase):
 
         evt.send()
         gt.wait()
-
 
 
     def test_full_duplex (self):
@@ -265,7 +261,7 @@ class TestGreenSocketSend(LimitedTestCase):
 
                 received.wait()
 
-            def receiver():
+            def receiver ():
                 client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 client.connect(('127.0.0.1', listener_port))
                 total = 0
@@ -284,7 +280,7 @@ class TestGreenSocketSend(LimitedTestCase):
 
                 received.send()
 
-            waitall(spawn(sender, listener),  spawn(receiver))
+            waitall(spawn(sender, listener), spawn(receiver))
 
         for how_many in (1000, 10000, 100000, 1000000):
             test_sendall_impl(how_many)

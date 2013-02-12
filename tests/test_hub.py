@@ -39,6 +39,7 @@ from evy.green.threads import spawn, sleep
 
 DELAY = 0.001
 
+
 def noop ():
     pass
 
@@ -53,11 +54,10 @@ def check_hub ():
         assert not dct, "hub.%s not empty: %s" % (nm, dct)
 
 
-
 class TestTimerCleanup(LimitedTestCase):
     TEST_TIMEOUT = 2
 
-    
+
     def test_cancel_immediate (self):
         hub = hubs.get_hub()
         stimers = hub.timers_count
@@ -69,7 +69,6 @@ class TestTimerCleanup(LimitedTestCase):
         self.assert_less_than_equal(hub.timers_count, 1000 + stimers)
 
 
-    
     def test_cancel_accumulated (self):
         hub = hubs.get_hub()
         stimers = hub.timers_count
@@ -81,7 +80,7 @@ class TestTimerCleanup(LimitedTestCase):
 
         self.assert_less_than_equal(hub.timers_count, 1000 + stimers)
 
-    
+
     def test_cancel_proportion (self):
         # if fewer than half the pending timers are canceled, it should
         # not clean them out
@@ -108,7 +107,6 @@ class TestTimerCleanup(LimitedTestCase):
 
 
 class TestScheduleCall(LimitedTestCase):
-
     def test_local (self):
         lst = [1]
         spawn(hubs.get_hub().schedule_call_local, DELAY, lst.pop)
@@ -134,22 +132,20 @@ class TestScheduleCall(LimitedTestCase):
 
 
 class TestDebug(LimitedTestCase):
-
     def test_timer_exceptions (self):
         hubs.get_hub().set_timer_exceptions(True)
         hubs.get_hub().set_timer_exceptions(False)
 
 
 class TestExceptions(LimitedTestCase):
-
     def test_sleep (self):
         # even if there was an error in the mainloop, the hub should continue to work
         start = time.time()
         sleep(DELAY)
         delay = time.time() - start
 
-        assert delay >= DELAY * 0.9, 'sleep returned after %s seconds (was scheduled for %s)' % (
-        delay, DELAY)
+        assert delay >= DELAY * 0.9, 'sleep returned after %f seconds (was scheduled for %s)' % (
+            delay, DELAY)
 
         def fail ():
             1 // 0
@@ -160,8 +156,8 @@ class TestExceptions(LimitedTestCase):
         sleep(DELAY)
         delay = time.time() - start
 
-        assert delay >= DELAY * 0.9, 'sleep returned after %s seconds (was scheduled for %s)' % (
-        delay, DELAY)
+        assert delay >= DELAY * 0.9, 'sleep returned after %f seconds (was scheduled for %s)' % (
+            delay, DELAY)
 
     def test_exception_spawn (self):
         def server ():
@@ -178,12 +174,12 @@ class TestExceptions(LimitedTestCase):
 
 
 class TestHubBlockingDetector(LimitedTestCase):
-
     TEST_TIMEOUT = 5
 
     def test_block_detect (self):
         def look_im_blocking ():
             import time
+
             time.sleep(2)
 
         from evy.tools import debug
@@ -193,11 +189,12 @@ class TestHubBlockingDetector(LimitedTestCase):
         self.assertRaises(RuntimeError, gt.wait)
         debug.hub_blocking_detection(False)
 
-    
+
     @skip_if_no_itimer
     def test_block_detect_with_itimer (self):
         def look_im_blocking ():
             import time
+
             time.sleep(0.5)
 
         from evy.tools import debug
@@ -236,22 +233,20 @@ except Timeout:
         new_env['PYTHONPATH'] = python_path
         p = subprocess.Popen([sys.executable,
                               os.path.join(self.tempdir, filename)],
-                                                                   stdout = subprocess.PIPE,
-                                                                   stderr = subprocess.STDOUT,
-                                                                   env = new_env)
+                             stdout = subprocess.PIPE,
+                             stderr = subprocess.STDOUT,
+                             env = new_env)
         sleep(0.4)  # wait for process to hit accept
         os.kill(p.pid, signal.SIGSTOP) # suspend and resume to generate EINTR
         os.kill(p.pid, signal.SIGCONT)
+
         output, _ = p.communicate()
         lines = [l for l in output.split("\n") if l]
         self.assert_("exited correctly" in lines[-1])
         shutil.rmtree(self.tempdir)
 
 
-
-
 class TestBadFilenos(LimitedTestCase):
-
     def test_repeated_selects (self):
         from evy.patched import select
 
@@ -262,9 +257,7 @@ class TestBadFilenos(LimitedTestCase):
 from tests.test_patcher import ProcessBase
 
 
-
 class TestFork(ProcessBase):
-    
     def test_fork (self):
         new_mod = """
 import os
@@ -362,6 +355,7 @@ else:
 
 class Foo(object):
     pass
+
 
 if __name__ == '__main__':
     main()

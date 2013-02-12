@@ -33,15 +33,14 @@ from __future__ import with_statement
 from evy import event, patcher, semaphore
 from evy.green.threads import spawn, sleep
 
-
 from tests import LimitedTestCase, using_pyevent, skip_unless
-
 
 
 try:
     from evy.patched import zmq
 except ImportError:
     zmq = {}    # for systems lacking zmq, skips tests instead of barfing
+
 
 def zmq_supported (_):
     try:

@@ -5,6 +5,7 @@ Many of these tests make connections to external servers, and all.py tries to sk
 
 from evy import debug
 
+
 def restart_hub ():
     from evy import hubs
 
@@ -37,6 +38,7 @@ def assimilate_patched (name):
             test_main.__name__ = name + '.test_main'
         except AttributeError:
             print "No test_main for %s, assuming it tests on import" % name
+
 
 import all_modules
 

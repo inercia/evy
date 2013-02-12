@@ -46,12 +46,12 @@ from evy.timeout import Timeout
 
 DELAY = 0.01
 
+
 class Error(Exception):
     pass
 
 
 class Test(LimitedTestCase):
-
     def test_cancellation (self):
         """
         Testing that nothing happens if with-block finishes before the timeout expires

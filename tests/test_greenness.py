@@ -39,6 +39,7 @@ import unittest
 from evy.patched import urllib2, BaseHTTPServer
 from evy.green.threads import spawn, kill
 
+
 class QuietHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     protocol_version = "HTTP/1.0"
 
@@ -63,7 +64,6 @@ def start_http_server ():
 
 
 class TestGreenness(unittest.TestCase):
-
     def setUp (self):
         self.gthread, self.server, self.port = start_http_server()
         #print 'Spawned the server'
@@ -80,6 +80,7 @@ class TestGreenness(unittest.TestCase):
         except urllib2.HTTPError, ex:
             assert ex.code == 501, repr(ex)
         self.assertEqual(self.server.request_count, 1)
+
 
 if __name__ == '__main__':
     unittest.main()

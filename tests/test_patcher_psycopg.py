@@ -30,7 +30,7 @@
 
 import os
 
-from tests import patcher_test, skip_unless
+from tests import skip_unless
 from tests import get_database_auth
 from tests.test_db_pool import postgres_requirement
 
@@ -65,8 +65,8 @@ assert count[0] > 100, count[0]
 print "done"
 """
 
-class TestPatchingPsycopg(patcher_test.ProcessBase):
 
+class TestPatchingPsycopg(patcher_test.ProcessBase):
     @skip_unless(postgres_requirement)
     def test_psycopg_patched (self):
         if 'PSYCOPG_TEST_DSN' not in os.environ:

@@ -32,7 +32,6 @@ from tests.test_patcher import ProcessBase
 
 
 class ForkTest(ProcessBase):
-
     def test_simple (self):
         newmod = '''
 import evy
@@ -40,6 +39,7 @@ import os
 import sys
 import signal
 
+from evy import sleep
 from evy.timeout import Timeout
 
 mydir = %r

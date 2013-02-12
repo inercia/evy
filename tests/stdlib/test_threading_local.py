@@ -10,9 +10,9 @@ hubs.get_hub()
 
 patcher.inject('test.test_threading_local',
                globals(),
-    ('time', time),
-    ('thread', thread),
-    ('threading', threading))
+               ('time', time),
+               ('thread', thread),
+               ('threading', threading))
 
 if __name__ == '__main__':
     test_main()

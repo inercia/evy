@@ -36,8 +36,8 @@ from tests import LimitedTestCase
 
 from evy.io.pipes import GreenPipe
 
-class TestGreenPipeWithStatement(LimitedTestCase):
 
+class TestGreenPipeWithStatement(LimitedTestCase):
     def test_pipe_context (self):
         # ensure using a pipe as a context actually closes it.
         r, w = os.pipe()

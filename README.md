@@ -12,7 +12,6 @@ Here's something you can try right on the command line::
     >>> gt2 = spawn(urllib2.urlopen, 'http://secondlife.com')
     >>> waitall(gt1, gt2)
 
-
 Documentation
 =============
 
@@ -31,6 +30,9 @@ The built html files can be found in `doc/_build/html` afterwards...
 Status
 ======
 
-The basic unit tests functionality is implemented, but it cannot fully replace the standard
-patched modules yet (ie, there are some differences in error codes or exceptions thrown...)
+Chec the current issues list here:
 
+https://github.com/inercia/evy/issues
+
+Overall, the code is functional for basic networking, but it is still not 100% compatible
+with the standard sockets library...

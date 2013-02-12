@@ -30,11 +30,12 @@
 
 import evy
 
-from evy import backdoor
+from evy.tools import backdoor
 from evy.patched import socket
 from evy.green.threads import sleep
 
 from tests import LimitedTestCase, main
+
 
 class BackdoorTest(LimitedTestCase):
     def test_server (self):

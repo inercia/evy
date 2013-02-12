@@ -42,9 +42,7 @@ certificate_file = os.path.join(os.path.dirname(__file__), 'server.crt')
 private_key_file = os.path.join(os.path.dirname(__file__), 'server.key')
 
 
-
 class TestConvenience(LimitedTestCase):
-
     def setUp (self):
         super(TestConvenience, self).setUp()
         from evy.tools import debug
@@ -118,8 +116,8 @@ class TestConvenience(LimitedTestCase):
     def test_blocking (self):
         l = convenience.listen(('localhost', 0))
         x = with_timeout(0.01,
-                                  convenience.serve, l, lambda c, a: None,
-                                  timeout_value = "timeout")
+                         convenience.serve, l, lambda c, a: None,
+                         timeout_value = "timeout")
         self.assertEqual(x, "timeout")
 
     def test_raising_stopserve (self):
@@ -129,7 +127,7 @@ class TestConvenience(LimitedTestCase):
         l = convenience.listen(('localhost', 0))
         # connect to trigger a call to stopit
         gt = spawn(convenience.connect,
-            ('localhost', l.getsockname()[1]))
+                   ('localhost', l.getsockname()[1]))
         convenience.serve(l, stopit)
         gt.wait()
 
@@ -157,8 +155,8 @@ class TestConvenience(LimitedTestCase):
     @skip_if_no_ssl
     def test_wrap_ssl (self):
         server = convenience.wrap_ssl(convenience.listen(('localhost', 0)),
-                                   certfile = certificate_file,
-                                   keyfile = private_key_file, server_side = True)
+                                      certfile = certificate_file,
+                                      keyfile = private_key_file, server_side = True)
         port = server.getsockname()[1]
 
         def handle (sock, addr):

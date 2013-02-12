@@ -45,9 +45,8 @@ from test_hub import check_hub
 warnings.simplefilter('ignore', DeprecationWarning)
 warnings.simplefilter('default', DeprecationWarning)
 
-
-
 _g_results = []
+
 
 def passthru (*args, **kw):
     _g_results.append((args, kw))
@@ -57,8 +56,6 @@ def passthru (*args, **kw):
 def waiter (a):
     sleep(0.1)
     return a
-
-
 
 
 class Asserts(object):
@@ -165,7 +162,6 @@ class TestSpawnAfter(LimitedTestCase, Asserts):
 
 
 class TestSpawnAfterLocal(LimitedTestCase, Asserts):
-
     def setUp (self):
         super(TestSpawnAfterLocal, self).setUp()
         self.lst = [1]
@@ -199,9 +195,7 @@ class TestSpawnAfterLocal(LimitedTestCase, Asserts):
         assert self.lst == [], self.lst
 
 
-
 class TestGreenHub(TestCase):
-
     def test_001_trampoline_timeout (self):
         server_sock = listen(('127.0.0.1', 0))
         bound_port = server_sock.getsockname()[1]
@@ -212,7 +206,7 @@ class TestGreenHub(TestCase):
 
         server_evt = spawn(server, server_sock)
         sleep(0)
-        
+
         try:
             desc = connect(('127.0.0.1', bound_port))
             hubs.trampoline(desc, read = True, write = False, timeout = 0.001)

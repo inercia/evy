@@ -39,6 +39,7 @@ except ImportError:
 import re
 import glob
 
+
 def parse_stdout (s):
     argv = re.search('^===ARGV=(.*?)$', s, re.M).group(1)
     argv = argv.split()
@@ -61,7 +62,9 @@ def parse_stdout (s):
         hub += '/%s' % reactor
     return testname, hub
 
+
 unittest_delim = '----------------------------------------------------------------------'
+
 
 def parse_unittest_output (s):
     s = s[s.rindex(unittest_delim) + len(unittest_delim):]
@@ -128,8 +131,9 @@ def main (db):
             c.execute('insert into parsed_command_record '
                       '(id, testname, hub, runs, errors, fails, timeouts) '
                       'values (?, ?, ?, ?, ?, ?, ?)',
-                (id, testname, hub, runs, errors, fails, timeouts))
+                      (id, testname, hub, runs, errors, fails, timeouts))
             c.commit()
+
 
 if __name__ == '__main__':
     if not sys.argv[1:]:

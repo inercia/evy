@@ -36,7 +36,7 @@ from evy import event
 from evy.patched import urllib2
 from evy.patched import httplib
 from evy.io.sockets import shutdown_safe
-from evy.io.convenience import listen
+from evy.io.convenience import connect, listen
 from evy.green.threads import sleep
 from evy.web.websocket import WebSocket, WebSocketWSGI
 
@@ -63,7 +63,9 @@ def handle (ws):
     else:
         ws.close()
 
+
 wsapp = WebSocketWSGI(handle)
+
 
 class TestWebSocket(_TestBase):
     TEST_TIMEOUT = 5
@@ -88,7 +90,7 @@ class TestWebSocket(_TestBase):
             "Host: localhost:%s" % self.port,
             "Origin: http://localhost:%s" % self.port,
             "WebSocket-Protocol: ws",
-            ])
+        ])
         http = httplib.HTTPConnection('localhost', self.port)
         http.request("GET", "/echo", headers = headers)
         resp = http.getresponse()
@@ -105,7 +107,7 @@ class TestWebSocket(_TestBase):
             "Host: localhost:%s" % self.port,
             "Origin: http://localhost:%s" % self.port,
             "Sec-WebSocket-Protocol: ws",
-            ])
+        ])
         http = httplib.HTTPConnection('localhost', self.port)
         http.request("GET", "/echo", headers = headers)
         resp = http.getresponse()
@@ -133,18 +135,18 @@ class TestWebSocket(_TestBase):
         self.assertEqual(resp.read(), '')
 
     def test_correct_upgrade_request_75 (self):
-        connect = [
+        connect_data = [
             "GET /echo HTTP/1.1",
             "Upgrade: WebSocket",
             "Connection: Upgrade",
             "Host: localhost:%s" % self.port,
             "Origin: http://localhost:%s" % self.port,
             "WebSocket-Protocol: ws",
-            ]
+        ]
         sock = connect(
             ('localhost', self.port))
 
-        sock.sendall('\r\n'.join(connect) + '\r\n\r\n')
+        sock.sendall('\r\n'.join(connect_data) + '\r\n\r\n')
         result = sock.recv(1024)
         ## The server responds the correct Websocket handshake
         self.assertEqual(result,
@@ -155,7 +157,7 @@ class TestWebSocket(_TestBase):
                                       'WebSocket-Location: ws://localhost:%s/echo\r\n\r\n' % self.port]))
 
     def test_correct_upgrade_request_76 (self):
-        connect = [
+        connect_data = [
             "GET /echo HTTP/1.1",
             "Upgrade: WebSocket",
             "Connection: Upgrade",
@@ -164,11 +166,11 @@ class TestWebSocket(_TestBase):
             "Sec-WebSocket-Protocol: ws",
             "Sec-WebSocket-Key1: 4 @1  46546xW%0l 1 5",
             "Sec-WebSocket-Key2: 12998 5 Y3 1  .P00",
-            ]
+        ]
         sock = connect(
             ('localhost', self.port))
 
-        sock.sendall('\r\n'.join(connect) + '\r\n\r\n^n:ds[4U')
+        sock.sendall('\r\n'.join(connect_data) + '\r\n\r\n^n:ds[4U')
         result = sock.recv(1024)
         ## The server responds the correct Websocket handshake
         self.assertEqual(result,
@@ -182,7 +184,7 @@ class TestWebSocket(_TestBase):
 
     def test_query_string (self):
         # verify that the query string comes out the other side unscathed
-        connect = [
+        connect_data = [
             "GET /echo?query_string HTTP/1.1",
             "Upgrade: WebSocket",
             "Connection: Upgrade",
@@ -191,11 +193,11 @@ class TestWebSocket(_TestBase):
             "Sec-WebSocket-Protocol: ws",
             "Sec-WebSocket-Key1: 4 @1  46546xW%0l 1 5",
             "Sec-WebSocket-Key2: 12998 5 Y3 1  .P00",
-            ]
+        ]
         sock = connect(
             ('localhost', self.port))
 
-        sock.sendall('\r\n'.join(connect) + '\r\n\r\n^n:ds[4U')
+        sock.sendall('\r\n'.join(connect_data) + '\r\n\r\n^n:ds[4U')
         result = sock.recv(1024)
         self.assertEqual(result,
                          '\r\n'.join(['HTTP/1.1 101 WebSocket Protocol Handshake',
@@ -207,7 +209,7 @@ class TestWebSocket(_TestBase):
 
     def test_empty_query_string (self):
         # verify that a single trailing ? doesn't get nuked
-        connect = [
+        connect_data = [
             "GET /echo? HTTP/1.1",
             "Upgrade: WebSocket",
             "Connection: Upgrade",
@@ -216,11 +218,11 @@ class TestWebSocket(_TestBase):
             "Sec-WebSocket-Protocol: ws",
             "Sec-WebSocket-Key1: 4 @1  46546xW%0l 1 5",
             "Sec-WebSocket-Key2: 12998 5 Y3 1  .P00",
-            ]
+        ]
         sock = connect(
             ('localhost', self.port))
 
-        sock.sendall('\r\n'.join(connect) + '\r\n\r\n^n:ds[4U')
+        sock.sendall('\r\n'.join(connect_data) + '\r\n\r\n^n:ds[4U')
         result = sock.recv(1024)
         self.assertEqual(result,
                          '\r\n'.join(['HTTP/1.1 101 WebSocket Protocol Handshake',
@@ -232,18 +234,18 @@ class TestWebSocket(_TestBase):
 
 
     def test_sending_messages_to_websocket_75 (self):
-        connect = [
+        connect_data = [
             "GET /echo HTTP/1.1",
             "Upgrade: WebSocket",
             "Connection: Upgrade",
             "Host: localhost:%s" % self.port,
             "Origin: http://localhost:%s" % self.port,
             "WebSocket-Protocol: ws",
-            ]
+        ]
         sock = connect(
             ('localhost', self.port))
 
-        sock.sendall('\r\n'.join(connect) + '\r\n\r\n')
+        sock.sendall('\r\n'.join(connect_data) + '\r\n\r\n')
         first_resp = sock.recv(1024)
         sock.sendall('\x00hello\xFF')
         result = sock.recv(1024)
@@ -258,7 +260,7 @@ class TestWebSocket(_TestBase):
         sleep(0.01)
 
     def test_sending_messages_to_websocket_76 (self):
-        connect = [
+        connect_data = [
             "GET /echo HTTP/1.1",
             "Upgrade: WebSocket",
             "Connection: Upgrade",
@@ -267,11 +269,11 @@ class TestWebSocket(_TestBase):
             "Sec-WebSocket-Protocol: ws",
             "Sec-WebSocket-Key1: 4 @1  46546xW%0l 1 5",
             "Sec-WebSocket-Key2: 12998 5 Y3 1  .P00",
-            ]
+        ]
         sock = connect(
             ('localhost', self.port))
 
-        sock.sendall('\r\n'.join(connect) + '\r\n\r\n^n:ds[4U')
+        sock.sendall('\r\n'.join(connect_data) + '\r\n\r\n^n:ds[4U')
         first_resp = sock.recv(1024)
         sock.sendall('\x00hello\xFF')
         result = sock.recv(1024)
@@ -286,18 +288,18 @@ class TestWebSocket(_TestBase):
         sleep(0.01)
 
     def test_getting_messages_from_websocket_75 (self):
-        connect = [
+        connect_data = [
             "GET /range HTTP/1.1",
             "Upgrade: WebSocket",
             "Connection: Upgrade",
             "Host: localhost:%s" % self.port,
             "Origin: http://localhost:%s" % self.port,
             "WebSocket-Protocol: ws",
-            ]
+        ]
         sock = connect(
             ('localhost', self.port))
 
-        sock.sendall('\r\n'.join(connect) + '\r\n\r\n')
+        sock.sendall('\r\n'.join(connect_data) + '\r\n\r\n')
         resp = sock.recv(1024)
         headers, result = resp.split('\r\n\r\n')
         msgs = [result.strip('\x00\xff')]
@@ -309,7 +311,7 @@ class TestWebSocket(_TestBase):
         self.assertEqual(msgs[:-1], ['msg %d' % i for i in range(10)])
 
     def test_getting_messages_from_websocket_76 (self):
-        connect = [
+        connect_data = [
             "GET /range HTTP/1.1",
             "Upgrade: WebSocket",
             "Connection: Upgrade",
@@ -318,11 +320,11 @@ class TestWebSocket(_TestBase):
             "Sec-WebSocket-Protocol: ws",
             "Sec-WebSocket-Key1: 4 @1  46546xW%0l 1 5",
             "Sec-WebSocket-Key2: 12998 5 Y3 1  .P00",
-            ]
+        ]
         sock = connect(
             ('localhost', self.port))
 
-        sock.sendall('\r\n'.join(connect) + '\r\n\r\n^n:ds[4U')
+        sock.sendall('\r\n'.join(connect_data) + '\r\n\r\n^n:ds[4U')
         resp = sock.recv(1024)
         headers, result = resp.split('\r\n\r\n')
         msgs = [result[16:].strip('\x00\xff')]
@@ -350,17 +352,17 @@ class TestWebSocket(_TestBase):
 
         self.site = error_detector
         self.spawn_server()
-        connect = [
+        connect_data = [
             "GET /range HTTP/1.1",
             "Upgrade: WebSocket",
             "Connection: Upgrade",
             "Host: localhost:%s" % self.port,
             "Origin: http://localhost:%s" % self.port,
             "WebSocket-Protocol: ws",
-            ]
+        ]
         sock = connect(
             ('localhost', self.port))
-        sock.sendall('\r\n'.join(connect) + '\r\n\r\n')
+        sock.sendall('\r\n'.join(connect_data) + '\r\n\r\n')
         resp = sock.recv(1024)  # get the headers
         sock.close()  # close while the app is running
         done_with_request.wait()
@@ -383,7 +385,7 @@ class TestWebSocket(_TestBase):
 
         self.site = error_detector
         self.spawn_server()
-        connect = [
+        connect_data = [
             "GET /range HTTP/1.1",
             "Upgrade: WebSocket",
             "Connection: Upgrade",
@@ -392,10 +394,10 @@ class TestWebSocket(_TestBase):
             "Sec-WebSocket-Protocol: ws",
             "Sec-WebSocket-Key1: 4 @1  46546xW%0l 1 5",
             "Sec-WebSocket-Key2: 12998 5 Y3 1  .P00",
-            ]
+        ]
         sock = connect(
             ('localhost', self.port))
-        sock.sendall('\r\n'.join(connect) + '\r\n\r\n^n:ds[4U')
+        sock.sendall('\r\n'.join(connect_data) + '\r\n\r\n^n:ds[4U')
         resp = sock.recv(1024)  # get the headers
         sock.close()  # close while the app is running
         done_with_request.wait()
@@ -418,7 +420,7 @@ class TestWebSocket(_TestBase):
 
         self.site = error_detector
         self.spawn_server()
-        connect = [
+        connect_data = [
             "GET /echo HTTP/1.1",
             "Upgrade: WebSocket",
             "Connection: Upgrade",
@@ -427,10 +429,10 @@ class TestWebSocket(_TestBase):
             "Sec-WebSocket-Protocol: ws",
             "Sec-WebSocket-Key1: 4 @1  46546xW%0l 1 5",
             "Sec-WebSocket-Key2: 12998 5 Y3 1  .P00",
-            ]
+        ]
         sock = connect(
             ('localhost', self.port))
-        sock.sendall('\r\n'.join(connect) + '\r\n\r\n^n:ds[4U')
+        sock.sendall('\r\n'.join(connect_data) + '\r\n\r\n^n:ds[4U')
         resp = sock.recv(1024)  # get the headers
         sock.sendall('\xff\x00') # "Close the connection" packet.
         done_with_request.wait()
@@ -453,7 +455,7 @@ class TestWebSocket(_TestBase):
 
         self.site = error_detector
         self.spawn_server()
-        connect = [
+        connect_data = [
             "GET /echo HTTP/1.1",
             "Upgrade: WebSocket",
             "Connection: Upgrade",
@@ -462,17 +464,17 @@ class TestWebSocket(_TestBase):
             "Sec-WebSocket-Protocol: ws",
             "Sec-WebSocket-Key1: 4 @1  46546xW%0l 1 5",
             "Sec-WebSocket-Key2: 12998 5 Y3 1  .P00",
-            ]
+        ]
         sock = connect(
             ('localhost', self.port))
-        sock.sendall('\r\n'.join(connect) + '\r\n\r\n^n:ds[4U')
+        sock.sendall('\r\n'.join(connect_data) + '\r\n\r\n^n:ds[4U')
         resp = sock.recv(1024)  # get the headers
         sock.sendall('\xef\x00') # Weird packet.
         done_with_request.wait()
         self.assert_(error_detected[0])
 
     def test_server_closing_connect_76 (self):
-        connect = [
+        connect_data = [
             "GET / HTTP/1.1",
             "Upgrade: WebSocket",
             "Connection: Upgrade",
@@ -481,11 +483,11 @@ class TestWebSocket(_TestBase):
             "Sec-WebSocket-Protocol: ws",
             "Sec-WebSocket-Key1: 4 @1  46546xW%0l 1 5",
             "Sec-WebSocket-Key2: 12998 5 Y3 1  .P00",
-            ]
+        ]
         sock = connect(
             ('localhost', self.port))
 
-        sock.sendall('\r\n'.join(connect) + '\r\n\r\n^n:ds[4U')
+        sock.sendall('\r\n'.join(connect_data) + '\r\n\r\n^n:ds[4U')
         resp = sock.recv(1024)
         headers, result = resp.split('\r\n\r\n')
         # The remote server should have immediately closed the connection.
@@ -508,17 +510,16 @@ class TestWebSocket(_TestBase):
 
         self.site = error_detector
         self.spawn_server()
-        connect = [
+        connect_data = [
             "GET /error HTTP/1.1",
             "Upgrade: WebSocket",
             "Connection: Upgrade",
             "Host: localhost:%s" % self.port,
             "Origin: http://localhost:%s" % self.port,
             "WebSocket-Protocol: ws",
-            ]
-        sock = connect(
-            ('localhost', self.port))
-        sock.sendall('\r\n'.join(connect) + '\r\n\r\n')
+        ]
+        sock = connect(('localhost', self.port))
+        sock.sendall('\r\n'.join(connect_data) + '\r\n\r\n')
         resp = sock.recv(1024)
         done_with_request.wait()
         self.assert_(error_detected[0])
@@ -540,7 +541,7 @@ class TestWebSocket(_TestBase):
 
         self.site = error_detector
         self.spawn_server()
-        connect = [
+        connect_data = [
             "GET /error HTTP/1.1",
             "Upgrade: WebSocket",
             "Connection: Upgrade",
@@ -549,10 +550,10 @@ class TestWebSocket(_TestBase):
             "Sec-WebSocket-Protocol: ws",
             "Sec-WebSocket-Key1: 4 @1  46546xW%0l 1 5",
             "Sec-WebSocket-Key2: 12998 5 Y3 1  .P00",
-            ]
+        ]
         sock = connect(
             ('localhost', self.port))
-        sock.sendall('\r\n'.join(connect) + '\r\n\r\n^n:ds[4U')
+        sock.sendall('\r\n'.join(connect_data) + '\r\n\r\n^n:ds[4U')
         resp = sock.recv(1024)
         done_with_request.wait()
         self.assert_(error_detected[0])
@@ -565,11 +566,11 @@ class TestWebSocketSSL(_TestBase):
     @skip_if_no_ssl
     def test_ssl_sending_messages (self):
         s = evy.wrap_ssl(listen(('localhost', 0)),
-                              certfile = certificate_file,
-                              keyfile = private_key_file,
-                              server_side = True)
+                         certfile = certificate_file,
+                         keyfile = private_key_file,
+                         server_side = True)
         self.spawn_server(sock = s)
-        connect = [
+        connect_data = [
             "GET /echo HTTP/1.1",
             "Upgrade: WebSocket",
             "Connection: Upgrade",
@@ -578,11 +579,11 @@ class TestWebSocketSSL(_TestBase):
             "Sec-WebSocket-Protocol: ws",
             "Sec-WebSocket-Key1: 4 @1  46546xW%0l 1 5",
             "Sec-WebSocket-Key2: 12998 5 Y3 1  .P00",
-            ]
+        ]
         sock = evy.wrap_ssl(connect(
             ('localhost', self.port)))
 
-        sock.sendall('\r\n'.join(connect) + '\r\n\r\n^n:ds[4U')
+        sock.sendall('\r\n'.join(connect_data) + '\r\n\r\n^n:ds[4U')
         first_resp = sock.recv(1024)
         # make sure it sets the wss: protocol on the location header
         loc_line = [x for x in first_resp.split("\r\n")

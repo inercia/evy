@@ -41,7 +41,8 @@ setup(
     ext_package         = 'evy',              # must match the package defined in the CFFI verify()
 
     test_suite          = 'nose.collector',
-    tests_require       = 'httplib2',
+    tests_require       = ['nose',
+                           'httplib2'],
 
    entry_points = {
         'console_scripts': [

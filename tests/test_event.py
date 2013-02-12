@@ -39,13 +39,14 @@ from tests import LimitedTestCase
 
 DELAY = 0.01
 
-class TestEvent(LimitedTestCase):
 
+class TestEvent(LimitedTestCase):
     def test_send_exc (self):
         log = []
         e = Event()
         d = Event()
-        def waiter():
+
+        def waiter ():
             try:
                 result = e.wait()
                 log.append(('received', result))

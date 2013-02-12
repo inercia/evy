@@ -35,7 +35,7 @@ import errno
 import os
 import socket
 import sys
-from tests import skipped, LimitedTestCase, skip_with_pyevent, skip_if_no_ssl
+from tests import skipped, LimitedTestCase, skip_if_no_ssl
 from unittest import main
 
 from evy import event
@@ -90,7 +90,7 @@ def big_chunks (env, start_response):
 def use_write (env, start_response):
     if env['PATH_INFO'] == '/a':
         write = start_response('200 OK', [('Content-type', 'text/plain'),
-            ('Content-Length', '5')])
+                                          ('Content-Length', '5')])
         write('abcde')
     if env['PATH_INFO'] == '/b':
         write = start_response('200 OK', [('Content-type', 'text/plain')])
@@ -150,6 +150,7 @@ Content-length: 11
 
 hello world
 """
+
 
 class ConnectionClosed(Exception):
     pass
@@ -300,7 +301,7 @@ class TestHttpd(_TestBase):
 
         subprocess.call([find_command('ab'),
                          '-c', '64', '-n', '1024', '-k', url],
-                                                             stdout = subprocess.PIPE)
+                        stdout = subprocess.PIPE)
 
     def test_006_reject_long_urls (self):
         sock = connect(
@@ -423,9 +424,9 @@ class TestHttpd(_TestBase):
         private_key_file = os.path.join(os.path.dirname(__file__), 'server.key')
 
         server_sock = evy.wrap_ssl(listen(('127.0.0.1', 0)),
-                                        certfile = certificate_file,
-                                        keyfile = private_key_file,
-                                        server_side = True)
+                                   certfile = certificate_file,
+                                   keyfile = private_key_file,
+                                   server_side = True)
         self.spawn_server(sock = server_sock, site = wsgi_app)
 
         sock = connect(('127.0.0.1', self.port))
@@ -444,9 +445,9 @@ class TestHttpd(_TestBase):
         certificate_file = os.path.join(os.path.dirname(__file__), 'server.crt')
         private_key_file = os.path.join(os.path.dirname(__file__), 'server.key')
         server_sock = evy.wrap_ssl(listen(('127.0.0.1', 0)),
-                                        certfile = certificate_file,
-                                        keyfile = private_key_file,
-                                        server_side = True)
+                                   certfile = certificate_file,
+                                   keyfile = private_key_file,
+                                   server_side = True)
         self.spawn_server(sock = server_sock, site = wsgi_app)
 
         sock = connect(('127.0.0.1', server_sock.getsockname()[1]))
@@ -557,9 +558,9 @@ class TestHttpd(_TestBase):
         private_key_file = os.path.join(os.path.dirname(__file__), 'server.key')
 
         sock = evy.wrap_ssl(listen(('127.0.0.1', 0)),
-                                 certfile = certificate_file,
-                                 keyfile = private_key_file,
-                                 server_side = True)
+                            certfile = certificate_file,
+                            keyfile = private_key_file,
+                            server_side = True)
         server_coro = evy.spawn(server, sock, wsgi_app, self.logfile)
 
         client = connect(('127.0.0.1', sock.getsockname()[1]))
@@ -695,9 +696,9 @@ class TestHttpd(_TestBase):
         # just test that it accepts the parameter for now
         # TODO: test that it uses the pool and that you can waitall() to
         # ensure that all clients finished
-        from evy import greenpool
+        from evy.pools import Pool
 
-        p = greenpool.GreenPool(5)
+        p = Pool(5)
         self.spawn_server(custom_pool = p)
 
         # this stuff is copied from test_001_server, could be better factored
@@ -859,9 +860,9 @@ class TestHttpd(_TestBase):
 
         for data in ('', 'GET /non-ssl-request HTTP/1.0\r\n\r\n'):
             srv_sock = evy.wrap_ssl(listen(('127.0.0.1', 0)),
-                                         certfile = certificate_file,
-                                         keyfile = private_key_file,
-                                         server_side = True)
+                                    certfile = certificate_file,
+                                    keyfile = private_key_file,
+                                    server_side = True)
             port = srv_sock.getsockname()[1]
             g = spawn_n(server, srv_sock)
             client = connect(('127.0.0.1', port))
@@ -900,7 +901,7 @@ class TestHttpd(_TestBase):
             env['local.test'] = 'test_029_posthooks'
             if 'evy.posthooks' not in env:
                 start_response('500 evy.posthooks not supported',
-                    [('Content-Type', 'text/plain')])
+                               [('Content-Type', 'text/plain')])
             else:
                 env['evy.posthooks'].append(
                     (posthook1, (2,), {'multiplier': 3}))
@@ -922,7 +923,7 @@ class TestHttpd(_TestBase):
             env['local.test'] = 'test_029_posthooks'
             if 'evy.posthooks' not in env:
                 start_response('500 evy.posthooks not supported',
-                    [('Content-Type', 'text/plain')])
+                               [('Content-Type', 'text/plain')])
             else:
                 env['evy.posthooks'].append(
                     (posthook1, (4,), {'multiplier': 5}))
@@ -944,7 +945,7 @@ class TestHttpd(_TestBase):
 
     def test_030_reject_long_header_lines (self):
         sock = connect(('127.0.0.1', self.port))
-        request = 'GET / HTTP/1.0\r\nHost: localhost\r\nLong: %s\r\n\r\n' %\
+        request = 'GET / HTTP/1.0\r\nHost: localhost\r\nLong: %s\r\n\r\n' % \
                   ('a' * 10000)
         fd = sock.makefile('rw')
         fd.write(request)
@@ -1076,7 +1077,7 @@ class TestHttpd(_TestBase):
         self.site.application = wsgi_app
         sock = connect(('127.0.0.1', self.port))
         fd = sock.makefile('rw')
-        fd.write('GET /a*b@%40%233 HTTP/1.1\r\nHost: localhost\r\nConnection: '\
+        fd.write('GET /a*b@%40%233 HTTP/1.1\r\nHost: localhost\r\nConnection: ' \
                  'close\r\n\r\n')
         fd.flush()
         response_line, headers, body = read_http(sock)
@@ -1198,7 +1199,7 @@ class IterableAlreadyHandledTest(_TestBase):
 class ProxiedIterableAlreadyHandledTest(IterableAlreadyHandledTest):
     # same thing as the previous test but ensuring that it works with tpooled
     # results as well as regular ones
-    
+
     def get_app (self):
         from evy import tpool
 
@@ -1254,7 +1255,7 @@ class TestChunkedInput(_TestBase):
 
     def body (self, dirt = None):
         return self.chunk_encode(["this", " is ", "chunked", "\nline", " 2", "\n", "line3", ""],
-                                                                                               dirt = dirt)
+                                 dirt = dirt)
 
     def ping (self, fd):
         fd.sendall("GET /ping HTTP/1.1\r\n\r\n")
@@ -1302,7 +1303,7 @@ class TestChunkedInput(_TestBase):
     def test_chunked_readline (self):
         body = self.body()
         req = "POST /lines HTTP/1.1\r\nContent-Length: %s\r\ntransfer-encoding: Chunked\r\n\r\n%s" % (
-        len(body), body)
+            len(body), body)
 
         fd = self.connect()
         fd.sendall(req)

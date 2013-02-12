@@ -37,6 +37,7 @@ from evy.green import threads as greenthread
 
 DELAY = 0.01
 
+
 class TestDirectRaise(LimitedTestCase):
     def test_direct_raise_class (self):
         try:
@@ -68,9 +69,6 @@ class TestDirectRaise(LimitedTestCase):
 
 
 class TestTimeout(LimitedTestCase):
-
-
-
     def test_with_timeout (self):
         self.assertRaises(timeout.Timeout, timeout.with_timeout, DELAY, greenthread.sleep,
                           DELAY * 10)
@@ -91,6 +89,7 @@ class TestTimeout(LimitedTestCase):
 
         self.assertRaises(timeout.Timeout,
                           timeout.with_timeout, DELAY, longer_timeout)
+
 
 if __name__ == '__main__':
     unittest.main()

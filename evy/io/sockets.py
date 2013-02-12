@@ -30,6 +30,7 @@
 
 import errno
 import time
+
 try:
     from cStringIO import StringIO
 except ImportError:
@@ -42,6 +43,7 @@ import weakref
 import pyuv
 
 from evy.support import get_errno
+from evy.support.errors import last_socket_error
 
 from evy.hubs import trampoline, wait_read, wait_write
 from evy.hubs import get_hub
@@ -55,11 +57,9 @@ from evy.io.utils import SOCKET_BLOCKING, SOCKET_CLOSED
 from evy.io.utils import _fileobject
 
 
-
 __all__ = [
     'GreenSocket',
-    ]
-
+]
 
 BUFFER_SIZE = 4096
 
@@ -72,79 +72,11 @@ except AttributeError:
     def _fileobject (sock, *args, **kwargs):
         return _original_socket.makefile(sock, *args, **kwargs)
 
-#: the mapping between libuv errors and errno
-_UV_ERR_TO_ERRNO_MAP = {
-    'UV_EACCES' : errno.EACCES ,
-    'UV_EAGAIN' : errno.EAGAIN,
-    'UV_EADDRINUSE' : errno.EADDRINUSE ,
-    'UV_EADDRNOTAVAIL' : errno.EADDRNOTAVAIL,
-    'UV_EAFNOSUPPORT' : errno.EAFNOSUPPORT,
-    'UV_EALREADY' : errno.EALREADY,
-    'UV_EBADF' : errno.EBADF,
-    'UV_EBUSY' : errno.EBUSY,
-    'UV_ECONNABORTED' : errno.ECONNABORTED,
-    'UV_ECONNREFUSED' : errno.ECONNREFUSED ,
-    'UV_ECONNRESET' : errno.ECONNRESET,
-    'UV_EDESTADDRREQ' : errno.EDESTADDRREQ,
-    'UV_EFAULT' : errno.EFAULT,
-    'UV_EHOSTUNREACH' : errno.EHOSTUNREACH,
-    'UV_EINTR' : errno.EINTR,
-    'UV_EINVAL' : errno.EINVAL,
-    'UV_EISCONN' : errno.EISCONN,
-    'UV_EMFILE' : errno.EMFILE,
-    'UV_EMSGSIZE' : errno.EMSGSIZE,
-    'UV_ENETDOWN' : errno.ENETDOWN,
-    'UV_ENETUNREACH' : errno.ENETUNREACH,
-    'UV_ENFILE' : errno.ENFILE,
-    'UV_ENOBUFS' : errno.ENOBUFS,
-    'UV_ENOMEM' : errno.ENOMEM,
-    'UV_ENOTDIR' : errno.ENOTDIR,
-    'UV_EISDIR' : errno.EISDIR,
-    #'UV_ENONET' : errno.ENONET,
-    'UV_ENOTCONN' : errno.ENOTCONN,
-    'UV_ENOTSOCK' : errno.ENOTSOCK,
-    #'UV_ENOTSUP' : errno.ENOTSUP,
-    'UV_ENOENT' : errno.ENOENT,
-    'UV_ENOSYS' : errno.ENOSYS,
-    'UV_EPIPE' : errno.EPIPE,
-    'UV_EPROTO' : errno.EPROTO,
-    'UV_EPROTONOSUPPORT' : errno.EPROTONOSUPPORT,
-    'UV_EPROTOTYPE' : errno.EPROTOTYPE,
-    'UV_ETIMEDOUT' : errno.ETIMEDOUT,
-    'UV_ESHUTDOWN' : errno.ESHUTDOWN,
-    'UV_EEXIST' : errno.EEXIST,
-    'UV_ESRCH' : errno.ESRCH,
-    'UV_ENAMETOOLONG' : errno.ENAMETOOLONG,
-    'UV_EPERM' : errno.EPERM,
-    'UV_ELOOP' : errno.ELOOP,
-    'UV_EXDEV' : errno.EXDEV,
-    'UV_ENOTEMPTY' : errno.ENOTEMPTY,
-    'UV_ENOSPC' : errno.ENOSPC,
-    'UV_EIO' : errno.EIO,
-    'UV_EROFS' : errno.EROFS,
-    'UV_ENODEV' : errno.ENODEV ,
-    'UV_ESPIPE' : errno.ESPIPE ,
-}
-
-def last_socket_error(code, msg = None):
-    """
-    Utility function for getting the last exception as a socket.error
-    """
-    if msg: msg += ': %s' % (pyuv.errno.strerror(code))
-    else:   msg = '%s' % (pyuv.errno.strerror(code))
-
-    try:
-        errno_code = _UV_ERR_TO_ERRNO_MAP[pyuv.errno.errorcode[code]]
-    except KeyError:
-        errno_code = code
-
-    return socket.error(errno_code, msg)
-
 
 
 ####################################################################################################
 
-def _closed_dummy(*args):
+def _closed_dummy (*args):
     raise socket.error(errno.EBADF, 'Bad file descriptor')
 
 # All the method names that must be delegated to either the real socket
@@ -161,7 +93,8 @@ class GreenSocket(object):
 
     EOF = (-1)
 
-    def __init__ (self, family = socket.AF_INET, type = socket.SOCK_STREAM, proto = 0, _sock = None, _hub = None):
+    def __init__ (self, family = socket.AF_INET, type = socket.SOCK_STREAM, proto = 0, _sock = None,
+                  _hub = None):
         """
         Initialize the UV socket
 
@@ -184,8 +117,10 @@ class GreenSocket(object):
             self.uv_fd = _sock
 
         if not self.uv_hub:
-            if _hub:    self.uv_hub = _hub
-            else:       self.uv_hub = weakref.proxy(get_hub())
+            if _hub:
+                self.uv_hub = _hub
+            else:
+                self.uv_hub = weakref.proxy(get_hub())
 
         ## check if the socket type is supported by pyUV and we can create a pyUV socket...
         if not self.uv_handle:
@@ -231,22 +166,22 @@ class GreenSocket(object):
         return attr
 
 
-
-    def __repr__(self):
+    def __repr__ (self):
         try:
             uv = 'yes' if self.uv_handle else 'no'
             blk = 'no' if self.act_non_blocking else 'no'
-            retval = "<GreenSocket object at %s (fd:%d, uv:%s, blk:%s)>" % (hex(id(self)), self.fileno(), uv, blk)
+            retval = "<GreenSocket object at %s (fd:%d, uv:%s, blk:%s)>" % (
+            hex(id(self)), self.fileno(), uv, blk)
             return retval
         except:
             return '<GreenSocket>'
 
 
-    def __del__(self):
+    def __del__ (self):
         ## force the close() method invokation when the refcount reaches 0
         self.close()
 
-    def close(self):
+    def close (self):
         """
         Close the TCP socket
         :return: None
@@ -258,7 +193,8 @@ class GreenSocket(object):
                 self._did_accept = None
 
                 if not self.uv_handle.closed:
-                    def closed_callback(*args): pass
+                    def closed_callback (*args):
+                        pass
                     self.uv_handle.close(closed_callback)
 
             elif self.uv_fd:
@@ -277,7 +213,7 @@ class GreenSocket(object):
 
 
     @property
-    def closed(self):
+    def closed (self):
         """
         Used to determine whether a socket is closed.
 
@@ -309,7 +245,7 @@ class GreenSocket(object):
         return newsock
 
 
-    def bind(self, address):
+    def bind (self, address):
         """
         Binds to a particular address and port
         :param address: the address, as a pair of IP and port
@@ -325,7 +261,7 @@ class GreenSocket(object):
                 raise socket.error(*last_socket_error(e.args[0], msg = 'bind error'))
 
 
-    def listen(self, backlog):
+    def listen (self, backlog):
         """
         Listen for a new connection
         :param backlog: the backlog
@@ -353,7 +289,7 @@ class GreenSocket(object):
                     return GreenSocket(client, _hub = self.uv_hub), addr
 
 
-    def connect(self, address):
+    def connect (self, address):
         """
         Connects to a remote address
         :param address: the remote address, as a IP and port tuple
@@ -364,10 +300,11 @@ class GreenSocket(object):
             try:
                 did_connect = Event()
 
-                def connect_callback(tcp_handle, error):
+                def connect_callback (tcp_handle, error):
                     try:
                         if error:
-                            did_connect.send_exception(last_socket_error(error, msg = 'connect error'))
+                            did_connect.send_exception(
+                                last_socket_error(error, msg = 'connect error'))
                         else:
                             did_connect.send(0)
                     except Exception, e:
@@ -434,7 +371,7 @@ class GreenSocket(object):
                     except socket.error, ex:
                         return get_errno(ex)
 
-    def ioctl(self, *args):
+    def ioctl (self, *args):
         self.uv_fd.ioctl(*args)
 
     def makefile (self, *args, **kw):
@@ -457,20 +394,31 @@ class GreenSocket(object):
     def recvfrom (self, *args):
         if not self.uv_fd:
             raise socket.error(errno.EBADFD, 'invalid file descriptor')
+
         if not self.act_non_blocking:
             wait_read(self.uv_fd, self.gettimeout(), socket.timeout("timed out"))
+
         return self.uv_fd.recvfrom(*args)
 
     def recvfrom_into (self, *args):
         if not self.uv_fd:
             raise socket.error(errno.EBADFD, 'invalid file descriptor')
+
         if not self.act_non_blocking:
             wait_read(self.uv_fd, self.gettimeout(), socket.timeout("timed out"))
+
         return self.uv_fd.recvfrom_into(*args)
 
     def recv_into (self, buf, nbytes = None, flags = None):
         if not self.uv_fd:
             raise socket.error(errno.EBADFD, 'invalid file descriptor')
+
+        if not nbytes:
+            nbytes = len(buf)
+
+        if not flags:
+            flags = 0
+
         if not self.act_non_blocking:
             wait_read(self.uv_fd, self.gettimeout(), socket.timeout("timed out"))
 
@@ -495,14 +443,15 @@ class GreenSocket(object):
 
                 did_read = Event()
 
-                def read_callback(handle, data, error):
+                def read_callback (handle, data, error):
                     try:
                         self.uv_handle.stop_read()
                         if error:
                             if pyuv.errno.errorcode[error] == 'UV_EOF':
                                 did_read.send(GreenSocket.EOF)
                             else:
-                                did_read.send_exception(last_socket_error(error, msg = 'read error'))
+                                did_read.send_exception(
+                                    last_socket_error(error, msg = 'read error'))
                         elif data is None or len(data) == 0:
                             did_read.send(GreenSocket.EOF)
                         else:
@@ -513,8 +462,13 @@ class GreenSocket(object):
                     except Exception, e:
                         did_read.send_exception(e)
 
-                self.uv_handle.start_read(read_callback)
-                did_read.wait(self.gettimeout(), socket.timeout("timed out"))
+                ## TODO: we cannot use start_read for UDP!!
+
+                if isinstance(self.uv_handle, pyuv.TCP):
+                    self.uv_handle.start_read(read_callback)
+                    did_read.wait(self.gettimeout(), socket.timeout("timed out"))
+                elif isinstance(self.uv_handle, pyuv.UDP):
+                    raise NotImplementedError('not implemented yet for UDP sockets')
 
             ## get the data we want from the read buffer, and keep the rest
             res, self.uv_recv_string = self.uv_recv_string[:buflen], self.uv_recv_string[buflen:]
@@ -549,7 +503,8 @@ class GreenSocket(object):
         elif self.uv_handle:
             did_write = Event()
             write_len = len(data)
-            def write_callback(handle, error):
+
+            def write_callback (handle, error):
                 try:
                     if error:
                         did_write.send_exception(last_socket_error(error, msg = 'write error'))
@@ -607,7 +562,7 @@ class GreenSocket(object):
         wait_write(self.uv_fd)
         return self.uv_fd.sendto(*args)
 
-    def getsockname(self):
+    def getsockname (self):
         if self.uv_handle:
             try:
                 return self.uv_handle.getsockname()
@@ -616,7 +571,7 @@ class GreenSocket(object):
         else:
             return self.uv_fd.getsockname()
 
-    def getpeername(self):
+    def getpeername (self):
         if self.uv_handle:
             try:
                 return self.uv_handle.getpeername()
@@ -625,10 +580,10 @@ class GreenSocket(object):
         else:
             return self.uv_fd.getpeername()
 
-    def setsockopt(self, *args, **kwargs):
+    def setsockopt (self, *args, **kwargs):
         return self.uv_fd.setsockopt(*args, **kwargs)
 
-    def shutdown(self, *args):
+    def shutdown (self, *args):
         """
         Shut down one or both halves of the connection. If how is SHUT_RD, further receives are
         disallowed. If how is SHUT_WR, further sends are disallowed. If how is SHUT_RDWR, further
@@ -640,7 +595,8 @@ class GreenSocket(object):
         """
         if self.uv_handle:
             shudown_event = Event()
-            def _shutdown_callback(tcp_handle, error):
+
+            def _shutdown_callback (tcp_handle, error):
                 shudown_event.send()
 
             self.uv_handle.shutdown(_shutdown_callback)
@@ -675,9 +631,6 @@ class GreenSocket(object):
 
     def gettimeout (self):
         return self._timeout
-
-
-
 
 
 def shutdown_safe (sock):

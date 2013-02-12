@@ -40,13 +40,15 @@ from socket import socket as _original_socket
 
 from evy.support import get_errno
 from evy.hubs import get_hub
-from evy.hubs import trampoline, wait_read, wait_write
+from evy.hubs import wait_read, wait_write
 from evy.event import Event
-
 from evy.io.utils import set_nonblocking
+from evy.patcher import original
+from evy.support.errors import last_file_error
 
 import errno
-import os
+
+_os_orig = original("os")
 
 
 # Emulate _fileobject class in 3.x implementation
@@ -61,72 +63,6 @@ except AttributeError:
 
 __all__ = []
 
-
-#: the mapping between libuv errors and errno
-_UV_ERR_TO_ERRNO_MAP = {
-    'UV_EACCES' : errno.EACCES ,
-    'UV_EAGAIN' : errno.EAGAIN,
-    'UV_EADDRINUSE' : errno.EADDRINUSE ,
-    'UV_EADDRNOTAVAIL' : errno.EADDRNOTAVAIL,
-    'UV_EAFNOSUPPORT' : errno.EAFNOSUPPORT,
-    'UV_EALREADY' : errno.EALREADY,
-    'UV_EBADF' : errno.EBADF,
-    'UV_EBUSY' : errno.EBUSY,
-    'UV_ECONNABORTED' : errno.ECONNABORTED,
-    'UV_ECONNREFUSED' : errno.ECONNREFUSED ,
-    'UV_ECONNRESET' : errno.ECONNRESET,
-    'UV_EDESTADDRREQ' : errno.EDESTADDRREQ,
-    'UV_EFAULT' : errno.EFAULT,
-    'UV_EHOSTUNREACH' : errno.EHOSTUNREACH,
-    'UV_EINTR' : errno.EINTR,
-    'UV_EINVAL' : errno.EINVAL,
-    'UV_EISCONN' : errno.EISCONN,
-    'UV_EMFILE' : errno.EMFILE,
-    'UV_EMSGSIZE' : errno.EMSGSIZE,
-    'UV_ENETDOWN' : errno.ENETDOWN,
-    'UV_ENETUNREACH' : errno.ENETUNREACH,
-    'UV_ENFILE' : errno.ENFILE,
-    'UV_ENOBUFS' : errno.ENOBUFS,
-    'UV_ENOMEM' : errno.ENOMEM,
-    'UV_ENOTDIR' : errno.ENOTDIR,
-    'UV_EISDIR' : errno.EISDIR,
-    #'UV_ENONET' : errno.ENONET,
-    'UV_ENOTCONN' : errno.ENOTCONN,
-    'UV_ENOTSOCK' : errno.ENOTSOCK,
-    #'UV_ENOTSUP' : errno.ENOTSUP,
-    'UV_ENOENT' : errno.ENOENT,
-    'UV_ENOSYS' : errno.ENOSYS,
-    'UV_EPIPE' : errno.EPIPE,
-    'UV_EPROTO' : errno.EPROTO,
-    'UV_EPROTONOSUPPORT' : errno.EPROTONOSUPPORT,
-    'UV_EPROTOTYPE' : errno.EPROTOTYPE,
-    'UV_ETIMEDOUT' : errno.ETIMEDOUT,
-    'UV_ESHUTDOWN' : errno.ESHUTDOWN,
-    'UV_EEXIST' : errno.EEXIST,
-    'UV_ESRCH' : errno.ESRCH,
-    'UV_ENAMETOOLONG' : errno.ENAMETOOLONG,
-    'UV_EPERM' : errno.EPERM,
-    'UV_ELOOP' : errno.ELOOP,
-    'UV_EXDEV' : errno.EXDEV,
-    'UV_ENOTEMPTY' : errno.ENOTEMPTY,
-    'UV_ENOSPC' : errno.ENOSPC,
-    'UV_EIO' : errno.EIO,
-    'UV_EROFS' : errno.EROFS,
-    'UV_ENODEV' : errno.ENODEV ,
-    'UV_ESPIPE' : errno.ESPIPE ,
-}
-
-def last_file_error(code, msg = None):
-    """
-    Utility function for getting the last exception as a IOerror
-    """
-    if msg: msg += ': %s' % (pyuv.errno.strerror(code))
-    else:   msg = '%s' % (pyuv.errno.strerror(code))
-
-    try:                errno_code = _UV_ERR_TO_ERRNO_MAP[pyuv.errno.errorcode[code]]
-    except KeyError:    errno_code = code
-
-    return IOError(errno_code, msg)
 
 
 
@@ -149,7 +85,7 @@ class _SocketDuckForFd(object):
     def recv (self, buflen):
         while True:
             try:
-                data = os.read(self._fileno, buflen)
+                data = _os_orig.read(self._fileno, buflen)
                 return data
             except OSError, e:
                 if get_errno(e) != errno.EAGAIN:
@@ -158,7 +94,7 @@ class _SocketDuckForFd(object):
 
     def sendall (self, data):
         len_data = len(data)
-        os_write = os.write
+        os_write = _os_orig.write
         fileno = self._fileno
         try:
             total_sent = os_write(fileno, data)
@@ -177,7 +113,7 @@ class _SocketDuckForFd(object):
 
     def __del__ (self):
         try:
-            os.close(self._fileno)
+            _os_orig.close(self._fileno)
         except:
             # os.close may fail if __init__ didn't complete (i.e file dscriptor passed to popen was invalid
             pass
@@ -226,14 +162,14 @@ class GreenPipe(_fileobject):
             self._name = "<fd:%d>" % fileno
             self._path = None
         else:
-            fileno = os.dup(f.fileno())
+            fileno = _os_orig.dup(f.fileno())
             self._name = self._path = f.name
             if f.mode != mode:
                 raise ValueError('file.mode %r does not match mode parameter %r' % (f.mode, mode))
             f.close()       ## close the file provided: we keep our dupped version...
 
         assert isinstance(fileno, int)
-        self._fileobj = os.fdopen(fileno, mode)
+        self._fileobj = _os_orig.fdopen(fileno, mode)
         
         super(GreenPipe, self).__init__(_SocketDuckForFd(fileno), mode, bufsize)
         set_nonblocking(self)
@@ -304,7 +240,7 @@ class GreenPipe(_fileobject):
         if whence == 1 and offset == 0: # tell synonym
             return self.tell()
         try:
-            rv = os.lseek(self.fileno(), offset, whence)
+            rv = _os_orig.lseek(self.fileno(), offset, whence)
         except OSError, e:
             raise IOError(*e.args)
         else:
@@ -316,7 +252,7 @@ class GreenPipe(_fileobject):
             if size == -1:
                 size = self.tell()
             try:
-                rv = os.ftruncate(self.fileno(), size)
+                rv = _os_orig.ftruncate(self.fileno(), size)
             except OSError, e:
                 raise IOError(*e.args)
             else:
@@ -325,7 +261,7 @@ class GreenPipe(_fileobject):
 
     def isatty (self):
         try:
-            return os.isatty(self.fileno())
+            return _os_orig.isatty(self.fileno())
         except OSError, e:
             raise IOError(*e.args)
 

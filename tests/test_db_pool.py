@@ -28,15 +28,22 @@
 #
 
 
-"Test cases for db_pool"
+"""
+Test cases for db_pool
+"""
+
 import sys
 import os
 import traceback
 from unittest import TestCase, main
 
-from tests import skipped, skip_unless, skip_with_pyevent, get_database_auth
+from tests import skipped, skip_unless, get_database_auth
+
 from evy import event
 from evy import db_pool
+from evy import sleep
+from evy import Timeout
+
 import evy
 
 
@@ -501,7 +508,6 @@ class TpoolConnectionPool(DBConnectionPool):
                                              **self._auth)
 
 
-    
     def setUp (self):
         super(TpoolConnectionPool, self).setUp()
 
@@ -525,7 +531,9 @@ class RawConnectionPool(DBConnectionPool):
                                          connect_timeout = connect_timeout,
                                          **self._auth)
 
+
 get_auth = get_database_auth
+
 
 def mysql_requirement (_f):
     verbose = os.environ.get('evy_test_mysql_verbose')
@@ -673,6 +681,7 @@ class Test01Psycopg2Tpool(Psycopg2ConnectionPool, TpoolConnectionPool, TestCase)
 
 class Test02Psycopg2Raw(Psycopg2ConnectionPool, RawConnectionPool, TestCase):
     __test__ = True
+
 
 if __name__ == '__main__':
     main()

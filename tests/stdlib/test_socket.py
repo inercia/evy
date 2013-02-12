@@ -9,11 +9,11 @@ from evy.patched import threading
 
 patcher.inject('test.test_socket',
                globals(),
-    ('socket', socket),
-    ('select', select),
-    ('time', time),
-    ('thread', thread),
-    ('threading', threading))
+               ('socket', socket),
+               ('select', select),
+               ('time', time),
+               ('thread', thread),
+               ('threading', threading))
 
 # TODO: fix
 TCPTimeoutTest.testInterruptedTimeout = lambda *a: None

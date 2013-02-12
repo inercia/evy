@@ -38,7 +38,6 @@ from evy.event import Event
 from evy.timeout import Timeout, with_timeout
 
 
-
 def do_bail (q):
     Timeout(0, RuntimeError())
     try:
@@ -49,7 +48,6 @@ def do_bail (q):
 
 
 class TestQueue(LimitedTestCase):
-
     @silence_warnings
     def test_send_first (self):
         q = Queue()
@@ -447,7 +445,7 @@ class TestQueue(LimitedTestCase):
     def test_task_done (self):
         from evy import queue
         from evy.tools import debug
-        
+
         channel = queue.Queue(0)
         X = object()
         gt = spawn(channel.put, X)
@@ -540,8 +538,6 @@ class TestNoWait(LimitedTestCase):
         # assert p.ready(), p
         assert q.full(), q
         assert q.empty(), q
-
-
 
 
 if __name__ == '__main__':
