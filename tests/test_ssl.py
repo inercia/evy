@@ -47,8 +47,7 @@ from evy.green import threads as greenthread
 
 
 def listen_ssl_socket (address = ('127.0.0.1', 0)):
-    sock = util.wrap_ssl(socket.socket(), certificate_file,
-                         private_key_file, True)
+    sock = util.wrap_ssl(socket.socket(), certificate_file, private_key_file, True)
     sock.bind(address)
     sock.listen(50)
 
