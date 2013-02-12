@@ -32,8 +32,9 @@
 import unittest
 from test import test_support
 
-import socket
-import urllib
+from evy.patched import socket
+from evy.patched import urllib
+
 import sys
 import os
 import time
