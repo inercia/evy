@@ -32,6 +32,7 @@ from unittest import TestCase, main
 
 import evy
 from evy import hubs
+from evy import sleep
 from evy.hubs import timer
 
 class TestTimer(TestCase):
