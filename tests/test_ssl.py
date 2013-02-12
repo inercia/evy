@@ -39,7 +39,7 @@ import evy
 from evy import util
 from evy.io.convenience import connect, listen
 from evy.io.sockets import shutdown_safe
-from evy.io.ssl import SSL, ssl_listener
+from evy.io.ssl import SSL
 from evy.green import threads as greenthread
 
 
