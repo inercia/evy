@@ -1,6 +1,6 @@
 Evy is a concurrency library, based on eventlet, and using libuv in its core.
 
-[![Build Status](https://travis-ci.org/inercia/evy.png)](https://travis-ci.org/inercia/evy)
+[![Build Status](https://travis-ci.org/inercia/evy.png?branch=develop)](https://travis-ci.org/inercia/evy)
 
 Quick Example
 =============
