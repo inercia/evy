@@ -12,5 +12,4 @@ install:
   - "pip install -r requirements.txt --use-mirrors"
 
 # command to run tests
-script: nosetests -v -a '!perf' -w tests
-
+script: make test
